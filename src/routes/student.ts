@@ -804,6 +804,18 @@ router.get('/sessions', async (req, res) => {
         orderBy: { startedAt: 'desc' },
         take: 50
       });
+    } else {
+      // Fallback: show all sessions
+      sessions = await prisma.tutoringSession.findMany({
+        include: {
+          subject: { include: { category: true } },
+          topic: true,
+          student: true,
+          messages: { take: 1 }
+        },
+        orderBy: { startedAt: 'desc' },
+        take: 50
+      });
     }
 
     res.render('student/sessions', {
@@ -950,6 +962,22 @@ router.get('/progress', async (req, res) => {
         orderBy: { lastActivityAt: 'desc' },
         take: 100
       });
+    } else {
+      // Fallback: show all progress
+      progress = await prisma.studentProgress.findMany({
+        include: {
+          student: true,
+          topic: {
+            include: {
+              subject: {
+                include: { category: true }
+              }
+            }
+          }
+        },
+        orderBy: { lastActivityAt: 'desc' },
+        take: 100
+      });
     }
 
     // Group by subject
@@ -1080,6 +1108,20 @@ router.get('/assignments', async (req, res) => {
           { dueDate: 'asc' },
           { createdAt: 'desc' }
         ],
+        take: 50
+      });
+    } else {
+      // Fallback: show all active assignments
+      assignments = await prisma.assignment.findMany({
+        where: { isActive: true },
+        include: {
+          topic: { include: { subject: true } },
+          class: true,
+          lesson: true,
+          student: true,
+          submissions: { take: 5 }
+        },
+        orderBy: [{ dueDate: 'asc' }, { createdAt: 'desc' }],
         take: 50
       });
     }
@@ -1220,6 +1262,10 @@ router.get('/quizzes', async (req, res) => {
     const isViewingAs = !!req.session.viewAsStudentId;
     const canViewAs = canViewAsStudent(req.session.role || '');
 
+    console.log('[DEBUG quizzes] session.role:', req.session.role);
+    console.log('[DEBUG quizzes] effectiveStudentId:', effectiveStudentId);
+    console.log('[DEBUG quizzes] canViewAs:', canViewAs);
+
     const loggedInUser = await prisma.user.findUnique({
       where: { id: req.session.userId! },
       include: { school: true }
@@ -1257,6 +1303,7 @@ router.get('/quizzes', async (req, res) => {
     } else if (canViewAs) {
       // Admin/Teacher viewing without specific student - show all accessible quizzes
       const accessibleClassIds = await getAccessibleClassIds(req.session);
+      console.log('[DEBUG quizzes] accessibleClassIds:', accessibleClassIds.length);
 
       quizzes = await prisma.quiz.findMany({
         where: {
@@ -1279,6 +1326,22 @@ router.get('/quizzes', async (req, res) => {
         orderBy: { createdAt: 'desc' },
         take: 50
       });
+      console.log('[DEBUG quizzes] quizzes found:', quizzes.length);
+    } else {
+      // Fallback: show all active quizzes if no specific filtering applies
+      console.log('[DEBUG quizzes] FALLBACK - showing all quizzes');
+      quizzes = await prisma.quiz.findMany({
+        where: { isActive: true },
+        include: {
+          topic: { include: { subject: true } },
+          class: true,
+          questions: true,
+          attempts: { take: 5 }
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 50
+      });
+      console.log('[DEBUG quizzes] fallback quizzes found:', quizzes.length);
     }
 
     res.render('student/quizzes', {
