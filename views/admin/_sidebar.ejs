@@ -16,7 +16,57 @@
     'STUDENT': 'Student'
   };
 %>
-<nav class="col-md-2 d-none d-md-block sidebar p-0" style="background: <%= bgColor %>;">
+<style>
+  .admin-sidebar {
+    min-height: 100vh;
+    max-height: 100vh;
+    overflow-y: auto;
+    position: sticky;
+    top: 0;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.3) transparent;
+  }
+  .admin-sidebar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .admin-sidebar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .admin-sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.3);
+    border-radius: 3px;
+  }
+  .admin-sidebar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.5);
+  }
+  .admin-sidebar .nav-link {
+    color: rgba(255,255,255,0.8);
+    padding: 0.75rem 1rem;
+    transition: all 0.2s;
+  }
+  .admin-sidebar .nav-link:hover,
+  .admin-sidebar .nav-link.active {
+    color: #fff;
+    background: rgba(255,255,255,0.1);
+  }
+  .admin-sidebar .nav-link i {
+    margin-right: 0.5rem;
+    width: 20px;
+    text-align: center;
+  }
+  .admin-sidebar .nav-divider {
+    border-top: 1px solid rgba(255,255,255,0.15);
+    margin: 0.5rem 0;
+  }
+  .admin-sidebar .nav-section {
+    color: rgba(255,255,255,0.5);
+    font-size: 0.7rem;
+    padding: 0.5rem 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+</style>
+<nav class="col-md-2 d-none d-md-block admin-sidebar sidebar p-0" style="background: linear-gradient(180deg, <%= bgColor %> 0%, <%= bgColor %>dd 100%);">
   <div class="p-3 text-white">
     <h5><i class="bi bi-mortarboard-fill"></i> TutorAI</h5>
     <small>AI-Powered Learning</small>
