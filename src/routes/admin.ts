@@ -862,4 +862,255 @@ router.post('/subscriptions/plans', async (req, res) => {
   }
 });
 
+// =====================
+// Trial Codes
+// =====================
+router.get('/trial-codes', async (req, res) => {
+  try {
+    const branding = await getBranding();
+    const trialCodes = await prisma.trialCode.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: { user: true }
+    });
+
+    const stats = {
+      total: trialCodes.length,
+      pending: trialCodes.filter(c => c.status === 'pending').length,
+      sent: trialCodes.filter(c => c.status === 'sent').length,
+      redeemed: trialCodes.filter(c => c.status === 'redeemed').length,
+      expired: trialCodes.filter(c => c.status === 'expired').length
+    };
+
+    res.render('admin/trial-codes', {
+      title: 'Trial Codes - TutorAI Admin',
+      active: 'trial-codes',
+      branding,
+      token: req.query.token || '',
+      basePath: config.basePath,
+      trialCodes,
+      stats
+    });
+  } catch (error) {
+    console.error('Trial codes page error:', error);
+    res.status(500).send('Error loading trial codes');
+  }
+});
+
+router.post('/trial-codes', async (req, res) => {
+  try {
+    const { firstName, lastName, email, phone, organization, deliveryMethod, durationDays } = req.body;
+
+    // Generate unique code
+    const code = 'TRIAL-' + Math.random().toString(36).substring(2, 10).toUpperCase();
+
+    await prisma.trialCode.create({
+      data: {
+        code,
+        requesterFirstName: firstName,
+        requesterLastName: lastName,
+        requesterEmail: email,
+        requesterPhone: phone || null,
+        requesterOrganization: organization || null,
+        deliveryMethod: deliveryMethod || 'email',
+        durationDays: parseInt(durationDays) || 14,
+        status: 'sent',
+        expiresAt: new Date(Date.now() + (parseInt(durationDays) || 14) * 24 * 60 * 60 * 1000)
+      }
+    });
+
+    res.json({ success: true, message: 'Trial code created and sent' });
+  } catch (error) {
+    console.error('Create trial code error:', error);
+    res.status(500).json({ error: 'Failed to create trial code' });
+  }
+});
+
+router.post('/trial-codes/:id/revoke', async (req, res) => {
+  try {
+    await prisma.trialCode.update({
+      where: { id: req.params.id },
+      data: { status: 'revoked', revokedAt: new Date() }
+    });
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Revoke trial code error:', error);
+    res.status(500).json({ error: 'Failed to revoke trial code' });
+  }
+});
+
+router.post('/trial-codes/:id/extend', async (req, res) => {
+  try {
+    const trialCode = await prisma.trialCode.findUnique({ where: { id: req.params.id } });
+    if (!trialCode) {
+      return res.status(404).json({ error: 'Trial code not found' });
+    }
+
+    const newExpiresAt = new Date(trialCode.expiresAt);
+    newExpiresAt.setDate(newExpiresAt.getDate() + 14);
+
+    await prisma.trialCode.update({
+      where: { id: req.params.id },
+      data: { expiresAt: newExpiresAt, extensionCount: (trialCode.extensionCount || 0) + 1 }
+    });
+
+    res.json({ success: true, newExpiresAt });
+  } catch (error) {
+    console.error('Extend trial code error:', error);
+    res.status(500).json({ error: 'Failed to extend trial code' });
+  }
+});
+
+// =====================
+// Account Settings
+// =====================
+router.get('/account', async (req, res) => {
+  try {
+    const branding = await getBranding();
+    const userId = req.session?.adminUserId;
+    const user = userId ? await prisma.user.findUnique({ where: { id: userId } }) : null;
+
+    res.render('admin/account', {
+      title: 'Account Settings - TutorAI Admin',
+      active: 'account',
+      branding,
+      token: req.query.token || '',
+      basePath: config.basePath,
+      user
+    });
+  } catch (error) {
+    console.error('Account page error:', error);
+    res.status(500).send('Error loading account settings');
+  }
+});
+
+router.post('/account/update', async (req, res) => {
+  try {
+    const userId = req.session?.adminUserId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    const { firstName, lastName, email, phone } = req.body;
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { firstName, lastName, email, phone }
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Update account error:', error);
+    res.status(500).json({ error: 'Failed to update account' });
+  }
+});
+
+router.post('/account/change-password', async (req, res) => {
+  try {
+    const userId = req.session?.adminUserId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    const { currentPassword, newPassword } = req.body;
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+
+    if (!user || !user.passwordHash) {
+      return res.status(400).json({ error: 'User not found' });
+    }
+
+    const validPassword = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!validPassword) {
+      return res.status(400).json({ error: 'Current password is incorrect' });
+    }
+
+    const newHash = await bcrypt.hash(newPassword, 10);
+    await prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash: newHash }
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({ error: 'Failed to change password' });
+  }
+});
+
+// =====================
+// My Subscription
+// =====================
+router.get('/my-subscription', async (req, res) => {
+  try {
+    const branding = await getBranding();
+    const userId = req.session?.adminUserId;
+
+    let subscription = null;
+    let currentPlan = null;
+
+    if (userId) {
+      subscription = await prisma.subscription.findFirst({
+        where: { userId, status: 'active' },
+        include: { plan: true }
+      });
+      currentPlan = subscription?.plan;
+    }
+
+    const plans = await prisma.subscriptionPlan.findMany({
+      where: { isActive: true },
+      orderBy: { price: 'asc' }
+    });
+
+    res.render('admin/my-subscription', {
+      title: 'My Subscription - TutorAI Admin',
+      active: 'my-subscription',
+      branding,
+      token: req.query.token || '',
+      basePath: config.basePath,
+      subscription,
+      currentPlan,
+      plans
+    });
+  } catch (error) {
+    console.error('My subscription page error:', error);
+    res.status(500).send('Error loading subscription');
+  }
+});
+
+// =====================
+// Pricing Plans
+// =====================
+router.get('/pricing', async (req, res) => {
+  try {
+    const branding = await getBranding();
+    const plans = await prisma.subscriptionPlan.findMany({
+      where: { isActive: true },
+      orderBy: { price: 'asc' }
+    });
+
+    const userId = req.session?.adminUserId;
+    let currentPlan = null;
+
+    if (userId) {
+      const subscription = await prisma.subscription.findFirst({
+        where: { userId, status: 'active' },
+        include: { plan: true }
+      });
+      currentPlan = subscription?.plan;
+    }
+
+    res.render('admin/pricing', {
+      title: 'Pricing Plans - TutorAI Admin',
+      active: 'pricing',
+      branding,
+      token: req.query.token || '',
+      basePath: config.basePath,
+      plans,
+      currentPlan
+    });
+  } catch (error) {
+    console.error('Pricing page error:', error);
+    res.status(500).send('Error loading pricing');
+  }
+});
+
 export default router;

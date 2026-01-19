@@ -177,6 +177,10 @@ model User {
   quizzesCreated     Quiz[]         @relation("QuizCreator")
   quizAttempts       QuizAttempt[]  @relation("QuizAttempts")
 
+  // Subscription and Trial relations
+  subscriptions      Subscription[]
+  trialCodes         TrialCode[]
+
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 }
@@ -791,7 +795,7 @@ model SubscriptionPlan {
   name               String
   code               String    @unique // basic, standard, premium, school
   description        String?
-  price              Float
+  price              Float     @default(0)
   currency           String    @default("USD")
   billingPeriod      String    @default("monthly") // monthly, yearly
   sessionsPerMonth   Int?      // null = unlimited
@@ -801,4 +805,65 @@ model SubscriptionPlan {
   sortOrder          Int       @default(0)
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
+
+  subscriptions      Subscription[]
+}
+
+// ============================================
+// USER SUBSCRIPTIONS
+// ============================================
+
+model Subscription {
+  id                    String    @id @default(cuid())
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id])
+  planId                String
+  plan                  SubscriptionPlan @relation(fields: [planId], references: [id])
+
+  stripeSubscriptionId  String?
+  stripeCustomerId      String?
+
+  status                String    @default("active") // active, canceled, past_due, trialing
+  trialEndsAt           DateTime?
+  currentPeriodStart    DateTime?
+  currentPeriodEnd      DateTime?
+  canceledAt            DateTime?
+  endedAt               DateTime?
+
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}
+
+// ============================================
+// TRIAL CODES
+// ============================================
+
+model TrialCode {
+  id                    String    @id @default(cuid())
+  code                  String    @unique
+
+  requesterFirstName    String
+  requesterLastName     String
+  requesterEmail        String
+  requesterPhone        String?
+  requesterOrganization String?
+
+  deliveryMethod        String    @default("email") // email, sms
+  durationDays          Int       @default(14)
+
+  status                String    @default("pending") // pending, sent, redeemed, expired, revoked
+
+  userId                String?
+  user                  User?     @relation(fields: [userId], references: [id])
+
+  redeemedAt            DateTime?
+  expiresAt             DateTime
+  revokedAt             DateTime?
+  revokedReason         String?
+
+  extensionCount        Int       @default(0)
+  parentCodeId          String?
+
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 }

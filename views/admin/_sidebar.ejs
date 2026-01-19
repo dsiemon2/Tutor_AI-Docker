@@ -73,6 +73,14 @@
     <div class="nav-section">Billing</div>
     <li class="nav-item"><a class="nav-link <%= _active === 'payment-gateways' ? 'active' : '' %>" href="<%= _basePath %>/admin/payment-gateways?token=<%= _token %>"><i class="bi bi-credit-card-2-front"></i> Payment Gateways</a></li>
     <li class="nav-item"><a class="nav-link <%= _active === 'subscriptions' ? 'active' : '' %>" href="<%= _basePath %>/admin/subscriptions?token=<%= _token %>"><i class="bi bi-receipt"></i> Subscriptions</a></li>
+    <li class="nav-item"><a class="nav-link <%= _active === 'trial-codes' ? 'active' : '' %>" href="<%= _basePath %>/admin/trial-codes?token=<%= _token %>"><i class="bi bi-ticket-perforated"></i> Trial Codes</a></li>
+
+    <!-- Account -->
+    <div class="nav-divider"></div>
+    <div class="nav-section">Account</div>
+    <li class="nav-item"><a class="nav-link <%= _active === 'account' ? 'active' : '' %>" href="<%= _basePath %>/admin/account?token=<%= _token %>"><i class="bi bi-shield-check"></i> Account Settings</a></li>
+    <li class="nav-item"><a class="nav-link <%= _active === 'my-subscription' ? 'active' : '' %>" href="<%= _basePath %>/admin/my-subscription?token=<%= _token %>"><i class="bi bi-person-badge"></i> My Subscription</a></li>
+    <li class="nav-item"><a class="nav-link <%= _active === 'pricing' ? 'active' : '' %>" href="<%= _basePath %>/admin/pricing?token=<%= _token %>"><i class="bi bi-tags"></i> Pricing Plans</a></li>
 
     <!-- System -->
     <div class="nav-divider"></div>
