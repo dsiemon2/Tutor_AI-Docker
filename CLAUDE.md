@@ -203,11 +203,23 @@ npm start
 ## RBAC Hierarchy
 
 ```
-SUPER_ADMIN (100)     - Platform owner, all schools
-└── SCHOOL_ADMIN (80) - School management, users, settings
-    └── TEACHER (60)  - Class management, student monitoring
-        └── STUDENT (40) - Use tutoring, view own progress
+SUPER_ADMIN (100)      - Platform owner, all schools, view any student
+├── DISTRICT_ADMIN (90) - District management, all schools in district
+│   └── PRINCIPAL (85)  - School management, all students in school
+│       └── VICE_PRINCIPAL (75) - School operations, student oversight
+│           └── DEPARTMENT_HEAD (65) - Department curriculum, teacher support
+│               └── TEACHER (60)  - Class management, own students only
+│                   └── STUDENT (40) - Use tutoring, view own progress
 ```
+
+### View-As-Student Feature
+Admins and teachers can view the student portal as any student they have access to:
+- **Super Admin**: Can view as any student
+- **District Admin**: Can view students in their district
+- **Principal/VP/Dept Head**: Can view students in their school
+- **Teacher**: Can view students in their classes
+
+Access via dropdown in student portal navbar when logged in as admin/teacher.
 
 ---
 
@@ -248,12 +260,51 @@ OPENAI_API_KEY=your-openai-key
 
 ---
 
+## Student Portal Pages
+
+| Page | Route | Description |
+|------|-------|-------------|
+| Dashboard | /student | Student home with quick stats |
+| Subjects | /student/subjects | Browse subjects by category |
+| Tutor | /student/tutor | AI tutoring chat interface |
+| Assignments | /student/assignments | View and submit assignments |
+| Quizzes | /student/quizzes | Take quizzes, view results |
+| Sessions | /student/sessions | Tutoring session history |
+| Progress | /student/progress | Learning progress by subject |
+| Settings | /student/settings | User preferences |
+
+---
+
+## Sample Data (Seed)
+
+The seed creates comprehensive demo data:
+
+| Data Type | Count | Description |
+|-----------|-------|-------------|
+| Schools | 5 | Lincoln HS, Elementary, Preschool, Middle, Vo-Tech |
+| Users | 26+ | Students across all grade levels |
+| Classes | 19 | From Pre-K Colors to Culinary Arts |
+| Lessons | 774 | Across all subjects and topics |
+| Assignments | 40+ | Homework, projects, essays |
+| Quizzes | 25 | With questions and answer options |
+| Sessions | 136 | Tutoring session records |
+| Progress | 16 | Student mastery tracking |
+
+### Grade Levels Supported
+- Pre-K 3 (grade -2)
+- Pre-K 4 (grade -1)
+- Kindergarten (grade 0)
+- Grades 1-12
+
+---
+
 ## Notes
 
 - Uses "Schools" instead of "Companies" for multi-tenancy
 - **Docker deployment available** - uses SQLite + Redis + Nginx
 - All 24 languages enabled by default
 - Sky blue color theme (#0ea5e9)
+- **Sessions are lost on container restart** (MemoryStore) - must re-login after rebuild
 
 ---
 
