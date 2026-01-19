@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx prisma db seed)",
+      "Bash(npm run dev:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)",
+      "Bash(dir \"C:\\\\Users\\\\dsiem\\\\Downloads\\\\AI Digital Assistants\" /B)",
+      "Bash(cd:*)",
+      "Bash(cmd.exe /c \"taskkill /F /PID 84912\")",
+      "Bash(powershell -Command \"Stop-Process -Id 84912 -Force\")",
+      "Bash(cat:*)",
+      "Bash(powershell -Command \"Stop-Process -Id 110004 -Force\")",
+      "Bash(npx prisma db push:*)",
+      "Bash(powershell -Command \"Stop-Process -Id 75396 -Force\")",
+      "Bash(timeout /t:*)",
+      "Bash(ping:*)",
+      "Bash(curl:*)",
+      "Bash(powershell -Command \"Stop-Process -Id 99604 -Force\")",
+      "Bash(npx prisma generate:*)",
+      "Bash(powershell -Command \"Stop-Process -Id 14624 -Force\")",
+      "Bash(powershell -Command \"Stop-Process -Id 65056 -Force\")",
+      "Bash(docker compose:*)",
+      "Bash(start \"\" \"C:\\\\Program Files\\\\Docker\\\\Docker\\\\Docker Desktop.exe\")",
+      "Bash(docker info:*)",
+      "Bash(docker exec tutor_ai-docker-app-1 printenv OPENAI_API_KEY)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\dsiem\\\\Downloads\\\\AI Digital Assistants\\\\Tutor_AI-Docker\" -Recurse -File)",
+      "Bash(Where-Object { $_FullName -notmatch '\\\\\\\\node_modules\\\\\\\\|\\\\\\\\\\\\.git\\\\\\\\' })",
+      "Bash(Sort-Object LastWriteTime -Descending)",
+      "Bash(Select-Object -First 20 LastWriteTime, FullName)",
+      "Bash(grep:*)",
+      "Bash(dir /a \"C:\\\\Users\\\\dsiem\\\\Downloads\\\\AI Digital Assistants\\\\Tutor_AI-Docker\")",
+      "Bash(dir /a:h \"C:\\\\Users\\\\dsiem\\\\Downloads\\\\AI Digital Assistants\\\\Tutor_AI-Docker\")",
+      "Bash(git init:*)",
+      "Bash(git remote add:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}

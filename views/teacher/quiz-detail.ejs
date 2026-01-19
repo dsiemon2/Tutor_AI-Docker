@@ -1,0 +1,91 @@
+<%- include('../layouts/teacher', { body: `
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-4">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="${typeof basePath !== 'undefined' ? basePath : ''}/teacher/quizzes">Quizzes</a></li>
+    <li class="breadcrumb-item active">${quiz.title}</li>
+  </ol>
+</nav>
+
+<!-- Quiz Header -->
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-start">
+      <div>
+        <h4 class="mb-2">${quiz.title}</h4>
+        <div class="d-flex gap-2 flex-wrap mb-3">
+          <span class="badge bg-primary">${quiz.questions?.length || 0} questions</span>
+          ${quiz.timeLimit ? '<span class="badge bg-warning text-dark">' + quiz.timeLimit + ' min</span>' : '<span class="badge bg-light text-dark">No time limit</span>'}
+          <span class="badge bg-info">${quiz.passingScore}% to pass</span>
+          <span class="badge bg-secondary">${quiz.maxAttempts} attempts max</span>
+          ${quiz.randomize ? '<span class="badge bg-dark">Randomized</span>' : ''}
+          ${quiz.showAnswers ? '<span class="badge bg-success">Shows answers</span>' : ''}
+        </div>
+        <p class="text-muted mb-0">
+          <strong>Topic:</strong> ${quiz.topic?.subject?.name || 'N/A'} - ${quiz.topic?.name || 'N/A'}
+          ${quiz.class ? '<br><strong>Class:</strong> ' + quiz.class.name : '<br><strong>Class:</strong> All students'}
+        </p>
+        ${quiz.description ? '<p class="mt-2 mb-0">' + quiz.description + '</p>' : ''}
+      </div>
+      <div class="d-flex gap-2">
+        <a href="${typeof basePath !== 'undefined' ? basePath : ''}/teacher/quizzes/${quiz.id}/edit" class="btn btn-outline-primary">
+          <i class="bi bi-pencil me-2"></i>Edit
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Questions Preview -->
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header bg-white">
+        <h6 class="mb-0"><i class="bi bi-list-ol me-2"></i>Questions Preview</h6>
+      </div>
+      <div class="card-body p-0">
+        ${quiz.questions && quiz.questions.length > 0 ? '<div class="list-group list-group-flush">' + quiz.questions.map((q, i) => '<div class="list-group-item"><div class="d-flex justify-content-between align-items-start"><div class="flex-grow-1"><strong>Q' + (i + 1) + '.</strong> ' + q.questionText + '<div class="mt-2">' + (q.questionType === 'multiple_choice' || q.questionType === 'true_false' ? '<div class="small">' + (q.options ? JSON.parse(q.options).map((opt, j) => '<span class="badge ' + (opt === q.correctAnswer ? 'bg-success' : 'bg-light text-dark') + ' me-1">' + String.fromCharCode(65 + j) + '. ' + opt + '</span>').join('') : '') + '</div>' : '<small class="text-muted">Answer: <code>' + q.correctAnswer + '</code></small>') + '</div>' + (q.explanation ? '<small class="text-muted d-block mt-1"><i class="bi bi-lightbulb me-1"></i>' + q.explanation + '</small>' : '') + '</div><div class="text-end"><span class="badge bg-' + (q.questionType === 'multiple_choice' ? 'primary' : (q.questionType === 'true_false' ? 'info' : 'warning')) + '">' + q.questionType.replace('_', ' ') + '</span><br><small class="text-muted">' + q.points + ' pt' + (q.points > 1 ? 's' : '') + '</small></div></div></div>').join('') + '</div>' : '<div class="p-4 text-center text-muted"><i class="bi bi-question-circle fs-1 d-block mb-3"></i><p>No questions added</p></div>'}
+      </div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="col-lg-6">
+    <div class="card mb-4">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="bi bi-graph-up me-2"></i>Results Summary</h6>
+        <span class="badge bg-primary">${quiz.attempts?.length || 0} attempts</span>
+      </div>
+      <div class="card-body">
+        ${quiz.attempts && quiz.attempts.length > 0 ? (function() {
+          const completedAttempts = quiz.attempts.filter(a => a.status === 'submitted' || a.status === 'graded');
+          const passedCount = completedAttempts.filter(a => a.passed).length;
+          const avgScore = completedAttempts.length > 0 ? Math.round(completedAttempts.reduce((sum, a) => sum + (a.percentage || 0), 0) / completedAttempts.length) : 0;
+          const highScore = completedAttempts.length > 0 ? Math.max(...completedAttempts.map(a => a.percentage || 0)) : 0;
+          const lowScore = completedAttempts.length > 0 ? Math.min(...completedAttempts.map(a => a.percentage || 0)) : 0;
+          return '<div class="row text-center"><div class="col-3"><div class="fs-4 fw-bold text-primary">' + completedAttempts.length + '</div><small class="text-muted">Completed</small></div><div class="col-3"><div class="fs-4 fw-bold text-success">' + passedCount + '</div><small class="text-muted">Passed</small></div><div class="col-3"><div class="fs-4 fw-bold text-info">' + avgScore + '%</div><small class="text-muted">Avg Score</small></div><div class="col-3"><div class="fs-4 fw-bold text-warning">' + highScore + '%</div><small class="text-muted">High Score</small></div></div>';
+        })() : '<div class="text-center text-muted py-3"><i class="bi bi-clipboard-data fs-1 d-block mb-2"></i><p class="mb-0">No attempts yet</p></div>'}
+      </div>
+    </div>
+
+    <!-- Student Attempts -->
+    <div class="card">
+      <div class="card-header bg-white">
+        <h6 class="mb-0"><i class="bi bi-people me-2"></i>Student Attempts</h6>
+      </div>
+      <div class="card-body p-0">
+        ${quiz.attempts && quiz.attempts.length > 0 ? '<div class="table-responsive"><table class="table table-hover mb-0"><thead class="table-light"><tr><th>Student</th><th>Attempt</th><th>Score</th><th>Status</th><th>Date</th></tr></thead><tbody>' + quiz.attempts.sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()).map(a => '<tr><td><strong>' + a.student.firstName + ' ' + a.student.lastName + '</strong><br><small class="text-muted">' + a.student.email + '</small></td><td>#' + a.attemptNum + '</td><td>' + (a.percentage !== null ? '<span class="' + (a.passed ? 'text-success' : 'text-danger') + ' fw-bold">' + Math.round(a.percentage) + '%</span><br><small class="text-muted">' + a.score + '/' + quiz.questions.reduce((sum, q) => sum + q.points, 0) + ' pts</small>' : '<span class="text-muted">-</span>') + '</td><td><span class="badge ' + (a.status === 'in_progress' ? 'bg-warning text-dark' : (a.passed ? 'bg-success' : 'bg-danger')) + '">' + (a.status === 'in_progress' ? 'In Progress' : (a.passed ? 'Passed' : 'Failed')) + '</span></td><td>' + new Date(a.startedAt).toLocaleDateString() + '<br><small class="text-muted">' + new Date(a.startedAt).toLocaleTimeString() + '</small></td></tr>').join('') + '</tbody></table></div>' : '<div class="p-4 text-center text-muted"><i class="bi bi-person-x fs-1 d-block mb-3"></i><p class="mb-0">No student attempts yet</p><small>Students will appear here when they take the quiz</small></div>'}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Button -->
+<div class="mt-4">
+  <form action="${typeof basePath !== 'undefined' ? basePath : ''}/teacher/quizzes/${quiz.id}/delete" method="POST" onsubmit="return confirm('Are you sure you want to delete this quiz? This will also delete all attempts.');">
+    <button type="submit" class="btn btn-outline-danger btn-sm">
+      <i class="bi bi-trash me-2"></i>Delete Quiz
+    </button>
+  </form>
+</div>
+`, activePage: 'quizzes', pageTitle: quiz.title }) %>

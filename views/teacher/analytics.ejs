@@ -1,0 +1,71 @@
+<%- include('../layouts/teacher', { body: `
+<div class="mb-4">
+  <h4 class="mb-1">Analytics</h4>
+  <p class="text-muted mb-0">Insights into student learning activity</p>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-bar-chart me-2"></i>Sessions Over Time</h5>
+      </div>
+      <div class="card-body">
+        <canvas id="sessionsChart" height="200"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-pie-chart me-2"></i>Sessions by Subject</h5>
+      </div>
+      <div class="card-body">
+        <canvas id="subjectsChart" height="200"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // Sessions over time chart
+  const sessionsCtx = document.getElementById('sessionsChart').getContext('2d');
+  new Chart(sessionsCtx, {
+    type: 'line',
+    data: {
+      labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+      datasets: [{
+        label: 'Sessions',
+        data: [12, 19, 15, 25, 22, 8, 5],
+        borderColor: '#0ea5e9',
+        backgroundColor: 'rgba(14, 165, 233, 0.1)',
+        fill: true,
+        tension: 0.4
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+
+  // Subjects chart
+  const subjectsCtx = document.getElementById('subjectsChart').getContext('2d');
+  new Chart(subjectsCtx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Math', 'Science', 'English', 'History'],
+      datasets: [{
+        data: [35, 25, 25, 15],
+        backgroundColor: ['#0ea5e9', '#22c55e', '#f59e0b', '#ef4444']
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'bottom' } }
+    }
+  });
+</script>
+`, activePage: 'analytics', pageTitle: 'Analytics' }) %>

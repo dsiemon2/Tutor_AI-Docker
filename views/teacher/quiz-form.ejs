@@ -1,0 +1,260 @@
+<%- include('../layouts/teacher', { body: `
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-4">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="${typeof basePath !== 'undefined' ? basePath : ''}/teacher/quizzes">Quizzes</a></li>
+    <li class="breadcrumb-item active">${isEdit ? 'Edit Quiz' : 'Create Quiz'}</li>
+  </ol>
+</nav>
+
+<!-- Form Card -->
+<div class="card">
+  <div class="card-header bg-white">
+    <h5 class="mb-0"><i class="bi bi-question-circle me-2"></i>${isEdit ? 'Edit Quiz' : 'Create New Quiz'}</h5>
+  </div>
+  <div class="card-body">
+    <form action="${typeof basePath !== 'undefined' ? basePath : ''}/teacher/quizzes${isEdit && quiz ? '/' + quiz.id : ''}" method="POST" id="quizForm">
+
+      <div class="row g-3">
+        <!-- Title -->
+        <div class="col-md-8">
+          <label class="form-label">Quiz Title <span class="text-danger">*</span></label>
+          <input type="text" name="title" class="form-control" placeholder="e.g., Chapter 3 Assessment" value="${quiz?.title || ''}" required>
+        </div>
+
+        <!-- Topic Selection -->
+        <div class="col-md-4">
+          <label class="form-label">Topic <span class="text-danger">*</span></label>
+          <select name="topicId" class="form-select" required>
+            <option value="">Select a topic...</option>
+            ${categories ? categories.map(cat => '<optgroup label="' + cat.name + '">' + cat.subjects.map(subj => subj.topics.map(topic => '<option value="' + topic.id + '"' + (quiz?.topicId === topic.id ? ' selected' : '') + '>' + subj.name + ' - ' + topic.name + '</option>').join('')).join('') + '</optgroup>').join('') : ''}
+          </select>
+        </div>
+
+        <!-- Description -->
+        <div class="col-12">
+          <label class="form-label">Description</label>
+          <textarea name="description" class="form-control" rows="2" placeholder="Brief description of what this quiz covers...">${quiz?.description || ''}</textarea>
+        </div>
+
+        <!-- Settings Row -->
+        <div class="col-md-3">
+          <label class="form-label">Time Limit (minutes)</label>
+          <input type="number" name="timeLimit" class="form-control" placeholder="No limit" min="1" max="180" value="${quiz?.timeLimit || ''}">
+          <small class="text-muted">Leave empty for no limit</small>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Passing Score (%)</label>
+          <input type="number" name="passingScore" class="form-control" value="${quiz?.passingScore || 70}" min="0" max="100" required>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Max Attempts</label>
+          <input type="number" name="maxAttempts" class="form-control" value="${quiz?.maxAttempts || 3}" min="1" max="10" required>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Assign to Class</label>
+          <select name="classId" class="form-select">
+            <option value="">All students</option>
+            ${classes ? classes.map(cls => '<option value="' + cls.id + '"' + (quiz?.classId === cls.id ? ' selected' : '') + '>' + cls.name + '</option>').join('') : ''}
+          </select>
+        </div>
+
+        <!-- Options -->
+        <div class="col-12">
+          <div class="form-check form-check-inline">
+            <input type="checkbox" name="randomize" class="form-check-input" id="randomize" ${quiz?.randomize ? 'checked' : ''}>
+            <label class="form-check-label" for="randomize">Randomize question order</label>
+          </div>
+          <div class="form-check form-check-inline">
+            <input type="checkbox" name="showAnswers" class="form-check-input" id="showAnswers" ${quiz?.showAnswers !== false ? 'checked' : ''}>
+            <label class="form-check-label" for="showAnswers">Show correct answers after submission</label>
+          </div>
+        </div>
+      </div>
+
+      <hr class="my-4">
+
+      <!-- Questions Section -->
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0"><i class="bi bi-list-ol me-2"></i>Questions</h5>
+        <button type="button" class="btn btn-outline-primary btn-sm" onclick="addQuestion()">
+          <i class="bi bi-plus-lg me-1"></i>Add Question
+        </button>
+      </div>
+
+      <div id="questionsContainer">
+        ${quiz?.questions && quiz.questions.length > 0 ? quiz.questions.map((q, i) => `
+        <div class="card mb-3 question-card" data-question="${i + 1}">
+          <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <span class="fw-bold">Question ${i + 1}</span>
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeQuestion(this)">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-md-8">
+                <label class="form-label">Question Text <span class="text-danger">*</span></label>
+                <textarea name="questions[${i}][questionText]" class="form-control" rows="2" required>${q.questionText}</textarea>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Question Type</label>
+                <select name="questions[${i}][questionType]" class="form-select question-type" onchange="updateQuestionOptions(this)">
+                  <option value="multiple_choice" ${q.questionType === 'multiple_choice' ? 'selected' : ''}>Multiple Choice</option>
+                  <option value="true_false" ${q.questionType === 'true_false' ? 'selected' : ''}>True/False</option>
+                  <option value="fill_blank" ${q.questionType === 'fill_blank' ? 'selected' : ''}>Fill in the Blank</option>
+                </select>
+              </div>
+              <div class="col-md-8 options-container" ${q.questionType === 'fill_blank' ? 'style="display:none;"' : ''}>
+                <label class="form-label">Options (one per line)</label>
+                <textarea name="questions[${i}][options]" class="form-control options-textarea" rows="4" placeholder="Option A&#10;Option B&#10;Option C&#10;Option D">${q.questionType === 'true_false' ? 'True\\nFalse' : (q.options ? JSON.parse(q.options).join('\\n') : '')}</textarea>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Correct Answer <span class="text-danger">*</span></label>
+                <input type="text" name="questions[${i}][correctAnswer]" class="form-control" value="${q.correctAnswer}" required>
+                <small class="text-muted correct-answer-hint">${q.questionType === 'fill_blank' ? 'Enter the expected answer' : 'Enter the correct option exactly'}</small>
+              </div>
+              <div class="col-md-8">
+                <label class="form-label">Explanation (shown after quiz)</label>
+                <input type="text" name="questions[${i}][explanation]" class="form-control" value="${q.explanation || ''}" placeholder="Why this answer is correct...">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Points</label>
+                <input type="number" name="questions[${i}][points]" class="form-control" value="${q.points || 1}" min="1" max="10">
+              </div>
+            </div>
+          </div>
+        </div>
+        `).join('') : ''}
+      </div>
+
+      <div id="noQuestionsMsg" class="text-center py-4 text-muted" ${quiz?.questions?.length > 0 ? 'style="display:none;"' : ''}>
+        <i class="bi bi-question-circle fs-1 d-block mb-2"></i>
+        <p>No questions added yet. Click "Add Question" to get started.</p>
+      </div>
+
+      <!-- Actions -->
+      <div class="mt-4 d-flex gap-2">
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-check-lg me-2"></i>${isEdit ? 'Save Changes' : 'Create Quiz'}
+        </button>
+        <a href="${typeof basePath !== 'undefined' ? basePath : ''}/teacher/quizzes" class="btn btn-outline-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  let questionCount = ${quiz?.questions?.length || 0};
+
+  function addQuestion() {
+    questionCount++;
+    document.getElementById('noQuestionsMsg').style.display = 'none';
+
+    const container = document.getElementById('questionsContainer');
+    const questionHtml = \`
+      <div class="card mb-3 question-card" data-question="\${questionCount}">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+          <span class="fw-bold">Question \${questionCount}</span>
+          <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeQuestion(this)">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-8">
+              <label class="form-label">Question Text <span class="text-danger">*</span></label>
+              <textarea name="questions[\${questionCount - 1}][questionText]" class="form-control" rows="2" required></textarea>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Question Type</label>
+              <select name="questions[\${questionCount - 1}][questionType]" class="form-select question-type" onchange="updateQuestionOptions(this)">
+                <option value="multiple_choice">Multiple Choice</option>
+                <option value="true_false">True/False</option>
+                <option value="fill_blank">Fill in the Blank</option>
+              </select>
+            </div>
+            <div class="col-md-8 options-container">
+              <label class="form-label">Options (one per line)</label>
+              <textarea name="questions[\${questionCount - 1}][options]" class="form-control options-textarea" rows="4" placeholder="Option A&#10;Option B&#10;Option C&#10;Option D"></textarea>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Correct Answer <span class="text-danger">*</span></label>
+              <input type="text" name="questions[\${questionCount - 1}][correctAnswer]" class="form-control" required>
+              <small class="text-muted correct-answer-hint">Enter the correct option exactly</small>
+            </div>
+            <div class="col-md-8">
+              <label class="form-label">Explanation (shown after quiz)</label>
+              <input type="text" name="questions[\${questionCount - 1}][explanation]" class="form-control" placeholder="Why this answer is correct...">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Points</label>
+              <input type="number" name="questions[\${questionCount - 1}][points]" class="form-control" value="1" min="1" max="10">
+            </div>
+          </div>
+        </div>
+      </div>
+    \`;
+    container.insertAdjacentHTML('beforeend', questionHtml);
+  }
+
+  function removeQuestion(btn) {
+    const card = btn.closest('.question-card');
+    card.remove();
+    renumberQuestions();
+
+    if (document.querySelectorAll('.question-card').length === 0) {
+      document.getElementById('noQuestionsMsg').style.display = 'block';
+    }
+  }
+
+  function renumberQuestions() {
+    const cards = document.querySelectorAll('.question-card');
+    cards.forEach((card, index) => {
+      card.querySelector('.fw-bold').textContent = 'Question ' + (index + 1);
+      card.querySelectorAll('[name^="questions["]').forEach(input => {
+        input.name = input.name.replace(/questions\\[\\d+\\]/, 'questions[' + index + ']');
+      });
+    });
+    questionCount = cards.length;
+  }
+
+  function updateQuestionOptions(select) {
+    const card = select.closest('.question-card');
+    const optionsContainer = card.querySelector('.options-container');
+    const optionsTextarea = card.querySelector('.options-textarea');
+    const hintText = card.querySelector('.correct-answer-hint');
+
+    if (select.value === 'fill_blank') {
+      optionsContainer.style.display = 'none';
+      optionsTextarea.value = '';
+      hintText.textContent = 'Enter the expected answer';
+    } else if (select.value === 'true_false') {
+      optionsContainer.style.display = '';
+      optionsTextarea.value = 'True\\nFalse';
+      hintText.textContent = 'Enter "True" or "False"';
+    } else {
+      optionsContainer.style.display = '';
+      if (optionsTextarea.value === 'True\\nFalse') {
+        optionsTextarea.value = '';
+      }
+      hintText.textContent = 'Enter the correct option exactly';
+    }
+  }
+
+  // Form submission - convert options to JSON
+  document.getElementById('quizForm').addEventListener('submit', function(e) {
+    const cards = document.querySelectorAll('.question-card');
+    if (cards.length === 0) {
+      e.preventDefault();
+      alert('Please add at least one question to the quiz.');
+      return;
+    }
+
+    // Options are sent as newline-separated text, server will parse
+  });
+</script>
+`, activePage: 'quizzes', pageTitle: isEdit ? 'Edit Quiz' : 'Create Quiz' }) %>

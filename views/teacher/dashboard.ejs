@@ -1,0 +1,75 @@
+<%- include('../layouts/teacher', { body: `
+<!-- Stats Cards -->
+<div class="row g-4 mb-4">
+  <div class="col-md-4">
+    <div class="stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Total Classes</div>
+          <div class="stat-value">${stats?.totalClasses || 0}</div>
+        </div>
+        <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+          <i class="bi bi-people"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Total Students</div>
+          <div class="stat-value">${stats?.totalStudents || 0}</div>
+        </div>
+        <div class="stat-icon bg-success bg-opacity-10 text-success">
+          <i class="bi bi-person-badge"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Total Sessions</div>
+          <div class="stat-value">${stats?.totalSessions || 0}</div>
+        </div>
+        <div class="stat-icon bg-info bg-opacity-10 text-info">
+          <i class="bi bi-chat-dots"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Classes Overview -->
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-people me-2"></i>My Classes</h5>
+        <a href="${typeof basePath !== 'undefined' ? basePath : ''}/teacher/classes" class="btn btn-sm btn-outline-primary">View All</a>
+      </div>
+      <div class="card-body p-0">
+        <div class="list-group list-group-flush">
+          ${classes && classes.length > 0 ? classes.slice(0, 5).map(cls => '<a href="' + (typeof basePath !== 'undefined' ? basePath : '') + '/teacher/classes/' + cls.id + '" class="list-group-item list-group-item-action"><div class="d-flex justify-content-between align-items-center"><div><strong>' + cls.name + '</strong><br><small class="text-muted">' + (cls.subject?.name || 'General') + '</small></div><span class="badge bg-primary">' + (cls.students?.length || 0) + ' students</span></div></a>').join('') : '<div class="p-4 text-center text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No classes assigned yet</div>'}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Sessions -->
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Recent Student Sessions</h5>
+      </div>
+      <div class="card-body p-0">
+        <div class="list-group list-group-flush">
+          ${recentSessions && recentSessions.length > 0 ? recentSessions.slice(0, 5).map(session => '<div class="list-group-item"><div class="d-flex justify-content-between align-items-center"><div><strong>' + (session.student?.firstName || 'Unknown') + ' ' + (session.student?.lastName || '') + '</strong><br><small class="text-muted">' + (session.subject?.name || 'General') + ' - ' + (session.topic?.name || 'No topic') + '</small></div><small class="text-muted">' + new Date(session.startedAt).toLocaleDateString() + '</small></div></div>').join('') : '<div class="p-4 text-center text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No recent sessions</div>'}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`, activePage: 'dashboard', pageTitle: 'Teacher Dashboard' }) %>

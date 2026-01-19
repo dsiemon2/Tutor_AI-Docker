@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --sidebar-bg: <%= typeof branding !== 'undefined' && branding.primaryColor ? branding.primaryColor : '#0ea5e9' %>;
+      --sidebar-bg-dark: <%= typeof branding !== 'undefined' && branding.secondaryColor ? branding.secondaryColor : '#0284c7' %>;
+      --accent-color: <%= typeof branding !== 'undefined' && branding.accentColor ? branding.accentColor : '#38bdf8' %>;
+      --sidebar-width: 260px;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f1f5f9;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: var(--sidebar-width);
+      height: 100vh;
+      background: linear-gradient(180deg, var(--sidebar-bg) 0%, var(--sidebar-bg-dark) 100%);
+      color: white;
+      z-index: 1000;
+      overflow-y: auto;
+    }
+
+    .sidebar-brand {
+      padding: 1.5rem;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .sidebar-brand h4 {
+      margin: 0;
+      font-weight: 700;
+    }
+
+    .sidebar-brand small {
+      opacity: 0.7;
+    }
+
+    .sidebar-nav {
+      padding: 1rem 0;
+    }
+
+    .sidebar-nav .nav-item {
+      margin: 2px 8px;
+    }
+
+    .sidebar-nav .nav-link {
+      color: rgba(255,255,255,0.7);
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.2s;
+    }
+
+    .sidebar-nav .nav-link:hover {
+      background: rgba(255,255,255,0.1);
+      color: white;
+    }
+
+    .sidebar-nav .nav-link.active {
+      background: rgba(255,255,255,0.15);
+      color: white;
+    }
+
+    .sidebar-nav .nav-link i {
+      font-size: 1.1rem;
+      width: 24px;
+      text-align: center;
+    }
+
+    .nav-section {
+      padding: 0.5rem 1.5rem;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: rgba(255,255,255,0.4);
+      margin-top: 1rem;
+    }
+
+    .main-content {
+      margin-left: var(--sidebar-width);
+      min-height: 100vh;
+    }
+
+    .top-navbar {
+      background: white;
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .page-content {
+      padding: 1.5rem;
+    }
+
+    .card {
+      border: none;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    .card-header {
+      background: white;
+      border-bottom: 1px solid #e2e8f0;
+      font-weight: 600;
+    }
+
+    .stat-card {
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    .stat-card .stat-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+
+    .stat-card .stat-value {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    .stat-card .stat-label {
+      color: #64748b;
+      font-size: 0.875rem;
+    }
+  </style>
+</head>
+<body>
+  <%
+    // Map activePage to active for sidebar partial
+    const _active = typeof activePage !== 'undefined' ? activePage : '';
+    const _token = typeof token !== 'undefined' ? token : '';
+    const _basePath = typeof basePath !== 'undefined' ? basePath : '/TutorAI';
+    const _branding = typeof branding !== 'undefined' ? branding : { primaryColor: '#0ea5e9', secondaryColor: '#0284c7', accentColor: '#38bdf8' };
+  %>
+
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <h4><i class="bi bi-mortarboard-fill me-2"></i>TutorAI</h4>
+      <small>Admin Panel</small>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section">Overview</div>
+      <ul class="nav flex-column">
+        <li class="nav-item">
+          <a class="nav-link <%= _active === 'dashboard' ? 'active' : '' %>" href="<%= _basePath %>/admin?token=<%= _token %>">
+            <i class="bi bi-speedometer2"></i> Dashboard
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link <%= _active === 'analytics' ? 'active' : '' %>" href="<%= _basePath %>/admin/analytics?token=<%= _token %>">
+            <i class="bi bi-graph-up"></i> Analytics
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link <%= _active === 'sessions' ? 'active' : '' %>" href="<%= _basePath %>/admin/sessions?token=<%= _token %>">
+            <i class="bi bi-chat-dots"></i> Sessions
+          </a>
+        </li>
+      </ul>
+
+      <div class="nav-section">Education</div>
+      <ul class="nav flex-column">
+        <li class="nav-item">
+          <a class="nav-link <%= _active === 'users' ? 'active' : '' %>" href="<%= _basePath %>/admin/users?token=<%= _token %>">
+            <i class="bi bi-people"></i> Users
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link <%= _active === 'schools' ? 'active' : '' %>" href="<%= _basePath %>/admin/schools?token=<%= _token %>">
+            <i class="bi bi-building"></i> Schools
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link <%= _active === 'subjects' ? 'active' : '' %>" href="<%= _basePath %>/admin/subjects?token=<%= _token %>">
+            <i class="bi bi-book"></i> Subjects
+          </a>
+        </li>
+      </ul>
+
+      <div class="nav-section">Configuration</div>
+      <ul class="nav flex-column">
+        <li class="nav-item">
+          <a class="nav-link <%= _active === 'greeting' ? 'active' : '' %>" href="<%= _basePath %>/admin/greeting?token=<%= _token %>">
+            <i class="bi bi-chat-heart"></i> Greeting
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link <%= _active === 'voices' ? 'active' : '' %>" href="<%= _basePath %>/admin/voices?token=<%= _token %>">
+            <i class="bi bi-mic"></i> Voices & Languages
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link <%= _active === 'settings' ? 'active' : '' %>" href="<%= _basePath %>/admin/settings?token=<%= _token %>">
+            <i class="bi bi-gear"></i> Settings
+          </a>
+        </li>
+      </ul>
+
+      <div class="nav-section">AI Configuration</div>
+      <ul class="nav flex-column">
+        <li class="nav-item">
+          <a class="nav-link <%= _active === 'ai-config' ? 'active' : '' %>" href="<%= _basePath %>/admin/ai-config?token=<%= _token %>">
+            <i class="bi bi-cpu"></i> AI Config
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link <%= _active === 'ai-agents' ? 'active' : '' %>" href="<%= _basePath %>/admin/ai-agents?token=<%= _token %>">
+            <i class="bi bi-robot"></i> AI Agents
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link <%= _active === 'ai-tools' ? 'active' : '' %>" href="<%= _basePath %>/admin/ai-tools?token=<%= _token %>">
+            <i class="bi bi-tools"></i> AI Tools
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link <%= _active === 'knowledge-base' ? 'active' : '' %>" href="<%= _basePath %>/admin/knowledge-base?token=<%= _token %>">
+            <i class="bi bi-journal-text"></i> Knowledge Base
+          </a>
+        </li>
+      </ul>
+
+      <div class="nav-section">Automation</div>
+      <ul class="nav flex-column">
+        <li class="nav-item">
+          <a class="nav-link <%= _active === 'logic-rules' ? 'active' : '' %>" href="<%= _basePath %>/admin/logic-rules?token=<%= _token %>">
+            <i class="bi bi-diagram-3"></i> Logic Rules
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link <%= _active === 'functions' ? 'active' : '' %>" href="<%= _basePath %>/admin/functions?token=<%= _token %>">
+            <i class="bi bi-code-square"></i> Functions
+          </a>
+        </li>
+      </ul>
+
+      <div class="nav-section">Communication</div>
+      <ul class="nav flex-column">
+        <li class="nav-item">
+          <a class="nav-link <%= _active === 'sms-settings' ? 'active' : '' %>" href="<%= _basePath %>/admin/sms-settings?token=<%= _token %>">
+            <i class="bi bi-chat-left-text"></i> SMS Settings
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link <%= _active === 'webhooks' ? 'active' : '' %>" href="<%= _basePath %>/admin/webhooks?token=<%= _token %>">
+            <i class="bi bi-link-45deg"></i> Webhooks
+          </a>
+        </li>
+      </ul>
+
+      <div class="nav-section">Billing</div>
+      <ul class="nav flex-column">
+        <li class="nav-item">
+          <a class="nav-link <%= _active === 'payments' ? 'active' : '' %>" href="<%= _basePath %>/admin/payments?token=<%= _token %>">
+            <i class="bi bi-credit-card"></i> Payments
+          </a>
+        </li>
+      </ul>
+
+      <div class="nav-section">System</div>
+      <ul class="nav flex-column">
+        <li class="nav-item">
+          <a class="nav-link <%= _active === 'features' ? 'active' : '' %>" href="<%= _basePath %>/admin/features?token=<%= _token %>">
+            <i class="bi bi-toggles"></i> Features
+          </a>
+        </li>
+      </ul>
+    </nav>
+  </aside>
+
+  <div class="main-content">
+    <header class="top-navbar">
+      <h5 class="mb-0"><%= typeof pageTitle !== 'undefined' ? pageTitle : 'Dashboard' %></h5>
+      <div>
+        <a href="<%= _basePath %>/" class="btn btn-outline-primary btn-sm" target="_blank">
+          <i class="bi bi-box-arrow-up-right me-1"></i>View Site
+        </a>
+      </div>
+    </header>
+
+    <div class="page-content">
+      <%- body %>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

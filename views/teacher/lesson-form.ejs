@@ -1,0 +1,101 @@
+<%- include('../layouts/teacher', { body: `
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-4">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="${typeof basePath !== 'undefined' ? basePath : ''}/teacher/lessons">Lessons</a></li>
+    <li class="breadcrumb-item active">${isEdit ? 'Edit Lesson' : 'Create Lesson'}</li>
+  </ol>
+</nav>
+
+<!-- Form Card -->
+<div class="card">
+  <div class="card-header bg-white">
+    <h5 class="mb-0"><i class="bi bi-journal-text me-2"></i>${isEdit ? 'Edit Lesson' : 'Create New Lesson'}</h5>
+  </div>
+  <div class="card-body">
+    <form action="${typeof basePath !== 'undefined' ? basePath : ''}/teacher/lessons${isEdit && lesson ? '/' + lesson.id : ''}" method="POST">
+
+      <div class="row g-3">
+        <!-- Title -->
+        <div class="col-12">
+          <label class="form-label">Lesson Title <span class="text-danger">*</span></label>
+          <input type="text" name="title" class="form-control" placeholder="e.g., Introduction to Fractions" value="${lesson?.title || ''}" required>
+        </div>
+
+        <!-- Description -->
+        <div class="col-12">
+          <label class="form-label">Description</label>
+          <textarea name="description" class="form-control" rows="2" placeholder="Brief description of the lesson">${lesson?.description || ''}</textarea>
+        </div>
+
+        <!-- Topic Selection -->
+        <div class="col-md-6">
+          <label class="form-label">Topic <span class="text-danger">*</span></label>
+          <select name="topicId" class="form-select" id="topicSelect" required>
+            <option value="">Select a topic...</option>
+            ${categories ? categories.map(cat => '<optgroup label="' + cat.name + '">' + cat.subjects.map(subj => subj.topics.map(topic => '<option value="' + topic.id + '"' + (lesson?.topicId === topic.id ? ' selected' : '') + '>' + subj.name + ' - ' + topic.name + '</option>').join('')).join('') + '</optgroup>').join('') : ''}
+          </select>
+        </div>
+
+        <!-- Class (Optional) -->
+        <div class="col-md-6">
+          <label class="form-label">Assign to Class</label>
+          <select name="classId" class="form-select">
+            <option value="">All Classes (General)</option>
+            ${classes ? classes.map(cls => '<option value="' + cls.id + '"' + (lesson?.classId === cls.id ? ' selected' : '') + '>' + cls.name + '</option>').join('') : ''}
+          </select>
+          <small class="text-muted">Leave empty to make available to all students</small>
+        </div>
+
+        <!-- Grade Level -->
+        <div class="col-md-6">
+          <label class="form-label">Target Grade Level</label>
+          <select name="gradeLevel" class="form-select">
+            <option value="">Any Grade</option>
+            <option value="0" ${lesson?.gradeLevel === 0 ? 'selected' : ''}>Kindergarten</option>
+            ${[1,2,3,4,5,6,7,8,9,10,11,12].map(g => '<option value="' + g + '"' + (lesson?.gradeLevel === g ? ' selected' : '') + '>Grade ' + g + '</option>').join('')}
+          </select>
+        </div>
+
+        <!-- Duration -->
+        <div class="col-md-6">
+          <label class="form-label">Estimated Duration (minutes)</label>
+          <input type="number" name="duration" class="form-control" placeholder="e.g., 30" value="${lesson?.duration || ''}" min="1" max="180">
+        </div>
+
+        <!-- Content -->
+        <div class="col-12">
+          <label class="form-label">Lesson Content <span class="text-danger">*</span></label>
+          <textarea name="content" class="form-control" rows="12" placeholder="Write your lesson content here. You can use Markdown formatting.
+
+## Learning Objectives
+- Objective 1
+- Objective 2
+
+## Introduction
+Start with an engaging introduction...
+
+## Main Content
+Explain the key concepts...
+
+## Practice Problems
+1. Problem 1
+2. Problem 2
+
+## Summary
+Recap the main points..." required>${lesson?.content || ''}</textarea>
+          <small class="text-muted">Supports Markdown formatting. Use ## for headings, - for lists, **bold**, *italic*</small>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="mt-4 d-flex gap-2">
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-check-lg me-2"></i>${isEdit ? 'Save Changes' : 'Create Lesson'}
+        </button>
+        <a href="${typeof basePath !== 'undefined' ? basePath : ''}/teacher/lessons" class="btn btn-outline-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+`, activePage: 'lessons', pageTitle: isEdit ? 'Edit Lesson' : 'Create Lesson' }) %>

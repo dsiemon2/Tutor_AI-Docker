@@ -1,0 +1,129 @@
+<%- include('../layouts/teacher', { body: `
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-4">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="${typeof basePath !== 'undefined' ? basePath : ''}/teacher/assignments">Assignments</a></li>
+    <li class="breadcrumb-item active">${isEdit ? 'Edit Assignment' : 'Create Assignment'}</li>
+  </ol>
+</nav>
+
+<!-- Form Card -->
+<div class="card">
+  <div class="card-header bg-white">
+    <h5 class="mb-0"><i class="bi bi-clipboard-check me-2"></i>${isEdit ? 'Edit Assignment' : 'Create New Assignment'}</h5>
+  </div>
+  <div class="card-body">
+    <form action="${typeof basePath !== 'undefined' ? basePath : ''}/teacher/assignments${isEdit && assignment ? '/' + assignment.id : ''}" method="POST">
+
+      <div class="row g-3">
+        <!-- Title -->
+        <div class="col-md-8">
+          <label class="form-label">Assignment Title <span class="text-danger">*</span></label>
+          <input type="text" name="title" class="form-control" placeholder="e.g., Chapter 5 Practice Problems" value="${assignment?.title || ''}" required>
+        </div>
+
+        <!-- Type -->
+        <div class="col-md-4">
+          <label class="form-label">Type</label>
+          <select name="type" class="form-select">
+            <option value="homework" ${assignment?.type === 'homework' || !assignment ? 'selected' : ''}>Homework</option>
+            <option value="project" ${assignment?.type === 'project' ? 'selected' : ''}>Project</option>
+            <option value="practice" ${assignment?.type === 'practice' ? 'selected' : ''}>Practice</option>
+          </select>
+        </div>
+
+        <!-- Topic Selection -->
+        <div class="col-md-6">
+          <label class="form-label">Topic <span class="text-danger">*</span></label>
+          <select name="topicId" class="form-select" required>
+            <option value="">Select a topic...</option>
+            ${categories ? categories.map(cat => '<optgroup label="' + cat.name + '">' + cat.subjects.map(subj => subj.topics.map(topic => '<option value="' + topic.id + '"' + (assignment?.topicId === topic.id || preselectedLesson?.topicId === topic.id ? ' selected' : '') + '>' + subj.name + ' - ' + topic.name + '</option>').join('')).join('') + '</optgroup>').join('') : ''}
+          </select>
+        </div>
+
+        <!-- Linked Lesson (Optional) -->
+        <div class="col-md-6">
+          <label class="form-label">Linked Lesson</label>
+          <select name="lessonId" class="form-select">
+            <option value="">No linked lesson</option>
+            ${lessons ? lessons.map(l => '<option value="' + l.id + '"' + (assignment?.lessonId === l.id || preselectedLesson?.id === l.id ? ' selected' : '') + '>' + l.title + '</option>').join('') : ''}
+          </select>
+          <small class="text-muted">Optional: Link to a lesson you created</small>
+        </div>
+
+        <!-- Assign To -->
+        <div class="col-12">
+          <label class="form-label">Assign To <span class="text-danger">*</span></label>
+          <div class="row g-2">
+            <div class="col-md-6">
+              <select name="classId" class="form-select" id="classSelect">
+                <option value="">Select a class...</option>
+                ${classes ? classes.map(cls => '<option value="' + cls.id + '"' + (assignment?.classId === cls.id ? ' selected' : '') + ' data-students=\\'' + JSON.stringify(cls.students?.map(s => ({id: s.student.id, name: s.student.firstName + ' ' + s.student.lastName})) || []) + '\\'>' + cls.name + '</option>').join('') : ''}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <select name="studentId" class="form-select" id="studentSelect">
+                <option value="">All students in class</option>
+                ${assignment?.studentId ? '<option value="' + assignment.studentId + '" selected>' + (assignment.student?.firstName + ' ' + assignment.student?.lastName) + '</option>' : ''}
+              </select>
+              <small class="text-muted">Leave empty to assign to entire class</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Due Date & Points -->
+        <div class="col-md-4">
+          <label class="form-label">Due Date</label>
+          <input type="datetime-local" name="dueDate" class="form-control" value="${assignment?.dueDate ? new Date(assignment.dueDate).toISOString().slice(0, 16) : ''}">
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Max Points</label>
+          <input type="number" name="maxPoints" class="form-control" value="${assignment?.maxPoints || 100}" min="1" max="1000">
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Late Submissions</label>
+          <div class="form-check mt-2">
+            <input type="checkbox" name="allowLate" class="form-check-input" id="allowLate" ${assignment?.allowLate !== false ? 'checked' : ''}>
+            <label class="form-check-label" for="allowLate">Allow late submissions</label>
+          </div>
+        </div>
+
+        <!-- Instructions -->
+        <div class="col-12">
+          <label class="form-label">Instructions <span class="text-danger">*</span></label>
+          <textarea name="instructions" class="form-control" rows="8" placeholder="Provide clear instructions for students...
+
+1. Read the lesson material
+2. Complete problems 1-10
+3. Show your work
+4. Submit by the due date" required>${assignment?.instructions || ''}</textarea>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="mt-4 d-flex gap-2">
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-check-lg me-2"></i>${isEdit ? 'Save Changes' : 'Create Assignment'}
+        </button>
+        <a href="${typeof basePath !== 'undefined' ? basePath : ''}/teacher/assignments" class="btn btn-outline-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  // Populate student dropdown when class is selected
+  document.getElementById('classSelect')?.addEventListener('change', function() {
+    const studentSelect = document.getElementById('studentSelect');
+    const selectedOption = this.options[this.selectedIndex];
+    const students = selectedOption.dataset.students ? JSON.parse(selectedOption.dataset.students) : [];
+
+    studentSelect.innerHTML = '<option value="">All students in class</option>';
+    students.forEach(s => {
+      studentSelect.innerHTML += '<option value="' + s.id + '">' + s.name + '</option>';
+    });
+  });
+</script>
+`, activePage: 'assignments', pageTitle: isEdit ? 'Edit Assignment' : 'Create Assignment' }) %>

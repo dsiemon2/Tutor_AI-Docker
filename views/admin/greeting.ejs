@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Greeting - TutorAI Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .sidebar { min-height: 100vh; max-height: 100vh; overflow-y: auto; position: sticky; top: 0; }
+    .sidebar .nav-link { color: rgba(255,255,255,0.8); padding: 0.75rem 1rem; }
+    .sidebar .nav-link:hover, .sidebar .nav-link.active { color: #fff; background: rgba(255,255,255,0.1); }
+    .sidebar .nav-link i { margin-right: 0.5rem; }
+    .main-content { background: #f8f9fa; min-height: 100vh; }
+    .nav-divider { border-top: 1px solid rgba(255,255,255,0.2); margin: 0.5rem 0; }
+    .nav-section { color: rgba(255,255,255,0.5); font-size: 0.75rem; padding: 0.5rem 1rem; text-transform: uppercase; }
+    .card { border: none; box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075); }
+  </style>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <%- include('_sidebar', { token, active: 'greeting', branding, basePath }) %>
+
+      <main class="col-md-10 ms-sm-auto main-content p-4">
+        <div class="mb-4">
+          <h2><i class="bi bi-chat-quote text-primary me-2"></i>Greeting Settings</h2>
+          <p class="text-muted mb-0">Customize the welcome messages for students</p>
+        </div>
+
+        <div class="card">
+          <div class="card-body">
+            <form id="greetingForm">
+              <div class="row g-4">
+                <div class="col-md-6">
+                  <label class="form-label">Welcome Title</label>
+                  <input type="text" class="form-control" name="welcomeTitle" value="<%= greeting.welcomeTitle || '' %>" placeholder="Welcome to TutorAI!">
+                  <small class="text-muted">Shown as the main heading when students start a session</small>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Voice Greeting</label>
+                  <input type="text" class="form-control" name="voiceGreeting" value="<%= greeting.voiceGreeting || '' %>" placeholder="Hello! I'm your AI tutor...">
+                  <small class="text-muted">Spoken when voice mode is enabled</small>
+                </div>
+                <div class="col-12">
+                  <label class="form-label">Welcome Message</label>
+                  <textarea class="form-control" name="welcomeMessage" rows="4" placeholder="I'm your AI tutor. What would you like to learn today?"><%= greeting.welcomeMessage || '' %></textarea>
+                  <small class="text-muted">The initial message shown to students</small>
+                </div>
+              </div>
+              <div class="mt-4">
+                <button type="submit" class="btn btn-primary">
+                  <i class="bi bi-check-lg me-2"></i>Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Preview Card -->
+        <div class="card mt-4">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-eye me-2"></i>Preview</h5>
+          </div>
+          <div class="card-body">
+            <div class="text-center p-4 bg-light rounded">
+              <div class="mb-3" style="font-size: 3rem;"><i class="bi bi-robot text-primary"></i></div>
+              <h4 id="previewTitle"><%= greeting.welcomeTitle || 'Welcome to TutorAI!' %></h4>
+              <p class="text-muted" id="previewMessage"><%= greeting.welcomeMessage || "I'm your AI tutor. What would you like to learn today?" %></p>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const basePath = '<%= basePath %>';
+    const token = '<%= token %>';
+
+    // Live preview
+    document.querySelector('[name="welcomeTitle"]').addEventListener('input', (e) => {
+      document.getElementById('previewTitle').textContent = e.target.value || 'Welcome to TutorAI!';
+    });
+    document.querySelector('[name="welcomeMessage"]').addEventListener('input', (e) => {
+      document.getElementById('previewMessage').textContent = e.target.value || "I'm your AI tutor.";
+    });
+
+    // Form submission
+    document.getElementById('greetingForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const data = Object.fromEntries(formData.entries());
+
+      try {
+        const response = await fetch(basePath + '/admin/greeting?token=' + token, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+          alert('Greeting saved successfully!');
+        } else {
+          alert('Failed to save greeting');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred');
+      }
+    });
+  </script>
+</body>
+</html>

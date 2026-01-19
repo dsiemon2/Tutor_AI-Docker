@@ -1,0 +1,118 @@
+<%- include('../layouts/schooladmin', { body: `
+<!-- School Info -->
+${school ? '<div class="alert alert-info mb-4"><i class="bi bi-building me-2"></i><strong>' + school.name + '</strong> - School Administration Portal</div>' : ''}
+
+<!-- Stats Cards -->
+<div class="row g-4 mb-4">
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Teachers</div>
+          <div class="stat-value">${stats?.totalTeachers || 0}</div>
+        </div>
+        <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+          <i class="bi bi-person-workspace"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Students</div>
+          <div class="stat-value">${stats?.totalStudents || 0}</div>
+        </div>
+        <div class="stat-icon bg-success bg-opacity-10 text-success">
+          <i class="bi bi-mortarboard"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Classes</div>
+          <div class="stat-value">${stats?.totalClasses || 0}</div>
+        </div>
+        <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+          <i class="bi bi-journal-bookmark"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Tutoring Sessions</div>
+          <div class="stat-value">${stats?.totalSessions || 0}</div>
+        </div>
+        <div class="stat-icon bg-info bg-opacity-10 text-info">
+          <i class="bi bi-chat-dots"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Recent Users -->
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-people me-2"></i>Recent Users</h5>
+        <a href="${typeof basePath !== 'undefined' ? basePath : ''}/schooladmin/users" class="btn btn-sm btn-outline-primary">Manage Users</a>
+      </div>
+      <div class="card-body p-0">
+        <div class="list-group list-group-flush">
+          ${recentUsers && recentUsers.length > 0 ? recentUsers.map(u => '<div class="list-group-item"><div class="d-flex justify-content-between align-items-center"><div><strong>' + u.firstName + ' ' + u.lastName + '</strong><br><small class="text-muted">' + u.email + '</small></div><span class="badge bg-' + (u.role === 'TEACHER' ? 'primary' : u.role === 'SCHOOL_ADMIN' ? 'purple' : 'success') + '">' + u.role + '</span></div></div>').join('') : '<div class="p-4 text-center text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No users found</div>'}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Sessions -->
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Recent Tutoring Sessions</h5>
+      </div>
+      <div class="card-body p-0">
+        <div class="list-group list-group-flush">
+          ${recentSessions && recentSessions.length > 0 ? recentSessions.map(session => '<div class="list-group-item"><div class="d-flex justify-content-between align-items-center"><div><strong>' + (session.student?.firstName || 'Unknown') + ' ' + (session.student?.lastName || '') + '</strong><br><small class="text-muted">' + (session.subject?.name || 'General') + '</small></div><small class="text-muted">' + new Date(session.startedAt).toLocaleDateString() + '</small></div></div>').join('') : '<div class="p-4 text-center text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No recent sessions</div>'}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-lightning me-2"></i>Quick Actions</h5>
+      </div>
+      <div class="card-body">
+        <div class="d-flex gap-3 flex-wrap">
+          <a href="${typeof basePath !== 'undefined' ? basePath : ''}/schooladmin/users" class="btn btn-outline-primary">
+            <i class="bi bi-person-plus me-2"></i>Manage Users
+          </a>
+          <a href="${typeof basePath !== 'undefined' ? basePath : ''}/schooladmin/classes" class="btn btn-outline-primary">
+            <i class="bi bi-journal-plus me-2"></i>Manage Classes
+          </a>
+          <a href="${typeof basePath !== 'undefined' ? basePath : ''}/schooladmin/analytics" class="btn btn-outline-primary">
+            <i class="bi bi-graph-up me-2"></i>View Analytics
+          </a>
+          <a href="${typeof basePath !== 'undefined' ? basePath : ''}/schooladmin/settings" class="btn btn-outline-primary">
+            <i class="bi bi-gear me-2"></i>School Settings
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`, activePage: 'dashboard', pageTitle: 'School Admin Dashboard' }) %>

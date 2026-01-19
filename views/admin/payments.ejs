@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payments - TutorAI Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .sidebar { min-height: 100vh; max-height: 100vh; overflow-y: auto; position: sticky; top: 0; }
+    .sidebar .nav-link { color: rgba(255,255,255,0.8); padding: 0.75rem 1rem; }
+    .sidebar .nav-link:hover, .sidebar .nav-link.active { color: #fff; background: rgba(255,255,255,0.1); }
+    .sidebar .nav-link i { margin-right: 0.5rem; }
+    .main-content { background: #f8f9fa; min-height: 100vh; }
+    .nav-divider { border-top: 1px solid rgba(255,255,255,0.2); margin: 0.5rem 0; }
+    .nav-section { color: rgba(255,255,255,0.5); font-size: 0.75rem; padding: 0.5rem 1rem; text-transform: uppercase; }
+    .card { border: none; box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075); }
+  </style>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <%- include('_sidebar', { token, active: 'payments', branding, basePath }) %>
+
+      <main class="col-md-10 ms-sm-auto main-content p-4">
+        <h2 class="mb-4"><i class="bi bi-credit-card text-primary me-2"></i>Payments</h2>
+        <p class="text-muted mb-4">Manage subscription billing and payment processing.</p>
+
+        <!-- Revenue Stats -->
+        <div class="row g-3 mb-4">
+          <div class="col-md-3">
+            <div class="card bg-primary text-white">
+              <div class="card-body">
+                <h6 class="opacity-75">Monthly Revenue</h6>
+                <h2>$12,450</h2>
+                <small><i class="bi bi-arrow-up"></i> +15% from last month</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card">
+              <div class="card-body">
+                <h6 class="text-muted">Active Subscriptions</h6>
+                <h2>234</h2>
+                <small class="text-success"><i class="bi bi-arrow-up"></i> +12 this week</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card">
+              <div class="card-body">
+                <h6 class="text-muted">Pending Payments</h6>
+                <h2>8</h2>
+                <small class="text-warning">$890 pending</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card">
+              <div class="card-body">
+                <h6 class="text-muted">Churn Rate</h6>
+                <h2>2.1%</h2>
+                <small class="text-success"><i class="bi bi-arrow-down"></i> -0.5% from last month</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-4">
+          <!-- Payment Gateway Config -->
+          <div class="col-md-6">
+            <div class="card h-100">
+              <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-gear me-2"></i>Payment Gateway</h5>
+              </div>
+              <div class="card-body">
+                <div class="mb-3">
+                  <label class="form-label">Provider</label>
+                  <select class="form-select">
+                    <option selected>Stripe</option>
+                    <option>PayPal</option>
+                    <option>Square</option>
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Publishable Key</label>
+                  <input type="text" class="form-control" placeholder="pk_live_...">
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Secret Key</label>
+                  <input type="password" class="form-control" placeholder="sk_live_...">
+                </div>
+                <div class="form-check form-switch mb-3">
+                  <input class="form-check-input" type="checkbox" id="testMode">
+                  <label class="form-check-label" for="testMode">Test Mode</label>
+                </div>
+                <button class="btn btn-primary">Save Configuration</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Subscription Plans -->
+          <div class="col-md-6">
+            <div class="card h-100">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-tags me-2"></i>Subscription Plans</h5>
+                <button class="btn btn-sm btn-primary"><i class="bi bi-plus-lg"></i></button>
+              </div>
+              <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                  <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                      <strong>Basic</strong>
+                      <br><small class="text-muted">5 sessions/month, 1 subject</small>
+                    </div>
+                    <span class="badge bg-primary fs-6">$9.99/mo</span>
+                  </div>
+                  <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                      <strong>Standard</strong>
+                      <br><small class="text-muted">20 sessions/month, 3 subjects</small>
+                    </div>
+                    <span class="badge bg-success fs-6">$24.99/mo</span>
+                  </div>
+                  <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                      <strong>Premium</strong>
+                      <br><small class="text-muted">Unlimited sessions, all subjects</small>
+                    </div>
+                    <span class="badge bg-warning fs-6">$49.99/mo</span>
+                  </div>
+                  <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                      <strong>School License</strong>
+                      <br><small class="text-muted">Per student, bulk pricing</small>
+                    </div>
+                    <span class="badge bg-info fs-6">Custom</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Transactions -->
+        <div class="card mt-4">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-receipt me-2"></i>Recent Transactions</h5>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Date</th>
+                    <th>Customer</th>
+                    <th>Plan</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Jan 1, 2026</td>
+                    <td>Johnson Family</td>
+                    <td>Premium</td>
+                    <td>$49.99</td>
+                    <td><span class="badge bg-success">Paid</span></td>
+                  </tr>
+                  <tr>
+                    <td>Jan 1, 2026</td>
+                    <td>Chen Academy</td>
+                    <td>School License</td>
+                    <td>$499.00</td>
+                    <td><span class="badge bg-success">Paid</span></td>
+                  </tr>
+                  <tr>
+                    <td>Dec 31, 2025</td>
+                    <td>Williams Home</td>
+                    <td>Standard</td>
+                    <td>$24.99</td>
+                    <td><span class="badge bg-warning">Pending</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

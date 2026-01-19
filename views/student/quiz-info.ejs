@@ -1,0 +1,79 @@
+<%- include('../layouts/student', { body: `
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-4">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="${typeof basePath !== 'undefined' ? basePath : ''}/student/quizzes">Quizzes</a></li>
+    <li class="breadcrumb-item active">${quiz.title}</li>
+  </ol>
+</nav>
+
+<div class="row g-4">
+  <!-- Quiz Info -->
+  <div class="col-lg-8">
+    <div class="card mb-4">
+      <div class="card-header bg-white">
+        <h5 class="mb-0">${quiz.title}</h5>
+      </div>
+      <div class="card-body">
+        <p class="text-muted mb-3">
+          <strong>Subject:</strong> ${quiz.topic?.subject?.name || 'N/A'} - ${quiz.topic?.name || 'N/A'}
+          ${quiz.class ? '<br><strong>Class:</strong> ' + quiz.class.name : ''}
+        </p>
+
+        ${quiz.description ? '<p class="mb-4">' + quiz.description + '</p>' : ''}
+
+        <div class="row g-3 mb-4">
+          <div class="col-md-3 col-6">
+            <div class="text-center p-3 bg-light rounded">
+              <i class="bi bi-list-ol fs-3 text-primary"></i>
+              <div class="fw-bold mt-2">${quiz.questions?.length || 0}</div>
+              <small class="text-muted">Questions</small>
+            </div>
+          </div>
+          <div class="col-md-3 col-6">
+            <div class="text-center p-3 bg-light rounded">
+              <i class="bi bi-clock fs-3 text-warning"></i>
+              <div class="fw-bold mt-2">${quiz.timeLimit || 'No'}</div>
+              <small class="text-muted">${quiz.timeLimit ? 'Minutes' : 'Time Limit'}</small>
+            </div>
+          </div>
+          <div class="col-md-3 col-6">
+            <div class="text-center p-3 bg-light rounded">
+              <i class="bi bi-trophy fs-3 text-success"></i>
+              <div class="fw-bold mt-2">${quiz.passingScore}%</div>
+              <small class="text-muted">To Pass</small>
+            </div>
+          </div>
+          <div class="col-md-3 col-6">
+            <div class="text-center p-3 bg-light rounded">
+              <i class="bi bi-arrow-repeat fs-3 text-info"></i>
+              <div class="fw-bold mt-2">${quiz.maxAttempts}</div>
+              <small class="text-muted">Max Attempts</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex gap-2 flex-wrap">
+          ${quiz.randomize ? '<span class="badge bg-secondary"><i class="bi bi-shuffle me-1"></i>Randomized Order</span>' : ''}
+          ${quiz.showAnswers ? '<span class="badge bg-success"><i class="bi bi-check me-1"></i>Answers Shown After</span>' : '<span class="badge bg-warning text-dark"><i class="bi bi-x me-1"></i>Answers Hidden</span>'}
+        </div>
+      </div>
+    </div>
+
+    <!-- Start Quiz Action -->
+    ${canTake || inProgressAttempt ? '<div class="card"><div class="card-body text-center py-4">' + (inProgressAttempt ? '<div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>You have a quiz in progress!</div><form action="' + (typeof basePath !== 'undefined' ? basePath : '') + '/student/quizzes/' + quiz.id + '/take" method="GET"><button type="submit" class="btn btn-warning btn-lg"><i class="bi bi-play-fill me-2"></i>Continue Quiz</button></form>' : '<p class="text-muted mb-3">You have <strong>' + (quiz.maxAttempts - myAttempts.length) + '</strong> attempt' + (quiz.maxAttempts - myAttempts.length !== 1 ? 's' : '') + ' remaining.</p><form action="' + (typeof basePath !== 'undefined' ? basePath : '') + '/student/quizzes/' + quiz.id + '/start" method="POST"><button type="submit" class="btn btn-primary btn-lg" onclick="return confirm(\\'Start quiz now?\\\\n\\\\n' + (quiz.timeLimit ? 'You will have ' + quiz.timeLimit + ' minutes to complete.' : 'There is no time limit.') + '\\')"><i class="bi bi-play-circle me-2"></i>Start Quiz</button></form>') + '</div></div>' : '<div class="card"><div class="card-body text-center py-4"><div class="alert alert-secondary mb-0"><i class="bi bi-x-circle me-2"></i>You have used all ' + quiz.maxAttempts + ' attempts for this quiz.</div></div></div>'}
+  </div>
+
+  <!-- My Attempts -->
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header bg-white">
+        <h6 class="mb-0"><i class="bi bi-clock-history me-2"></i>My Attempts</h6>
+      </div>
+      <div class="card-body p-0">
+        ${myAttempts && myAttempts.length > 0 ? '<div class="list-group list-group-flush">' + myAttempts.map((a, i) => '<a href="' + (a.status !== 'in_progress' ? (typeof basePath !== 'undefined' ? basePath : '') + '/student/quizzes/' + quiz.id + '/results/' + a.id : '#') + '" class="list-group-item list-group-item-action' + (a.status === 'in_progress' ? ' disabled' : '') + '"><div class="d-flex justify-content-between align-items-center"><div><strong>Attempt #' + a.attemptNum + '</strong><br><small class="text-muted">' + new Date(a.startedAt).toLocaleDateString() + '</small></div><div class="text-end">' + (a.status === 'in_progress' ? '<span class="badge bg-warning text-dark">In Progress</span>' : '<span class="fs-5 fw-bold ' + (a.passed ? 'text-success' : 'text-danger') + '">' + Math.round(a.percentage) + '%</span><br><span class="badge ' + (a.passed ? 'bg-success' : 'bg-danger') + '">' + (a.passed ? 'Passed' : 'Failed') + '</span>') + '</div></div></a>').join('') + '</div>' : '<div class="p-4 text-center text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i><p class="mb-0">No attempts yet</p></div>'}
+      </div>
+    </div>
+  </div>
+</div>
+`, activePage: 'quizzes', pageTitle: quiz.title, branding, user }) %>

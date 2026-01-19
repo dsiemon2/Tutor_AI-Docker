@@ -1,0 +1,353 @@
+# TutorAI - Project Reference
+
+**Type:** AI Tutoring Platform
+**Port:** 8091
+**URL Prefix:** /TutorAI/
+**Status:** Active (Development)
+
+---
+
+## Quick Access URLs
+
+| Type | URL |
+|------|-----|
+| Landing | http://localhost:8091/TutorAI/ |
+| Student | http://localhost:8091/TutorAI/student |
+| Teacher | http://localhost:8091/TutorAI/teacher |
+| Admin | http://localhost:8091/TutorAI/admin?token=admin |
+| Login | http://localhost:8091/TutorAI/auth/login |
+
+---
+
+## Project Overview
+
+TutorAI is a multi-tenant K-12 AI tutoring platform that provides personalized learning experiences for students.
+
+### Key Features
+
+- **Multi-tenant Architecture**: School > User hierarchy
+- **K-12 Curriculum**: 74 subjects, 166 topics across 6 categories
+- **Voice & Text Modes**: OpenAI Realtime API integration
+- **Visual Rendering**: KaTeX (math), Mermaid (diagrams), Chart.js (graphs)
+- **Progress Tracking**: Session-based learning with mastery levels
+- **Knowledge Base**: Educational content documents
+- **Adaptive Learning**: Logic rules for personalized responses
+- **Accessibility**: High contrast, dyslexia font, text size options
+- **24 Languages**: Full multilingual support
+
+---
+
+## Subject Categories
+
+| Category | Subjects | Topics |
+|----------|----------|--------|
+| Mathematics | 14 (K-12) | Counting through AP Calculus |
+| Science | 12 (K-12) | Elementary Science through AP Physics |
+| English Language Arts | 15 (K-12) | Phonics through AP Literature |
+| History & Social Studies | 14 (K-12) | Community Helpers through AP History |
+| World Languages | 7 | Spanish, French, Chinese, Latin |
+| Computer Science | 6 | Intro CS through AP Computer Science |
+
+---
+
+## Tech Stack
+
+- **Backend**: Node.js + Express + TypeScript
+- **Database**: SQLite (Prisma ORM)
+- **Sessions**: Redis
+- **Frontend**: EJS templates + Bootstrap 5
+- **Voice**: OpenAI Realtime API
+- **Math Rendering**: KaTeX
+- **Diagrams**: Mermaid.js
+- **Charts**: Chart.js
+- **Containerization**: Docker + Docker Compose + Nginx
+
+---
+
+## Demo Credentials
+
+| Role | Email | Password |
+|------|-------|----------|
+| Super Admin | admin@tutorai.com | demo1234 |
+| School Admin | principal@lincolnhs.edu | demo1234 |
+| Teacher | sjohnson@lincolnhs.edu | demo1234 |
+| Student | emma.wilson@student.lincolnhs.edu | demo1234 |
+
+---
+
+## Project Structure
+
+```
+Tutor_AI/
+├── prisma/
+│   ├── schema.prisma      # Database schema
+│   └── seed.ts            # Demo data seeding
+├── src/
+│   ├── config/            # Database, Redis, constants
+│   ├── middleware/        # Auth, RBAC, error handling
+│   ├── routes/            # Express routes
+│   └── server.ts          # Main entry point
+├── views/
+│   ├── admin/             # Admin panel pages
+│   ├── auth/              # Login, register
+│   ├── public/            # Landing, features
+│   ├── student/           # Student dashboard, tutoring
+│   └── teacher/           # Teacher dashboard
+└── public/                # Static assets
+```
+
+---
+
+## Database Schema
+
+### Core Models
+
+- **School**: Multi-tenant root (name, address, subscription)
+- **User**: Users with roles (SUPER_ADMIN, SCHOOL_ADMIN, TEACHER, STUDENT)
+- **Class**: Classes within schools
+- **ClassStudent/ClassTeacher**: Enrollment relationships
+
+### Curriculum Models
+
+- **SubjectCategory**: Math, Science, ELA, History, Languages, CS
+- **Subject**: Individual subjects within categories
+- **Topic**: Topics within subjects with grade levels
+
+### Session Models
+
+- **TutoringSession**: Student tutoring records
+- **SessionMessage**: Chat history with visual aids
+- **StudentProgress**: Mastery tracking per topic
+
+### Config Models
+
+- **AIConfig**: Model settings, voice, temperature
+- **Language**: 24 languages (all enabled)
+- **Branding**: Colors, logo, fonts
+- **Greeting**: Welcome messages
+- **KnowledgeDocument**: Educational content
+- **LogicRule**: Adaptive learning rules
+- **AIFunction**: AI tool definitions
+
+---
+
+## Commands
+
+### Docker (Recommended)
+```bash
+# Copy environment file and add your OPENAI_API_KEY
+cp .env.docker .env
+
+# Build and start all containers
+docker compose up -d --build
+
+# View logs
+docker compose logs -f
+
+# Stop all containers
+docker compose down
+
+# Rebuild after code changes
+docker compose build --no-cache && docker compose up -d
+```
+
+### Local Development (without Docker)
+```bash
+# Install dependencies
+npm install
+
+# Start dev server (requires local Redis)
+npm run dev
+```
+
+### Database Operations
+```bash
+# Push schema changes
+npx prisma db push
+
+# Seed database
+npx prisma db seed
+
+# Open Prisma Studio
+npx prisma studio
+```
+
+### Build for Production
+```bash
+npm run build
+npm start
+```
+
+---
+
+## Admin Panel Pages
+
+| Page | Route | Description |
+|------|-------|-------------|
+| Dashboard | /admin | Overview & stats |
+| Sessions | /admin/sessions | Tutoring sessions |
+| Analytics | /admin/analytics | Usage metrics |
+| Schools | /admin/schools | School management |
+| Users | /admin/users | User management |
+| Subjects | /admin/subjects | Subjects & topics |
+| Knowledge Base | /admin/knowledge-base | KB documents |
+| AI Config | /admin/ai-config | AI settings |
+| Voices | /admin/voices | Voice & languages |
+| Greeting | /admin/greeting | Welcome messages |
+| Logic Rules | /admin/logic-rules | Adaptive rules |
+| Functions | /admin/functions | AI functions |
+| Settings | /admin/settings | Platform settings |
+
+---
+
+## RBAC Hierarchy
+
+```
+SUPER_ADMIN (100)     - Platform owner, all schools
+└── SCHOOL_ADMIN (80) - School management, users, settings
+    └── TEACHER (60)  - Class management, student monitoring
+        └── STUDENT (40) - Use tutoring, view own progress
+```
+
+---
+
+## Environment Variables
+
+### Docker (.env file)
+```bash
+# Required
+OPENAI_API_KEY=sk-your-openai-api-key
+
+# Admin access
+ADMIN_TOKEN=admin
+
+# Security (change for production)
+SESSION_SECRET=change-me-in-production
+```
+
+### Local Development
+```bash
+# Server
+PORT=8091
+BASE_PATH=/TutorAI
+NODE_ENV=development
+
+# Database (SQLite for local dev)
+DATABASE_URL=file:./dev.db
+
+# Redis
+REDIS_URL=redis://localhost:6379
+
+# Auth
+SESSION_SECRET=your-session-secret
+ADMIN_TOKEN=admin
+
+# OpenAI
+OPENAI_API_KEY=your-openai-key
+```
+
+---
+
+## Notes
+
+- Uses "Schools" instead of "Companies" for multi-tenancy
+- **Docker deployment available** - uses SQLite + Redis + Nginx
+- All 24 languages enabled by default
+- Sky blue color theme (#0ea5e9)
+
+---
+
+## Agent Capabilities
+
+When working on this project, apply these specialized behaviors:
+
+### Backend Architect
+- Design routes for multi-tenant School > User hierarchy
+- Implement session management with Redis
+- Structure curriculum routes (categories, subjects, topics)
+- Handle tutoring session state and progress tracking
+
+### AI Engineer
+- Design adaptive AI tutor that adjusts to student level
+- Implement voice tutoring via OpenAI Realtime API
+- Create encouraging, patient tutoring persona
+- Handle visual rendering triggers (math, diagrams, charts)
+
+### Database Admin
+- Prisma schema for curriculum (74 subjects, 166 topics, 6 categories)
+- Track StudentProgress with mastery levels
+- Store TutoringSession and SessionMessage history
+- Handle KnowledgeDocument for educational content
+
+### Security Auditor
+- Protect student data (FERPA/COPPA considerations)
+- Implement proper RBAC (SUPER_ADMIN > SCHOOL_ADMIN > TEACHER > STUDENT)
+- Secure session handling with Redis
+- Review school-level data isolation
+
+### Content Creator
+- Write educational content for K-12 curriculum
+- Create encouraging feedback messages
+- Design adaptive learning logic rules
+- Structure knowledge base documents
+
+### Frontend Developer
+- Implement KaTeX for math rendering
+- Integrate Mermaid.js for diagrams
+- Use Chart.js for progress visualization
+- Build accessible interfaces (high contrast, dyslexia fonts)
+
+### UX Researcher
+- Design for K-12 students (varying ages and abilities)
+- Implement accessibility options (text size, contrast, fonts)
+- Create engaging learning interfaces
+- Test with student-appropriate language
+
+## Payment Gateways
+
+All 5 payment gateways are fully integrated:
+
+| Gateway | Status | Location |
+|---------|--------|----------|
+| **Stripe** | Full integration | `src/services/payments/stripe.service.ts` |
+| **PayPal** | Full integration | `src/services/payments/paypal.service.ts` |
+| **Braintree** | Full integration | `src/services/payments/braintree.service.ts` |
+| **Square** | Full integration | `src/services/payments/square.service.ts` |
+| **Authorize.net** | Full integration | `src/services/payments/authorize.service.ts` |
+
+### Payment Services Location
+```
+src/services/payments/
+├── stripe.service.ts       # Stripe payment processing
+├── paypal.service.ts       # PayPal order management
+├── braintree.service.ts    # Braintree transactions
+├── square.service.ts       # Square payment processing
+├── authorize.service.ts    # Authorize.net processing
+├── payment.service.ts      # Unified payment orchestrator
+└── index.ts                # Service exports
+```
+
+## Docker Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Nginx (port 8091)                        │
+│                    Reverse Proxy                            │
+│         /TutorAI/admin/* → admin:3001                       │
+│         /TutorAI/* → app:3000                               │
+└──────────────┬────────────────────────────┬─────────────────┘
+               │                            │
+    ┌──────────▼──────────┐     ┌──────────▼──────────┐
+    │   App Container     │     │  Admin Container    │
+    │   (port 3000)       │     │   (port 3001)       │
+    └──────────┬──────────┘     └──────────┬──────────┘
+               │                            │
+    ┌──────────▼────────────────────────────▼─────────┐
+    │                                                 │
+    │  ┌─────────────┐         ┌─────────────┐       │
+    │  │   SQLite    │         │   Redis     │       │
+    │  │ (shared vol)│         │ (sessions)  │       │
+    │  └─────────────┘         └─────────────┘       │
+    │                                                 │
+    └─────────────────────────────────────────────────┘
+```

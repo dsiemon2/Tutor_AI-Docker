@@ -1,0 +1,91 @@
+<%
+  const bgColor = (typeof branding !== 'undefined' && branding && branding.primaryColor) ? branding.primaryColor : '#0ea5e9';
+  const _basePath = typeof basePath !== 'undefined' ? basePath : '/TutorAI';
+  const _token = typeof token !== 'undefined' ? token : '';
+  const _active = typeof active !== 'undefined' ? active : '';
+
+  // User info for display
+  const userRole = (typeof user !== 'undefined' && user && user.role) ? user.role : 'SUPER_ADMIN';
+  const userName = (typeof user !== 'undefined' && user && user.name) ? user.name : 'Admin';
+
+  // Role display names
+  const roleNames = {
+    'SUPER_ADMIN': 'Super Admin',
+    'SCHOOL_ADMIN': 'School Admin',
+    'TEACHER': 'Teacher',
+    'STUDENT': 'Student'
+  };
+%>
+<nav class="col-md-2 d-none d-md-block sidebar p-0" style="background: <%= bgColor %>;">
+  <div class="p-3 text-white">
+    <h5><i class="bi bi-mortarboard-fill"></i> TutorAI</h5>
+    <small>AI-Powered Learning</small>
+    <div class="mt-2" style="font-size: 0.75rem; opacity: 0.8;">
+      <i class="bi bi-person-circle me-1"></i><%= userName %>
+      <span class="badge bg-light text-dark ms-1" style="font-size: 0.65rem;"><%= roleNames[userRole] || userRole %></span>
+    </div>
+  </div>
+  <ul class="nav flex-column">
+    <!-- Dashboard & Analytics -->
+    <li class="nav-item"><a class="nav-link <%= _active === 'dashboard' ? 'active' : '' %>" href="<%= _basePath %>/admin?token=<%= _token %>"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
+    <li class="nav-item"><a class="nav-link <%= _active === 'analytics' ? 'active' : '' %>" href="<%= _basePath %>/admin/analytics?token=<%= _token %>"><i class="bi bi-graph-up"></i> Analytics</a></li>
+
+    <!-- Education -->
+    <div class="nav-divider"></div>
+    <div class="nav-section">Education</div>
+    <li class="nav-item"><a class="nav-link <%= _active === 'schools' ? 'active' : '' %>" href="<%= _basePath %>/admin/schools?token=<%= _token %>"><i class="bi bi-building"></i> Schools</a></li>
+    <li class="nav-item"><a class="nav-link <%= _active === 'subjects' ? 'active' : '' %>" href="<%= _basePath %>/admin/subjects?token=<%= _token %>"><i class="bi bi-book"></i> Subjects</a></li>
+    <li class="nav-item"><a class="nav-link <%= _active === 'sessions' ? 'active' : '' %>" href="<%= _basePath %>/admin/sessions?token=<%= _token %>"><i class="bi bi-chat-dots"></i> Sessions</a></li>
+
+    <!-- Configuration -->
+    <div class="nav-divider"></div>
+    <div class="nav-section">Configuration</div>
+    <li class="nav-item"><a class="nav-link <%= _active === 'greeting' ? 'active' : '' %>" href="<%= _basePath %>/admin/greeting?token=<%= _token %>"><i class="bi bi-chat-quote"></i> Greeting</a></li>
+
+    <!-- AI Configuration -->
+    <div class="nav-divider"></div>
+    <div class="nav-section">AI Configuration</div>
+    <li class="nav-item"><a class="nav-link <%= _active === 'ai-config' ? 'active' : '' %>" href="<%= _basePath %>/admin/ai-config?token=<%= _token %>"><i class="bi bi-sliders"></i> AI Config</a></li>
+    <li class="nav-item"><a class="nav-link <%= _active === 'ai-agents' ? 'active' : '' %>" href="<%= _basePath %>/admin/ai-agents?token=<%= _token %>"><i class="bi bi-robot"></i> AI Agents</a></li>
+    <li class="nav-item"><a class="nav-link <%= _active === 'ai-tools' ? 'active' : '' %>" href="<%= _basePath %>/admin/ai-tools?token=<%= _token %>"><i class="bi bi-tools"></i> AI Tools</a></li>
+    <li class="nav-item"><a class="nav-link <%= _active === 'knowledge-base' ? 'active' : '' %>" href="<%= _basePath %>/admin/knowledge-base?token=<%= _token %>"><i class="bi bi-journal-text"></i> Knowledge Base</a></li>
+    <li class="nav-item"><a class="nav-link <%= _active === 'voices' ? 'active' : '' %>" href="<%= _basePath %>/admin/voices?token=<%= _token %>"><i class="bi bi-volume-up"></i> Voices & Mode</a></li>
+
+    <!-- Automation -->
+    <div class="nav-divider"></div>
+    <div class="nav-section">Automation</div>
+    <li class="nav-item"><a class="nav-link <%= _active === 'logic-rules' ? 'active' : '' %>" href="<%= _basePath %>/admin/logic-rules?token=<%= _token %>"><i class="bi bi-diagram-3"></i> Logic Rules</a></li>
+    <li class="nav-item"><a class="nav-link <%= _active === 'functions' ? 'active' : '' %>" href="<%= _basePath %>/admin/functions?token=<%= _token %>"><i class="bi bi-code-slash"></i> Functions</a></li>
+
+    <!-- Communication -->
+    <div class="nav-divider"></div>
+    <div class="nav-section">Communication</div>
+    <li class="nav-item"><a class="nav-link <%= _active === 'sms-settings' ? 'active' : '' %>" href="<%= _basePath %>/admin/sms-settings?token=<%= _token %>"><i class="bi bi-chat-dots"></i> SMS Settings</a></li>
+    <li class="nav-item"><a class="nav-link <%= _active === 'webhooks' ? 'active' : '' %>" href="<%= _basePath %>/admin/webhooks?token=<%= _token %>"><i class="bi bi-link-45deg"></i> WebHooks</a></li>
+
+    <!-- Management -->
+    <div class="nav-divider"></div>
+    <div class="nav-section">Management</div>
+    <li class="nav-item"><a class="nav-link <%= _active === 'users' ? 'active' : '' %>" href="<%= _basePath %>/admin/users?token=<%= _token %>"><i class="bi bi-people"></i> Users</a></li>
+
+    <!-- Billing -->
+    <div class="nav-divider"></div>
+    <div class="nav-section">Billing</div>
+    <li class="nav-item"><a class="nav-link <%= _active === 'payment-gateways' ? 'active' : '' %>" href="<%= _basePath %>/admin/payment-gateways?token=<%= _token %>"><i class="bi bi-credit-card-2-front"></i> Payment Gateways</a></li>
+    <li class="nav-item"><a class="nav-link <%= _active === 'subscriptions' ? 'active' : '' %>" href="<%= _basePath %>/admin/subscriptions?token=<%= _token %>"><i class="bi bi-receipt"></i> Subscriptions</a></li>
+
+    <!-- System -->
+    <div class="nav-divider"></div>
+    <div class="nav-section">System</div>
+    <li class="nav-item"><a class="nav-link <%= _active === 'settings' ? 'active' : '' %>" href="<%= _basePath %>/admin/settings?token=<%= _token %>"><i class="bi bi-gear"></i> Settings</a></li>
+    <li class="nav-item"><a class="nav-link <%= _active === 'features' ? 'active' : '' %>" href="<%= _basePath %>/admin/features?token=<%= _token %>"><i class="bi bi-toggles"></i> Features</a></li>
+
+    <!-- Logout -->
+    <div class="nav-divider"></div>
+    <li class="nav-item">
+      <a class="nav-link text-danger" href="<%= _basePath %>/admin/logout">
+        <i class="bi bi-box-arrow-left"></i> Logout
+      </a>
+    </li>
+  </ul>
+</nav>

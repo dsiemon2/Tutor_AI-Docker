@@ -1,0 +1,53 @@
+<%- include('../layouts/teacher', { body: `
+<nav aria-label="breadcrumb" class="mb-4">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="${typeof basePath !== 'undefined' ? basePath : ''}/teacher/students">Students</a></li>
+    <li class="breadcrumb-item active">${student.firstName} ${student.lastName}</li>
+  </ol>
+</nav>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="row align-items-center">
+      <div class="col-auto">
+        <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center" style="width: 64px; height: 64px;">
+          <i class="bi bi-person fs-2 text-primary"></i>
+        </div>
+      </div>
+      <div class="col">
+        <h4 class="mb-1">${student.firstName} ${student.lastName}</h4>
+        <p class="text-muted mb-0">${student.email}</p>
+        ${student.gradeLevel ? '<span class="badge bg-primary mt-2">Grade ' + student.gradeLevel + '</span>' : ''}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Recent Sessions -->
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Recent Sessions</h5>
+      </div>
+      <div class="card-body p-0">
+        <div class="list-group list-group-flush">
+          ${student.tutoringSessionsAsStudent && student.tutoringSessionsAsStudent.length > 0 ? student.tutoringSessionsAsStudent.map(session => '<div class="list-group-item"><div class="d-flex justify-content-between align-items-center"><div><strong>' + (session.subject?.name || 'General') + '</strong><br><small class="text-muted">' + (session.topic?.name || 'No topic') + '</small></div><div class="text-end"><small class="text-muted">' + new Date(session.startedAt).toLocaleDateString() + '</small><br><span class="badge bg-' + (session.status === 'COMPLETED' ? 'success' : 'primary') + '">' + session.status + '</span></div></div></div>').join('') : '<div class="p-4 text-center text-muted">No sessions yet</div>'}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-graph-up me-2"></i>Progress</h5>
+      </div>
+      <div class="card-body">
+        ${student.progress && student.progress.length > 0 ? '<div class="row g-3">' + student.progress.map(p => '<div class="col-12"><div class="d-flex justify-content-between align-items-center mb-1"><span>' + p.topic?.name + '</span><span class="badge bg-' + (p.masteryLevel >= 80 ? 'success' : p.masteryLevel >= 50 ? 'primary' : 'warning') + '">' + p.masteryLevel + '%</span></div><div class="progress" style="height: 8px;"><div class="progress-bar bg-' + (p.masteryLevel >= 80 ? 'success' : p.masteryLevel >= 50 ? 'primary' : 'warning') + '" style="width: ' + p.masteryLevel + '%"></div></div></div>').join('') + '</div>' : '<div class="text-center text-muted py-3">No progress data yet</div>'}
+      </div>
+    </div>
+  </div>
+</div>
+`, activePage: 'students', pageTitle: student.firstName + ' ' + student.lastName }) %>

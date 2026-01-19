@@ -1,0 +1,58 @@
+<%- include('../layouts/student', { body: `
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h4 class="mb-1"><i class="bi bi-clipboard-check me-2"></i>My Assignments</h4>
+    <p class="text-muted mb-0">View and submit your assigned work</p>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="row g-3 align-items-center">
+      <div class="col-md-4">
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-filter"></i></span>
+          <select class="form-select" id="statusFilter" onchange="filterAssignments()">
+            <option value="all">All Assignments</option>
+            <option value="pending">Pending</option>
+            <option value="submitted">Submitted</option>
+            <option value="graded">Graded</option>
+            <option value="overdue">Overdue</option>
+          </select>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="text-muted">
+          <strong>${assignments?.length || 0}</strong> assignments total
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Assignments List -->
+${assignments && assignments.length > 0 ? '<div class="row g-4" id="assignmentsList">' + assignments.map(a => {
+  const submission = a.submissions?.[0];
+  const isOverdue = a.dueDate && new Date(a.dueDate) < new Date() && !submission;
+  const status = submission ? submission.status : (isOverdue ? 'overdue' : 'pending');
+  return '<div class="col-md-6 col-lg-4 assignment-item" data-status="' + status + '"><div class="card h-100"><div class="card-header bg-white d-flex justify-content-between align-items-start"><div><h6 class="mb-1">' + a.title + '</h6><small class="text-muted">' + (a.topic?.subject?.name || 'No subject') + '</small></div><span class="badge ' + (status === 'graded' ? 'bg-success' : (status === 'submitted' ? 'bg-info' : (status === 'overdue' ? 'bg-danger' : 'bg-warning text-dark'))) + '">' + status.charAt(0).toUpperCase() + status.slice(1) + '</span></div><div class="card-body"><div class="d-flex gap-2 flex-wrap mb-3"><span class="badge bg-secondary">' + a.type + '</span><span class="badge bg-primary">' + a.maxPoints + ' pts</span>' + (a.class ? '<span class="badge bg-light text-dark">' + a.class.name + '</span>' : '') + '</div>' + (a.dueDate ? '<p class="mb-2"><i class="bi bi-calendar me-1"></i><strong>Due:</strong> <span class="' + (isOverdue ? 'text-danger' : '') + '">' + new Date(a.dueDate).toLocaleDateString() + ' ' + new Date(a.dueDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) + '</span></p>' : '<p class="mb-2 text-muted"><i class="bi bi-calendar me-1"></i>No due date</p>') + (submission ? '<div class="alert alert-' + (submission.status === 'graded' ? 'success' : 'info') + ' py-2 mb-0">' + (submission.status === 'graded' ? '<strong>Grade:</strong> ' + submission.grade + '/' + a.maxPoints + ' (' + Math.round((submission.grade/a.maxPoints)*100) + '%)' : '<i class="bi bi-check-circle me-1"></i>Submitted ' + new Date(submission.submittedAt).toLocaleDateString()) + '</div>' : '') + '</div><div class="card-footer bg-white"><a href="' + (typeof basePath !== 'undefined' ? basePath : '') + '/student/assignments/' + a.id + '" class="btn btn-sm ' + (submission ? 'btn-outline-primary' : 'btn-primary') + ' w-100">' + (submission ? '<i class="bi bi-eye me-1"></i>View' : '<i class="bi bi-upload me-1"></i>Submit') + '</a></div></div></div>';
+}).join('') + '</div>' : '<div class="text-center py-5"><div class="mb-4"><i class="bi bi-clipboard-check fs-1 text-muted"></i></div><h5>No Assignments Yet</h5><p class="text-muted mb-4">Your assignments will appear here when your teacher assigns them.</p></div>'}
+
+<script>
+  function filterAssignments() {
+    const filter = document.getElementById('statusFilter').value;
+    const items = document.querySelectorAll('.assignment-item');
+
+    items.forEach(item => {
+      const status = item.dataset.status;
+      if (filter === 'all' || status === filter) {
+        item.style.display = '';
+      } else {
+        item.style.display = 'none';
+      }
+    });
+  }
+</script>
+`, activePage: 'assignments', pageTitle: 'My Assignments', branding, user }) %>

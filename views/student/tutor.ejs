@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- KaTeX -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+
+  <style>
+    :root {
+      --primary-color: <%= branding.primaryColor || '#0ea5e9' %>;
+      --secondary-color: <%= branding.secondaryColor || '#0284c7' %>;
+      --accent-color: <%= branding.accentColor || '#38bdf8' %>;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f1f5f9;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .tutor-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    /* Header */
+    .tutor-header {
+      background: white;
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      z-index: 100;
+    }
+
+    .tutor-header .back-btn {
+      color: #64748b;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .tutor-header .back-btn:hover {
+      color: var(--primary-color);
+    }
+
+    .session-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .session-badge {
+      background: var(--primary-color);
+      color: white;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.875rem;
+    }
+
+    /* Chat Area */
+    .chat-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .message {
+      display: flex;
+      gap: 0.75rem;
+      max-width: 80%;
+    }
+
+    .message.user {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+    }
+
+    .message-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .message.assistant .message-avatar {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    .message.user .message-avatar {
+      background: #e2e8f0;
+      color: #64748b;
+    }
+
+    .message-content {
+      background: white;
+      padding: 1rem;
+      border-radius: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    .message.user .message-content {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    .message-content p:last-child {
+      margin-bottom: 0;
+    }
+
+    /* Visual Aids Container */
+    .visual-aid {
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: 1rem;
+      margin-top: 0.75rem;
+    }
+
+    .visual-aid.math {
+      font-size: 1.25rem;
+      text-align: center;
+      overflow-x: auto;
+    }
+
+    .visual-aid.diagram {
+      text-align: center;
+    }
+
+    .visual-aid.steps {
+      border-left: 3px solid var(--primary-color);
+    }
+
+    .step-item {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .step-item:last-child {
+      border-bottom: none;
+    }
+
+    .step-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--primary-color);
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-right: 0.75rem;
+    }
+
+    /* Step Card Styles */
+    .step-card {
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      border-radius: 12px;
+      padding: 1rem;
+      margin-top: 1rem;
+      border: 1px solid #e2e8f0;
+    }
+
+    .step-card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .step-card-header i {
+      color: var(--primary-color);
+    }
+
+    .step-card-header h6 {
+      margin: 0;
+      font-weight: 600;
+      color: #334155;
+    }
+
+    .step-progress {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 1rem;
+    }
+
+    .step-progress-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #e2e8f0;
+      transition: all 0.3s;
+    }
+
+    .step-progress-dot.active {
+      background: var(--primary-color);
+      transform: scale(1.2);
+    }
+
+    .step-progress-dot.completed {
+      background: #22c55e;
+    }
+
+    .step-content {
+      padding: 0.75rem;
+      background: white;
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+      border-left: 3px solid var(--primary-color);
+    }
+
+    .step-content .step-title {
+      font-weight: 600;
+      color: var(--primary-color);
+      margin-bottom: 0.25rem;
+    }
+
+    .step-content .step-text {
+      color: #475569;
+      font-size: 0.9rem;
+    }
+
+    /* Mermaid Diagram Styles */
+    .mermaid-container {
+      background: white;
+      border-radius: 12px;
+      padding: 1rem;
+      margin-top: 1rem;
+      text-align: center;
+      overflow-x: auto;
+    }
+
+    .mermaid {
+      display: inline-block;
+    }
+
+    /* Chart Container */
+    .chart-container {
+      background: white;
+      border-radius: 12px;
+      padding: 1rem;
+      margin-top: 1rem;
+    }
+
+    .chart-container canvas {
+      max-height: 300px;
+    }
+
+    /* Welcome State */
+    .welcome-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    .welcome-icon {
+      width: 80px;
+      height: 80px;
+      border-radius: 20px;
+      background: var(--primary-color);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .quick-prompts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: center;
+      max-width: 600px;
+      margin-top: 1.5rem;
+    }
+
+    .quick-prompt {
+      background: white;
+      border: 1px solid #e2e8f0;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .quick-prompt:hover {
+      border-color: var(--primary-color);
+      color: var(--primary-color);
+    }
+
+    /* Input Area */
+    .input-area {
+      background: white;
+      padding: 1rem 1.5rem;
+      box-shadow: 0 -1px 3px rgba(0,0,0,0.1);
+    }
+
+    .input-container {
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-end;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .input-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .input-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      background: white;
+      color: #64748b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .input-btn:hover {
+      border-color: var(--primary-color);
+      color: var(--primary-color);
+    }
+
+    .input-btn.active {
+      background: var(--primary-color);
+      border-color: var(--primary-color);
+      color: white;
+    }
+
+    .input-btn.recording {
+      background: #ef4444;
+      border-color: #ef4444;
+      color: white;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
+    .text-input-wrapper {
+      flex: 1;
+      position: relative;
+    }
+
+    .text-input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      resize: none;
+      font-family: inherit;
+      font-size: 1rem;
+      min-height: 44px;
+      max-height: 150px;
+    }
+
+    .text-input:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+    }
+
+    .send-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: var(--primary-color);
+      border: none;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .send-btn:hover {
+      background: var(--secondary-color);
+    }
+
+    .send-btn:disabled {
+      background: #e2e8f0;
+      cursor: not-allowed;
+    }
+
+    /* File Upload Preview */
+    .upload-preview {
+      display: none;
+      margin-bottom: 0.75rem;
+      padding: 0.75rem;
+      background: #f8fafc;
+      border-radius: 12px;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .upload-preview.show {
+      display: flex;
+    }
+
+    .upload-preview img {
+      max-width: 100px;
+      max-height: 80px;
+      border-radius: 8px;
+      object-fit: cover;
+    }
+
+    .upload-preview .remove-btn {
+      margin-left: auto;
+      color: #ef4444;
+      cursor: pointer;
+    }
+
+    /* Typing Indicator */
+    .typing-indicator {
+      display: none;
+    }
+
+    .typing-indicator.show {
+      display: flex;
+    }
+
+    .typing-dots {
+      display: flex;
+      gap: 4px;
+      padding: 0.5rem;
+    }
+
+    .typing-dots span {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #94a3b8;
+      animation: bounce 1.4s infinite ease-in-out;
+    }
+
+    .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+    .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0); }
+      40% { transform: scale(1); }
+    }
+
+    /* Hidden file input */
+    #fileInput {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="tutor-container">
+    <!-- Header -->
+    <header class="tutor-header">
+      <a href="<%= typeof basePath !== 'undefined' ? basePath : '' %>/student" class="back-btn">
+        <i class="bi bi-arrow-left"></i>
+        <span>Back to Dashboard</span>
+      </a>
+      <div class="session-info">
+        <% if (subject) { %>
+          <span class="session-badge">
+            <i class="bi bi-book me-1"></i><%= subject.name %>
+          </span>
+        <% } %>
+        <% if (topic) { %>
+          <span class="session-badge bg-success">
+            <%= topic.name %>
+          </span>
+        <% } %>
+      </div>
+      <button class="btn btn-outline-danger btn-sm" id="endSessionBtn">
+        <i class="bi bi-x-lg me-1"></i>End Session
+      </button>
+    </header>
+
+    <!-- Chat Area -->
+    <div class="chat-area" id="chatArea">
+      <!-- Welcome State (shown when no messages) -->
+      <div class="welcome-state" id="welcomeState">
+        <div class="welcome-icon">
+          <i class="bi bi-robot"></i>
+        </div>
+        <h2><%= greeting.welcomeTitle %></h2>
+        <p class="text-muted"><%= greeting.welcomeMessage %></p>
+        <div class="quick-prompts">
+          <button class="quick-prompt" data-prompt="Help me solve a math problem">
+            <i class="bi bi-calculator me-1"></i>Math problem
+          </button>
+          <button class="quick-prompt" data-prompt="Explain this science concept to me">
+            <i class="bi bi-lightbulb me-1"></i>Science concept
+          </button>
+          <button class="quick-prompt" data-prompt="Help me with my essay">
+            <i class="bi bi-pencil me-1"></i>Essay help
+          </button>
+          <button class="quick-prompt" data-prompt="Quiz me on this topic">
+            <i class="bi bi-question-circle me-1"></i>Quiz me
+          </button>
+        </div>
+      </div>
+
+      <!-- Messages will be appended here -->
+      <div id="messagesContainer" style="display: none;"></div>
+
+      <!-- Typing Indicator -->
+      <div class="message assistant typing-indicator" id="typingIndicator">
+        <div class="message-avatar">
+          <i class="bi bi-robot"></i>
+        </div>
+        <div class="message-content">
+          <div class="typing-dots">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input Area -->
+    <div class="input-area">
+      <div class="input-container">
+        <div class="input-actions">
+          <button class="input-btn" id="uploadBtn" title="Upload image">
+            <i class="bi bi-image"></i>
+          </button>
+          <button class="input-btn" id="micBtn" title="Voice input">
+            <i class="bi bi-mic"></i>
+          </button>
+        </div>
+        <div class="text-input-wrapper">
+          <div class="upload-preview" id="uploadPreview">
+            <img id="previewImage" src="" alt="Preview">
+            <span id="fileName"></span>
+            <i class="bi bi-x-circle remove-btn" id="removeUpload"></i>
+          </div>
+          <textarea class="text-input" id="messageInput" placeholder="Ask me anything..." rows="1"></textarea>
+        </div>
+        <button class="send-btn" id="sendBtn" title="Send message">
+          <i class="bi bi-send"></i>
+        </button>
+      </div>
+    </div>
+
+    <input type="file" id="fileInput" accept="image/*,.pdf,.doc,.docx">
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- KaTeX -->
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+  <!-- Mermaid -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.0/dist/mermaid.min.js"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <script>
+    const basePath = '<%= typeof basePath !== "undefined" ? basePath : "" %>';
+    const aiConfig = <%- JSON.stringify(aiConfig) %>;
+    let sessionId = null;
+    let isRecording = false;
+    let mediaRecorder = null;
+    let uploadedFile = null;
+
+    // DOM Elements
+    const chatArea = document.getElementById('chatArea');
+    const welcomeState = document.getElementById('welcomeState');
+    const messagesContainer = document.getElementById('messagesContainer');
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const micBtn = document.getElementById('micBtn');
+    const fileInput = document.getElementById('fileInput');
+    const uploadPreview = document.getElementById('uploadPreview');
+    const previewImage = document.getElementById('previewImage');
+    const fileName = document.getElementById('fileName');
+    const removeUpload = document.getElementById('removeUpload');
+    const typingIndicator = document.getElementById('typingIndicator');
+    const endSessionBtn = document.getElementById('endSessionBtn');
+
+    // Initialize Mermaid
+    mermaid.initialize({ startOnLoad: false, theme: 'neutral' });
+
+    // Create session on load
+    async function createSession() {
+      try {
+        const response = await fetch(`${basePath}/api/sessions`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            subjectId: '<%= subject?.id || "" %>',
+            topicId: '<%= topic?.id || "" %>',
+            mode: 'TEXT'
+          })
+        });
+        const data = await response.json();
+        if (data.success) {
+          sessionId = data.session.id;
+        }
+      } catch (error) {
+        console.error('Failed to create session:', error);
+      }
+    }
+
+    // Send message
+    async function sendMessage() {
+      const content = messageInput.value.trim();
+      if (!content && !uploadedFile) return;
+
+      // Hide welcome state and show messages
+      welcomeState.style.display = 'none';
+      messagesContainer.style.display = 'block';
+
+      // Add user message
+      addMessage('user', content, null, uploadedFile);
+
+      // Clear input
+      messageInput.value = '';
+      clearUpload();
+
+      // Show typing indicator
+      typingIndicator.classList.add('show');
+      scrollToBottom();
+
+      // Send to AI API
+      try {
+        const response = await fetch(`${basePath}/api/sessions/${sessionId}/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content })
+        });
+
+        const data = await response.json();
+        typingIndicator.classList.remove('show');
+
+        if (data.success && data.response) {
+          addMessage('assistant', data.response, data.visualAids);
+        } else {
+          addMessage('assistant', 'I apologize, but I encountered an error. Please try again.');
+        }
+      } catch (error) {
+        console.error('Chat error:', error);
+        typingIndicator.classList.remove('show');
+        addMessage('assistant', 'I apologize, but I couldn\'t connect to the server. Please try again.');
+      }
+      scrollToBottom();
+    }
+
+    // Add message to chat with visual aids support
+    function addMessage(role, content, visualAids = null, file = null) {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${role}`;
+
+      const avatarIcon = role === 'assistant' ? 'bi-robot' : 'bi-person';
+
+      let fileHtml = '';
+      if (file) {
+        if (file.type.startsWith('image/')) {
+          fileHtml = `<img src="${URL.createObjectURL(file)}" class="img-fluid rounded mb-2" style="max-width: 300px;">`;
+        } else {
+          fileHtml = `<div class="file-attachment mb-2"><i class="bi bi-file-earmark me-2"></i>${file.name}</div>`;
+        }
+      }
+
+      // Format content - remove mermaid code blocks from display text (they'll be rendered separately)
+      let displayContent = content.replace(/```mermaid[\s\S]*?```/gi, '');
+
+      messageDiv.innerHTML = `
+        <div class="message-avatar">
+          <i class="bi ${avatarIcon}"></i>
+        </div>
+        <div class="message-content">
+          ${fileHtml}
+          <div class="message-text">${formatContent(displayContent)}</div>
+          <div class="visual-aids-container"></div>
+        </div>
+      `;
+
+      messagesContainer.appendChild(messageDiv);
+
+      // Render math with KaTeX
+      if (role === 'assistant') {
+        const textElement = messageDiv.querySelector('.message-text');
+        renderMathInElement(textElement, {
+          delimiters: [
+            {left: '$$', right: '$$', display: true},
+            {left: '$', right: '$', display: false}
+          ],
+          throwOnError: false
+        });
+
+        // Render visual aids
+        if (visualAids && visualAids.length > 0) {
+          const container = messageDiv.querySelector('.visual-aids-container');
+          renderVisualAids(container, visualAids);
+        }
+      }
+    }
+
+    // Render visual aids (step cards, diagrams, charts)
+    async function renderVisualAids(container, visualAids) {
+      for (const aid of visualAids) {
+        switch (aid.type) {
+          case 'stepCard':
+            renderStepCard(container, aid);
+            break;
+          case 'diagram':
+            await renderMermaidDiagram(container, aid);
+            break;
+          case 'chart':
+            renderChart(container, aid);
+            break;
+          // math is already rendered inline by KaTeX
+        }
+      }
+    }
+
+    // Render step-by-step solution card
+    function renderStepCard(container, aid) {
+      const steps = aid.content.steps || [];
+      if (steps.length === 0) return;
+
+      const stepCardDiv = document.createElement('div');
+      stepCardDiv.className = 'step-card';
+
+      // Progress dots
+      const progressHtml = aid.content.showProgress
+        ? `<div class="step-progress">${steps.map((_, i) =>
+            `<div class="step-progress-dot${i === 0 ? ' active' : ''}"></div>`
+          ).join('')}</div>`
+        : '';
+
+      // Steps HTML
+      const stepsHtml = steps.map(step => `
+        <div class="step-content">
+          <div class="step-title">
+            <span class="step-number">${step.number}</span>
+            ${step.title}
+          </div>
+          <div class="step-text">${formatContent(step.content)}</div>
+        </div>
+      `).join('');
+
+      stepCardDiv.innerHTML = `
+        <div class="step-card-header">
+          <i class="bi bi-list-ol"></i>
+          <h6>Step-by-Step Solution</h6>
+        </div>
+        ${progressHtml}
+        ${stepsHtml}
+      `;
+
+      container.appendChild(stepCardDiv);
+
+      // Render math in step card
+      renderMathInElement(stepCardDiv, {
+        delimiters: [
+          {left: '$$', right: '$$', display: true},
+          {left: '$', right: '$', display: false}
+        ],
+        throwOnError: false
+      });
+    }
+
+    // Render Mermaid diagram
+    async function renderMermaidDiagram(container, aid) {
+      const mermaidCode = aid.content.mermaid;
+      if (!mermaidCode) return;
+
+      const diagramDiv = document.createElement('div');
+      diagramDiv.className = 'mermaid-container';
+
+      const mermaidElement = document.createElement('div');
+      mermaidElement.className = 'mermaid';
+      mermaidElement.textContent = mermaidCode;
+      diagramDiv.appendChild(mermaidElement);
+      container.appendChild(diagramDiv);
+
+      // Re-render mermaid diagrams
+      try {
+        await mermaid.run({ nodes: [mermaidElement] });
+      } catch (error) {
+        console.error('Mermaid rendering error:', error);
+        mermaidElement.innerHTML = `<p class="text-muted"><i class="bi bi-diagram-3"></i> Diagram could not be rendered</p>`;
+      }
+    }
+
+    // Render Chart.js chart
+    function renderChart(container, aid) {
+      const chartData = aid.content;
+      if (!chartData || !chartData.type || !chartData.data) return;
+
+      const chartDiv = document.createElement('div');
+      chartDiv.className = 'chart-container';
+
+      const canvas = document.createElement('canvas');
+      canvas.id = `chart-${Date.now()}`;
+      chartDiv.appendChild(canvas);
+      container.appendChild(chartDiv);
+
+      try {
+        new Chart(canvas, {
+          type: chartData.type,
+          data: chartData.data,
+          options: chartData.options || {
+            responsive: true,
+            maintainAspectRatio: true
+          }
+        });
+      } catch (error) {
+        console.error('Chart rendering error:', error);
+        chartDiv.innerHTML = `<p class="text-muted"><i class="bi bi-bar-chart"></i> Chart could not be rendered</p>`;
+      }
+    }
+
+    // Format message content
+    function formatContent(content) {
+      if (!content) return '';
+      // Convert markdown-style formatting
+      return content
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\n/g, '<br>');
+    }
+
+    // Scroll to bottom of chat
+    function scrollToBottom() {
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+
+    // Handle file upload
+    uploadBtn.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        uploadedFile = file;
+        if (file.type.startsWith('image/')) {
+          previewImage.src = URL.createObjectURL(file);
+          previewImage.style.display = 'block';
+        } else {
+          previewImage.style.display = 'none';
+        }
+        fileName.textContent = file.name;
+        uploadPreview.classList.add('show');
+      }
+    });
+
+    removeUpload.addEventListener('click', clearUpload);
+
+    function clearUpload() {
+      uploadedFile = null;
+      fileInput.value = '';
+      uploadPreview.classList.remove('show');
+    }
+
+    // Handle voice input
+    micBtn.addEventListener('click', async () => {
+      if (!isRecording) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          mediaRecorder = new MediaRecorder(stream);
+          const chunks = [];
+
+          mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+          mediaRecorder.onstop = async () => {
+            const blob = new Blob(chunks, { type: 'audio/webm' });
+            // TODO: Send to speech-to-text API
+            console.log('Audio recorded:', blob);
+            stream.getTracks().forEach(track => track.stop());
+          };
+
+          mediaRecorder.start();
+          isRecording = true;
+          micBtn.classList.add('recording');
+          micBtn.innerHTML = '<i class="bi bi-stop-fill"></i>';
+        } catch (error) {
+          console.error('Microphone access denied:', error);
+          alert('Please allow microphone access to use voice input.');
+        }
+      } else {
+        mediaRecorder.stop();
+        isRecording = false;
+        micBtn.classList.remove('recording');
+        micBtn.innerHTML = '<i class="bi bi-mic"></i>';
+      }
+    });
+
+    // Send on Enter (Shift+Enter for new line)
+    messageInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    // Auto-resize textarea
+    messageInput.addEventListener('input', () => {
+      messageInput.style.height = 'auto';
+      messageInput.style.height = Math.min(messageInput.scrollHeight, 150) + 'px';
+    });
+
+    // Send button click
+    sendBtn.addEventListener('click', sendMessage);
+
+    // Quick prompts
+    document.querySelectorAll('.quick-prompt').forEach(btn => {
+      btn.addEventListener('click', () => {
+        messageInput.value = btn.dataset.prompt;
+        messageInput.focus();
+      });
+    });
+
+    // End session
+    endSessionBtn.addEventListener('click', async () => {
+      if (sessionId && confirm('Are you sure you want to end this session?')) {
+        try {
+          await fetch(`${basePath}/api/sessions/${sessionId}/end`, {
+            method: 'PUT'
+          });
+        } catch (error) {
+          console.error('Failed to end session:', error);
+        }
+        window.location.href = `${basePath}/student`;
+      } else if (!sessionId) {
+        window.location.href = `${basePath}/student`;
+      }
+    });
+
+    // Initialize
+    createSession();
+  </script>
+</body>
+</html>

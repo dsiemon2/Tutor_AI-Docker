@@ -1,0 +1,19 @@
+<%- include('../layouts/student', { body: `
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h4 class="mb-1"><i class="bi bi-question-circle me-2"></i>My Quizzes</h4>
+    <p class="text-muted mb-0">Test your knowledge with quizzes</p>
+  </div>
+</div>
+
+<!-- Quiz Grid -->
+${quizzes && quizzes.length > 0 ? '<div class="row g-4">' + quizzes.map(quiz => {
+  const myAttempts = quiz.attempts || [];
+  const bestAttempt = myAttempts.find(a => a.passed) || myAttempts.sort((a, b) => (b.percentage || 0) - (a.percentage || 0))[0];
+  const canTake = myAttempts.length < quiz.maxAttempts;
+  const hasInProgress = myAttempts.some(a => a.status === 'in_progress');
+
+  return '<div class="col-md-6 col-lg-4"><div class="card h-100"><div class="card-header bg-white d-flex justify-content-between align-items-start"><div><h6 class="mb-1">' + quiz.title + '</h6><small class="text-muted">' + (quiz.topic?.subject?.name || 'No subject') + '</small></div>' + (bestAttempt?.passed ? '<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Passed</span>' : (myAttempts.length > 0 ? '<span class="badge bg-warning text-dark">Attempted</span>' : '<span class="badge bg-secondary">New</span>')) + '</div><div class="card-body">' + (quiz.description ? '<p class="text-muted small mb-3">' + quiz.description + '</p>' : '') + '<div class="d-flex gap-2 flex-wrap mb-3"><span class="badge bg-primary">' + (quiz.questions?.length || 0) + ' questions</span>' + (quiz.timeLimit ? '<span class="badge bg-warning text-dark">' + quiz.timeLimit + ' min</span>' : '<span class="badge bg-light text-dark">No limit</span>') + '<span class="badge bg-info">' + quiz.passingScore + '% to pass</span></div><div class="row text-center mb-3"><div class="col-4"><div class="fw-bold">' + myAttempts.length + '/' + quiz.maxAttempts + '</div><small class="text-muted">Attempts</small></div><div class="col-4"><div class="fw-bold ' + (bestAttempt?.passed ? 'text-success' : (bestAttempt ? 'text-danger' : 'text-muted')) + '">' + (bestAttempt ? Math.round(bestAttempt.percentage) + '%' : '-') + '</div><small class="text-muted">Best</small></div><div class="col-4"><div class="fw-bold">' + (quiz.questions?.reduce((sum, q) => sum + q.points, 0) || 0) + '</div><small class="text-muted">Points</small></div></div></div><div class="card-footer bg-white"><a href="' + (typeof basePath !== 'undefined' ? basePath : '') + '/student/quizzes/' + quiz.id + '" class="btn btn-sm ' + (hasInProgress ? 'btn-warning' : (canTake ? 'btn-primary' : 'btn-outline-secondary')) + ' w-100">' + (hasInProgress ? '<i class="bi bi-play-fill me-1"></i>Continue Quiz' : (canTake ? '<i class="bi bi-play-circle me-1"></i>Start Quiz' : '<i class="bi bi-eye me-1"></i>View Results')) + '</a></div></div></div>';
+}).join('') + '</div>' : '<div class="text-center py-5"><div class="mb-4"><i class="bi bi-question-circle fs-1 text-muted"></i></div><h5>No Quizzes Available</h5><p class="text-muted mb-4">Quizzes will appear here when your teacher creates them.</p></div>'}
+`, activePage: 'quizzes', pageTitle: 'My Quizzes', branding, user }) %>

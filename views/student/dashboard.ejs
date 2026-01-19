@@ -1,0 +1,102 @@
+<%- include('../layouts/student', { body: `
+<!-- Welcome Banner -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card" style="background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); border: 1px solid #7dd3fc;">
+      <div class="card-body p-4">
+        <div class="row align-items-center">
+          <div class="col-md-8">
+            <h2 class="mb-2 text-dark">Welcome back, ${user.firstName}! &#128075;</h2>
+            <p class="mb-3 text-secondary">Ready to continue your learning journey? Pick up where you left off or explore new topics.</p>
+            <a href="${typeof basePath !== 'undefined' ? basePath : ''}/student/tutor" class="btn btn-primary">
+              <i class="bi bi-play-fill me-2"></i>Start Tutoring Session
+            </a>
+          </div>
+          <div class="col-md-4 text-end d-none d-md-block">
+            <i class="bi bi-mortarboard-fill text-primary" style="font-size: 6rem; opacity: 0.3;"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row g-4 mb-4">
+  <div class="col-md-4">
+    <div class="stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Total Sessions</div>
+          <div class="stat-value">${sessionStats?.totalSessions || 0}</div>
+        </div>
+        <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+          <i class="bi bi-chat-dots"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Learning Time</div>
+          <div class="stat-value">${sessionStats?.totalMinutes || 0}<small class="text-muted ms-1">min</small></div>
+        </div>
+        <div class="stat-icon bg-success bg-opacity-10 text-success">
+          <i class="bi bi-clock"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Topics Studied</div>
+          <div class="stat-value">${progressSummary?.length || 0}</div>
+        </div>
+        <div class="stat-icon bg-info bg-opacity-10 text-info">
+          <i class="bi bi-book"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Main Content -->
+<div class="row g-4">
+  <!-- Subject Categories -->
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-grid-3x3-gap me-2"></i>Explore Subjects</h5>
+        <a href="${typeof basePath !== 'undefined' ? basePath : ''}/student/subjects" class="btn btn-sm btn-outline-primary">View All</a>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          ${subjectCategories ? subjectCategories.map(cat => '<div class="col-6 col-md-4"><a href="' + (typeof basePath !== 'undefined' ? basePath : '') + '/student/subjects/' + cat.code.toLowerCase() + '" class="text-decoration-none"><div class="subject-card"><div class="subject-icon" style="background: ' + cat.color + '20; color: ' + cat.color + ';"><i class="bi ' + cat.icon + '"></i></div><h6 class="mb-1">' + cat.name + '</h6><small class="text-muted">' + cat.description + '</small></div></a></div>').join('') : ''}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Sessions -->
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Recent Sessions</h5>
+        <a href="${typeof basePath !== 'undefined' ? basePath : ''}/student/sessions" class="btn btn-sm btn-outline-primary">View All</a>
+      </div>
+      <div class="card-body p-0">
+        <div class="list-group list-group-flush">
+          ${recentSessions && recentSessions.length > 0 ? recentSessions.map(session => '<a href="' + (typeof basePath !== 'undefined' ? basePath : '') + '/student/sessions/' + session.id + '" class="list-group-item list-group-item-action"><div class="d-flex justify-content-between align-items-center"><div><strong>' + (session.subject?.name || 'General') + '</strong><br><small class="text-muted">' + (session.topic?.name || 'No topic') + '</small></div><small class="text-muted">' + new Date(session.startedAt).toLocaleDateString() + '</small></div></a>').join('') : '<div class="p-4 text-center text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No sessions yet<br><small>Start a tutoring session to see your history</small></div>'}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Progress Section -->
+${progressSummary && progressSummary.length > 0 ? '<div class="row mt-4"><div class="col-12"><div class="card"><div class="card-header d-flex justify-content-between align-items-center"><h5 class="mb-0"><i class="bi bi-graph-up me-2"></i>Your Progress</h5><a href="' + (typeof basePath !== 'undefined' ? basePath : '') + '/student/progress" class="btn btn-sm btn-outline-primary">View Details</a></div><div class="card-body"><div class="row g-3">' + progressSummary.slice(0, 6).map(p => '<div class="col-md-4"><div class="d-flex align-items-center gap-3 p-3 bg-light rounded"><div class="progress flex-grow-1" style="height: 8px;"><div class="progress-bar bg-primary" style="width: ' + p.masteryLevel + '%"></div></div><span class="badge bg-primary">' + p.masteryLevel + '%</span></div><small class="text-muted mt-1 d-block">' + p.topic?.name + '</small></div>').join('') + '</div></div></div></div></div>' : ''}
+`, activePage: 'dashboard', pageTitle: 'Dashboard' }) %>

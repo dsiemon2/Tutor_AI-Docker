@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Voices & Mode - TutorAI Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .sidebar { min-height: 100vh; max-height: 100vh; overflow-y: auto; position: sticky; top: 0; }
+    .sidebar .nav-link { color: rgba(255,255,255,0.8); padding: 0.75rem 1rem; }
+    .sidebar .nav-link:hover, .sidebar .nav-link.active { color: #fff; background: rgba(255,255,255,0.1); }
+    .sidebar .nav-link i { margin-right: 0.5rem; }
+    .main-content { background: #f8f9fa; min-height: 100vh; }
+    .nav-divider { border-top: 1px solid rgba(255,255,255,0.2); margin: 0.5rem 0; }
+    .nav-section { color: rgba(255,255,255,0.5); font-size: 0.75rem; padding: 0.5rem 1rem; text-transform: uppercase; }
+
+    .voice-card {
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: 3px solid transparent;
+    }
+    .voice-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    .voice-card.selected {
+      border-color: #0ea5e9;
+      box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.25);
+    }
+    .voice-avatar {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      margin: 0 auto 1rem;
+      color: white;
+    }
+    .voice-card .play-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .voice-card:hover .play-btn {
+      opacity: 1;
+    }
+
+    .mode-card {
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 3px solid transparent;
+    }
+    .mode-card:hover {
+      border-color: #dee2e6;
+    }
+    .mode-card.selected {
+      border-color: #0ea5e9;
+      background: rgba(14, 165, 233, 0.05);
+    }
+
+    .difficulty-btn {
+      transition: all 0.2s;
+    }
+    .difficulty-btn.active {
+      transform: scale(1.05);
+    }
+
+    .lang-card {
+      transition: all 0.2s;
+    }
+    .lang-card.disabled-lang {
+      opacity: 0.5;
+    }
+    .lang-flag {
+      font-size: 2rem;
+      margin-right: 0.75rem;
+    }
+
+    .toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; }
+  </style>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <%- include('_sidebar', { token, active: 'voices', branding, basePath }) %>
+
+      <main class="col-md-10 ms-sm-auto main-content p-4">
+        <h2 class="mb-4"><i class="bi bi-volume-up text-primary me-2"></i>Voices, Languages & Mode</h2>
+
+        <!-- Toast container -->
+        <div class="toast-container"></div>
+
+        <!-- Tutoring Mode Section -->
+        <div class="card mb-4">
+          <div class="card-header bg-info text-white">
+            <h5 class="mb-0"><i class="bi bi-arrow-left-right me-2"></i>Tutoring Mode</h5>
+          </div>
+          <div class="card-body">
+            <p class="text-muted mb-4">Choose how the AI tutor will interact with students.</p>
+
+            <div class="row g-4">
+              <div class="col-md-4">
+                <div class="card mode-card h-100 p-3 <%= aiConfig && aiConfig.enableRealtime ? 'selected' : '' %>"
+                     data-mode="realtime" onclick="selectMode('realtime')">
+                  <div class="text-center">
+                    <i class="bi bi-headset text-primary" style="font-size: 3rem;"></i>
+                    <h4 class="mt-3">Voice Mode</h4>
+                    <p class="text-muted mb-0">Real-time voice conversations with the AI tutor. Best for interactive learning.</p>
+                    <% if (aiConfig && aiConfig.enableRealtime) { %>
+                    <span class="badge bg-primary mt-2"><i class="bi bi-check-lg"></i> Active</span>
+                    <% } %>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="card mode-card h-100 p-3 <%= aiConfig && !aiConfig.enableRealtime ? 'selected' : '' %>"
+                     data-mode="text" onclick="selectMode('text')">
+                  <div class="text-center">
+                    <i class="bi bi-chat-text text-success" style="font-size: 3rem;"></i>
+                    <h4 class="mt-3">Text Mode</h4>
+                    <p class="text-muted mb-0">Chat-based tutoring with text responses. Good for quiet environments.</p>
+                    <% if (aiConfig && !aiConfig.enableRealtime) { %>
+                    <span class="badge bg-primary mt-2"><i class="bi bi-check-lg"></i> Active</span>
+                    <% } %>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="card mode-card h-100 p-3" data-mode="hybrid" onclick="selectMode('hybrid')">
+                  <div class="text-center">
+                    <i class="bi bi-arrows-angle-contract text-warning" style="font-size: 3rem;"></i>
+                    <h4 class="mt-3">Hybrid Mode</h4>
+                    <p class="text-muted mb-0">Students can switch between voice and text during sessions.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Difficulty Level Section -->
+        <div class="card mb-4">
+          <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0"><i class="bi bi-speedometer2 me-2"></i>Tutoring Style</h5>
+          </div>
+          <div class="card-body">
+            <p class="text-muted mb-4">How should the AI tutor approach teaching?</p>
+
+            <div class="row g-3">
+              <div class="col-md-3 col-6">
+                <button class="btn btn-outline-success w-100 difficulty-btn" onclick="selectDifficulty('supportive')">
+                  <i class="bi bi-emoji-smile d-block" style="font-size: 2rem;"></i>
+                  <strong>Supportive</strong>
+                  <small class="d-block text-muted">Gentle guidance & encouragement</small>
+                </button>
+              </div>
+              <div class="col-md-3 col-6">
+                <button class="btn btn-outline-primary w-100 difficulty-btn active btn-primary text-white" onclick="selectDifficulty('balanced')">
+                  <i class="bi bi-emoji-neutral d-block" style="font-size: 2rem;"></i>
+                  <strong>Balanced</strong>
+                  <small class="d-block text-muted">Mix of support & challenge</small>
+                </button>
+              </div>
+              <div class="col-md-3 col-6">
+                <button class="btn btn-outline-warning w-100 difficulty-btn" onclick="selectDifficulty('challenging')">
+                  <i class="bi bi-trophy d-block" style="font-size: 2rem;"></i>
+                  <strong>Challenging</strong>
+                  <small class="d-block text-muted">Push for deeper understanding</small>
+                </button>
+              </div>
+              <div class="col-md-3 col-6">
+                <button class="btn btn-outline-danger w-100 difficulty-btn" onclick="selectDifficulty('socratic')">
+                  <i class="bi bi-lightbulb d-block" style="font-size: 2rem;"></i>
+                  <strong>Socratic</strong>
+                  <small class="d-block text-muted">Questions to guide discovery</small>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Voice Selection Section -->
+        <div class="card mb-4">
+          <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="bi bi-person-circle me-2"></i>Select AI Voice</h5>
+          </div>
+          <div class="card-body">
+            <p class="text-muted mb-4">Choose the voice for your AI tutor. Click to select, hover to preview.</p>
+
+            <!-- Male Voices -->
+            <h6 class="text-muted mb-3"><i class="bi bi-gender-male me-2"></i>Male Voices</h6>
+            <div class="row g-4 mb-4">
+              <% const maleVoices = [
+                { id: 'ash', name: 'Ash', desc: 'Confident & authoritative', detail: 'Great for STEM subjects', color: '#2c3e50' },
+                { id: 'echo', name: 'Echo', desc: 'Calm & reassuring', detail: 'Perfect for anxious learners', color: '#1a5276' },
+                { id: 'verse', name: 'Verse', desc: 'Dynamic & engaging', detail: 'Keeps students interested', color: '#6f42c1' }
+              ];
+              maleVoices.forEach((voice) => { %>
+              <div class="col-md-4 col-sm-6">
+                <div class="card voice-card h-100 text-center p-3 position-relative <%= aiConfig && aiConfig.voiceId === voice.id ? 'selected' : '' %>"
+                     data-voice="<%= voice.id %>" onclick="selectVoice('<%= voice.id %>')">
+                  <button class="btn btn-sm btn-light play-btn" data-bs-toggle="tooltip" title="Preview voice" onclick="event.stopPropagation(); previewVoice('<%= voice.id %>')">
+                    <i class="bi bi-play-fill"></i>
+                  </button>
+                  <div class="voice-avatar" style="background: <%= voice.color %>;">
+                    <i class="bi bi-person-fill"></i>
+                  </div>
+                  <h5 class="mb-1"><%= voice.name %></h5>
+                  <span class="badge bg-info mb-1">American English</span>
+                  <small class="text-muted d-block"><%= voice.desc %></small>
+                  <small class="text-muted d-block" style="font-size: 0.75rem;"><%= voice.detail %></small>
+                  <% if (aiConfig && aiConfig.voiceId === voice.id) { %>
+                  <span class="badge bg-primary mt-2"><i class="bi bi-check-lg"></i> Active</span>
+                  <% } %>
+                </div>
+              </div>
+              <% }); %>
+            </div>
+
+            <!-- Female Voices -->
+            <h6 class="text-muted mb-3"><i class="bi bi-gender-female me-2"></i>Female Voices</h6>
+            <div class="row g-4 mb-4">
+              <% const femaleVoices = [
+                { id: 'alloy', name: 'Alloy', desc: 'Neutral & balanced', detail: 'Works for all subjects', color: '#6c757d' },
+                { id: 'coral', name: 'Coral', desc: 'Friendly & encouraging', detail: 'Great for younger students', color: '#fd7e14' },
+                { id: 'sage', name: 'Sage', desc: 'Wise & professional', detail: 'Perfect for advanced topics', color: '#198754' },
+                { id: 'shimmer', name: 'Shimmer', desc: 'Bright & energetic', detail: 'Keeps energy up', color: '#0dcaf0' },
+                { id: 'nova', name: 'Nova', desc: 'Warm & patient', detail: 'Best for struggling students', color: '#d63384' }
+              ];
+              femaleVoices.forEach((voice) => { %>
+              <div class="col-md-4 col-sm-6">
+                <div class="card voice-card h-100 text-center p-3 position-relative <%= aiConfig && aiConfig.voiceId === voice.id ? 'selected' : '' %>"
+                     data-voice="<%= voice.id %>" onclick="selectVoice('<%= voice.id %>')">
+                  <button class="btn btn-sm btn-light play-btn" data-bs-toggle="tooltip" title="Preview voice" onclick="event.stopPropagation(); previewVoice('<%= voice.id %>')">
+                    <i class="bi bi-play-fill"></i>
+                  </button>
+                  <div class="voice-avatar" style="background: <%= voice.color %>;">
+                    <i class="bi bi-person-fill"></i>
+                  </div>
+                  <h5 class="mb-1"><%= voice.name %></h5>
+                  <span class="badge bg-info mb-1">American English</span>
+                  <small class="text-muted d-block"><%= voice.desc %></small>
+                  <small class="text-muted d-block" style="font-size: 0.75rem;"><%= voice.detail %></small>
+                  <% if (aiConfig && aiConfig.voiceId === voice.id) { %>
+                  <span class="badge bg-primary mt-2"><i class="bi bi-check-lg"></i> Active</span>
+                  <% } %>
+                </div>
+              </div>
+              <% }); %>
+            </div>
+
+            <!-- Info about accents -->
+            <div class="alert alert-info mt-3">
+              <h6><i class="bi bi-info-circle me-2"></i>Voice Provider Information</h6>
+              <p class="mb-0">These voices are powered by OpenAI's Realtime API. For additional accents (British, Australian, etc.) or custom voice cloning, integration with <a href="https://elevenlabs.io" target="_blank">ElevenLabs</a> would be required.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Languages Section -->
+        <div class="card mb-4">
+          <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-translate me-2"></i>Supported Languages</h5>
+            <span class="badge bg-light text-dark"><%= languages ? languages.filter(l => l.enabled).length : 0 %> of <%= languages ? languages.length : 0 %> enabled</span>
+          </div>
+          <div class="card-body">
+            <p class="text-muted mb-4">Enable or disable languages for your AI tutor.</p>
+
+            <div class="row g-3">
+              <% if (languages && languages.length > 0) { %>
+                <% languages.forEach(lang => { %>
+                <div class="col-md-4 col-sm-6">
+                  <div class="card lang-card <%= !lang.enabled ? 'disabled-lang' : '' %>">
+                    <div class="card-body d-flex align-items-center justify-content-between py-2">
+                      <div>
+                        <strong><%= lang.name %></strong>
+                        <br><small class="text-muted"><%= lang.nativeName %> (<%= lang.code %>)</small>
+                      </div>
+                      <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox"
+                               id="lang-<%= lang.code %>"
+                               <%= lang.enabled ? 'checked' : '' %>
+                               onchange="toggleLanguage('<%= lang.code %>', this.checked)">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <% }); %>
+              <% } else { %>
+                <div class="col-12">
+                  <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>No languages configured. Please run database seed.
+                  </div>
+                </div>
+              <% } %>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="row g-3">
+          <div class="col-6 col-md">
+            <div class="card text-center h-100">
+              <div class="card-body">
+                <i class="bi bi-arrow-left-right text-info" style="font-size: 2rem;"></i>
+                <h4 class="mt-2"><%= aiConfig && aiConfig.enableRealtime ? 'Voice' : 'Text' %></h4>
+                <small class="text-muted">Tutoring Mode</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-md">
+            <div class="card text-center h-100">
+              <div class="card-body">
+                <i class="bi bi-speedometer2 text-warning" style="font-size: 2rem;"></i>
+                <h4 class="mt-2">Balanced</h4>
+                <small class="text-muted">Teaching Style</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-md">
+            <div class="card text-center h-100">
+              <div class="card-body">
+                <i class="bi bi-volume-up-fill text-primary" style="font-size: 2rem;"></i>
+                <h4 class="mt-2 text-capitalize"><%= aiConfig ? aiConfig.voiceId : 'alloy' %></h4>
+                <small class="text-muted">Current Voice</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-md">
+            <div class="card text-center h-100">
+              <div class="card-body">
+                <i class="bi bi-translate text-success" style="font-size: 2rem;"></i>
+                <h4 class="mt-2"><%= languages ? languages.filter(l => l.enabled).length : 0 %></h4>
+                <small class="text-muted">Active Languages</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const basePath = '<%= basePath %>';
+    const token = '<%= token %>';
+
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (el) { return new bootstrap.Tooltip(el) });
+
+    function showToast(message, type = 'success') {
+      const container = document.querySelector('.toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast show align-items-center text-bg-${type} border-0`;
+      toast.innerHTML = `
+        <div class="d-flex">
+          <div class="toast-body">${message}</div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+      `;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    async function selectMode(mode) {
+      try {
+        const enableRealtime = mode === 'realtime' || mode === 'hybrid';
+        const res = await fetch(`${basePath}/admin/ai-config?token=${token}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enableRealtime })
+        });
+
+        if (res.ok) {
+          showToast(`Tutoring mode changed to ${mode}`);
+          setTimeout(() => location.reload(), 1000);
+        }
+      } catch (err) {
+        showToast('Failed to update mode', 'danger');
+      }
+    }
+
+    async function selectDifficulty(difficulty) {
+      showToast(`Teaching style set to ${difficulty}`);
+    }
+
+    async function selectVoice(voiceId) {
+      try {
+        const res = await fetch(`${basePath}/admin/ai-config?token=${token}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ voiceId })
+        });
+
+        if (res.ok) {
+          document.querySelectorAll('.voice-card').forEach(card => {
+            card.classList.remove('selected');
+            const badge = card.querySelector('.badge.bg-primary');
+            if (badge && badge.textContent.includes('Active')) badge.remove();
+          });
+
+          const selectedCard = document.querySelector(`[data-voice="${voiceId}"]`);
+          selectedCard.classList.add('selected');
+          selectedCard.insertAdjacentHTML('beforeend', '<span class="badge bg-primary mt-2"><i class="bi bi-check-lg"></i> Active</span>');
+
+          showToast(`Voice changed to ${voiceId}`);
+        }
+      } catch (err) {
+        showToast('Failed to update voice', 'danger');
+      }
+    }
+
+    function previewVoice(voiceId) {
+      const utterance = new SpeechSynthesisUtterance(`Hello! I'm ${voiceId}, your AI tutor. Let me help you learn something new today!`);
+      window.speechSynthesis.speak(utterance);
+      showToast(`Playing preview for ${voiceId}...`, 'info');
+    }
+
+    async function toggleLanguage(code, enabled) {
+      try {
+        const res = await fetch(`${basePath}/admin/languages/${code}/toggle?token=${token}`, {
+          method: 'POST'
+        });
+
+        if (res.ok) {
+          const card = document.querySelector(`#lang-${code}`)?.closest('.lang-card');
+          if (card) {
+            card.classList.toggle('disabled-lang', !enabled);
+          }
+          showToast(`Language ${enabled ? 'enabled' : 'disabled'}`);
+        }
+      } catch (err) {
+        showToast('Failed to update language', 'danger');
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,226 @@
+<%- include('../layouts/student', { body: `
+<div class="mb-4">
+  <h4 class="mb-1">Settings</h4>
+  <p class="text-muted mb-0">Customize your learning experience</p>
+</div>
+
+<div class="row g-4">
+  <!-- Profile Settings -->
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-person me-2"></i>Profile</h5>
+      </div>
+      <div class="card-body">
+        <form id="profileForm">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">First Name</label>
+              <input type="text" class="form-control" value="${user.firstName}" name="firstName" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Last Name</label>
+              <input type="text" class="form-control" value="${user.lastName}" name="lastName" required>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Email</label>
+              <input type="email" class="form-control" value="${user.email}" disabled>
+              <small class="text-muted">Contact support to change your email</small>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Grade Level</label>
+              <select class="form-select" name="gradeLevel">
+                ${[1,2,3,4,5,6,7,8,9,10,11,12,13].map(g => '<option value="' + g + '" ' + (user.gradeLevel === g ? 'selected' : '') + '>' + (g === 13 ? 'College' : g + (g === 1 ? 'st' : g === 2 ? 'nd' : g === 3 ? 'rd' : 'th') + ' Grade') + '</option>').join('')}
+              </select>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary mt-3">
+            <i class="bi bi-check-lg me-2"></i>Save Changes
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Learning Preferences -->
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-sliders me-2"></i>Learning Preferences</h5>
+      </div>
+      <div class="card-body">
+        <form id="preferencesForm">
+          <div class="mb-3">
+            <label class="form-label">Preferred Language</label>
+            <select class="form-select" name="preferredLanguage">
+              <option value="en" ${user.preferredLanguage === 'en' ? 'selected' : ''}>English</option>
+              <option value="es" ${user.preferredLanguage === 'es' ? 'selected' : ''}>Spanish</option>
+              <option value="fr" ${user.preferredLanguage === 'fr' ? 'selected' : ''}>French</option>
+              <option value="de" ${user.preferredLanguage === 'de' ? 'selected' : ''}>German</option>
+              <option value="zh" ${user.preferredLanguage === 'zh' ? 'selected' : ''}>Chinese</option>
+              <option value="ja" ${user.preferredLanguage === 'ja' ? 'selected' : ''}>Japanese</option>
+              <option value="ko" ${user.preferredLanguage === 'ko' ? 'selected' : ''}>Korean</option>
+              <option value="hi" ${user.preferredLanguage === 'hi' ? 'selected' : ''}>Hindi</option>
+              <option value="ar" ${user.preferredLanguage === 'ar' ? 'selected' : ''}>Arabic</option>
+              <option value="pt" ${user.preferredLanguage === 'pt' ? 'selected' : ''}>Portuguese</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Tutor Voice</label>
+            <select class="form-select" name="preferredVoice">
+              <option value="alloy" ${user.preferredVoice === 'alloy' ? 'selected' : ''}>Alloy (Neutral)</option>
+              <option value="echo" ${user.preferredVoice === 'echo' ? 'selected' : ''}>Echo (Male)</option>
+              <option value="fable" ${user.preferredVoice === 'fable' ? 'selected' : ''}>Fable (British)</option>
+              <option value="onyx" ${user.preferredVoice === 'onyx' ? 'selected' : ''}>Onyx (Deep Male)</option>
+              <option value="nova" ${user.preferredVoice === 'nova' ? 'selected' : ''}>Nova (Female)</option>
+              <option value="shimmer" ${user.preferredVoice === 'shimmer' ? 'selected' : ''}>Shimmer (Soft Female)</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-lg me-2"></i>Save Preferences
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Accessibility -->
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-universal-access me-2"></i>Accessibility</h5>
+      </div>
+      <div class="card-body">
+        <form id="accessibilityForm">
+          <div class="mb-3">
+            <label class="form-label">Text Size</label>
+            <select class="form-select" name="textSize">
+              <option value="small" ${user.textSize === 'small' ? 'selected' : ''}>Small</option>
+              <option value="normal" ${user.textSize === 'normal' || !user.textSize ? 'selected' : ''}>Normal</option>
+              <option value="large" ${user.textSize === 'large' ? 'selected' : ''}>Large</option>
+              <option value="x-large" ${user.textSize === 'x-large' ? 'selected' : ''}>Extra Large</option>
+            </select>
+          </div>
+          <div class="form-check form-switch mb-3">
+            <input class="form-check-input" type="checkbox" id="highContrast" name="highContrast" ${user.highContrast ? 'checked' : ''}>
+            <label class="form-check-label" for="highContrast">High Contrast Mode</label>
+          </div>
+          <div class="form-check form-switch mb-3">
+            <input class="form-check-input" type="checkbox" id="dyslexiaFont" name="dyslexiaFont" ${user.dyslexiaFont ? 'checked' : ''}>
+            <label class="form-check-label" for="dyslexiaFont">Dyslexia-Friendly Font</label>
+          </div>
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-lg me-2"></i>Save Settings
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Account Actions -->
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-shield-lock me-2"></i>Account</h5>
+      </div>
+      <div class="card-body">
+        <div class="d-grid gap-2">
+          <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
+            <i class="bi bi-key me-2"></i>Change Password
+          </button>
+          <a href="${typeof basePath !== 'undefined' ? basePath : ''}/auth/logout" class="btn btn-outline-danger">
+            <i class="bi bi-box-arrow-right me-2"></i>Sign Out
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Change Password Modal -->
+<div class="modal fade" id="changePasswordModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Change Password</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="passwordForm">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Current Password</label>
+            <input type="password" class="form-control" name="currentPassword" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">New Password</label>
+            <input type="password" class="form-control" name="newPassword" minlength="8" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Confirm New Password</label>
+            <input type="password" class="form-control" name="confirmPassword" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Update Password</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  const basePath = '${typeof basePath !== "undefined" ? basePath : ""}';
+
+  // Handle form submissions
+  document.getElementById('preferencesForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
+
+    try {
+      const response = await fetch(basePath + '/api/user/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      if (response.ok) {
+        alert('Preferences saved successfully!');
+      } else {
+        alert('Failed to save preferences');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('An error occurred');
+    }
+  });
+
+  document.getElementById('accessibilityForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = {
+      textSize: e.target.textSize.value,
+      highContrast: e.target.highContrast.checked,
+      dyslexiaFont: e.target.dyslexiaFont.checked
+    };
+
+    try {
+      const response = await fetch(basePath + '/api/user/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      if (response.ok) {
+        alert('Accessibility settings saved!');
+        location.reload();
+      } else {
+        alert('Failed to save settings');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('An error occurred');
+    }
+  });
+</script>
+`, activePage: 'settings', pageTitle: 'Settings' }) %>

@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics - TutorAI Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .sidebar { min-height: 100vh; max-height: 100vh; overflow-y: auto; position: sticky; top: 0; }
+    .sidebar .nav-link { color: rgba(255,255,255,0.8); padding: 0.75rem 1rem; }
+    .sidebar .nav-link:hover, .sidebar .nav-link.active { color: #fff; background: rgba(255,255,255,0.1); }
+    .sidebar .nav-link i { margin-right: 0.5rem; }
+    .main-content { background: #f8f9fa; min-height: 100vh; }
+    .nav-divider { border-top: 1px solid rgba(255,255,255,0.2); margin: 0.5rem 0; }
+    .nav-section { color: rgba(255,255,255,0.5); font-size: 0.75rem; padding: 0.5rem 1rem; text-transform: uppercase; }
+    .card { border: none; box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075); }
+    .stat-card { transition: all 0.2s; }
+    .stat-card:hover { transform: translateY(-2px); }
+  </style>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <%- include('_sidebar', { token, active: 'analytics', branding, basePath }) %>
+
+      <main class="col-md-10 ms-sm-auto main-content p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2><i class="bi bi-graph-up text-primary me-2"></i>Analytics</h2>
+          <div>
+            <select class="form-select form-select-sm d-inline-block w-auto">
+              <option>Last 7 days</option>
+              <option>Last 30 days</option>
+              <option>Last 90 days</option>
+              <option>This year</option>
+            </select>
+            <button class="btn btn-outline-primary btn-sm ms-2"><i class="bi bi-download me-1"></i>Export</button>
+          </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="row g-3 mb-4">
+          <div class="col-md-3">
+            <div class="card stat-card h-100">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <p class="text-muted mb-1">Total Sessions</p>
+                    <h3 class="mb-0">1,234</h3>
+                    <small class="text-success"><i class="bi bi-arrow-up"></i> +12% vs last week</small>
+                  </div>
+                  <div class="bg-primary bg-opacity-10 p-3 rounded">
+                    <i class="bi bi-chat-dots text-primary fs-3"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card stat-card h-100">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <p class="text-muted mb-1">Active Students</p>
+                    <h3 class="mb-0">456</h3>
+                    <small class="text-success"><i class="bi bi-arrow-up"></i> +8% vs last week</small>
+                  </div>
+                  <div class="bg-success bg-opacity-10 p-3 rounded">
+                    <i class="bi bi-mortarboard text-success fs-3"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card stat-card h-100">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <p class="text-muted mb-1">Avg. Session Time</p>
+                    <h3 class="mb-0">32m</h3>
+                    <small class="text-warning"><i class="bi bi-dash"></i> Same as last week</small>
+                  </div>
+                  <div class="bg-warning bg-opacity-10 p-3 rounded">
+                    <i class="bi bi-clock text-warning fs-3"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card stat-card h-100">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <p class="text-muted mb-1">Mastery Rate</p>
+                    <h3 class="mb-0">78%</h3>
+                    <small class="text-success"><i class="bi bi-arrow-up"></i> +5% vs last week</small>
+                  </div>
+                  <div class="bg-info bg-opacity-10 p-3 rounded">
+                    <i class="bi bi-trophy text-info fs-3"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="row g-4 mb-4">
+          <div class="col-md-8">
+            <div class="card h-100">
+              <div class="card-header">
+                <h5 class="mb-0">Sessions Over Time</h5>
+              </div>
+              <div class="card-body">
+                <canvas id="sessionsChart" height="100"></canvas>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card h-100">
+              <div class="card-header">
+                <h5 class="mb-0">Sessions by Subject</h5>
+              </div>
+              <div class="card-body">
+                <canvas id="subjectsChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top Performers -->
+        <div class="row g-4">
+          <div class="col-md-6">
+            <div class="card">
+              <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-star text-warning me-2"></i>Top Performers</h5>
+              </div>
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Student</th>
+                        <th>Sessions</th>
+                        <th>Mastery</th>
+                        <th>Streak</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><i class="bi bi-trophy-fill text-warning me-2"></i>Emma Johnson</td>
+                        <td>45</td>
+                        <td><span class="badge bg-success">95%</span></td>
+                        <td>14 days</td>
+                      </tr>
+                      <tr>
+                        <td><i class="bi bi-trophy-fill text-secondary me-2"></i>Michael Chen</td>
+                        <td>38</td>
+                        <td><span class="badge bg-success">92%</span></td>
+                        <td>10 days</td>
+                      </tr>
+                      <tr>
+                        <td><i class="bi bi-trophy-fill text-danger me-2"></i>Sarah Williams</td>
+                        <td>35</td>
+                        <td><span class="badge bg-success">89%</span></td>
+                        <td>7 days</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card">
+              <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-book text-primary me-2"></i>Popular Topics</h5>
+              </div>
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Topic</th>
+                        <th>Subject</th>
+                        <th>Sessions</th>
+                        <th>Avg Mastery</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>Linear Equations</td>
+                        <td><span class="badge bg-primary">Math</span></td>
+                        <td>156</td>
+                        <td>72%</td>
+                      </tr>
+                      <tr>
+                        <td>Photosynthesis</td>
+                        <td><span class="badge bg-success">Science</span></td>
+                        <td>124</td>
+                        <td>68%</td>
+                      </tr>
+                      <tr>
+                        <td>Essay Structure</td>
+                        <td><span class="badge bg-info">English</span></td>
+                        <td>98</td>
+                        <td>75%</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Sessions Chart
+    new Chart(document.getElementById('sessionsChart'), {
+      type: 'line',
+      data: {
+        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        datasets: [{
+          label: 'Sessions',
+          data: [145, 189, 165, 201, 178, 95, 72],
+          borderColor: '#0ea5e9',
+          backgroundColor: 'rgba(14, 165, 233, 0.1)',
+          fill: true,
+          tension: 0.4
+        }]
+      },
+      options: { responsive: true, plugins: { legend: { display: false } } }
+    });
+
+    // Subjects Chart
+    new Chart(document.getElementById('subjectsChart'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Math', 'Science', 'English', 'History'],
+        datasets: [{
+          data: [35, 25, 25, 15],
+          backgroundColor: ['#0ea5e9', '#22c55e', '#f59e0b', '#ef4444']
+        }]
+      },
+      options: { responsive: true }
+    });
+  </script>
+</body>
+</html>

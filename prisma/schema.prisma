@@ -1,0 +1,804 @@
+// TutorAI Database Schema
+// Multi-tenant AI Tutoring Platform
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// DISTRICT MODEL - Groups multiple schools
+// ============================================
+
+model District {
+  id                 String   @id @default(cuid())
+  name               String
+  code               String   @unique // e.g., "USD-001"
+  state              String
+  address            String?
+  city               String?
+  zipCode            String?
+  phone              String?
+  email              String?
+  website            String?
+  logoUrl            String?
+
+  superintendent     String?  // Name of superintendent
+
+  schools            School[]
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  isActive           Boolean  @default(true)
+}
+
+// ============================================
+// SCHOOL TYPES
+// ============================================
+// Stored as String in SQLite, validated in application
+// PRESCHOOL, KINDERGARTEN, ELEMENTARY, MIDDLE_SCHOOL,
+// HIGH_SCHOOL, VOCATIONAL_TECH, K8, K12, CHARTER, MAGNET
+
+// ============================================
+// MULTI-TENANT: SCHOOL MODEL
+// ============================================
+
+model School {
+  id                 String   @id @default(cuid())
+  name               String
+  domain             String?  @unique
+
+  // District relationship
+  districtId         String?
+  district           District? @relation(fields: [districtId], references: [id])
+
+  // School classification
+  schoolType         String   @default("ELEMENTARY") // PRESCHOOL, KINDERGARTEN, ELEMENTARY, MIDDLE_SCHOOL, HIGH_SCHOOL, VOCATIONAL_TECH, K8, K12
+  gradeMin           Int      @default(0)  // Minimum grade served (PK=-1, K=0, 1-12)
+  gradeMax           Int      @default(5)  // Maximum grade served
+
+  address            String?
+  city               String?
+  state              String?
+  zipCode            String?
+  country            String   @default("USA")
+  phone              String?
+  email              String?
+  website            String?
+  logoUrl            String?
+
+  subscriptionTier   String   @default("FREE")
+  subscriptionStatus String   @default("ACTIVE")
+  trialEndsAt        DateTime?
+
+  timezone           String   @default("America/New_York")
+  gradeRange         String?  // Legacy field for display
+
+  users              User[]
+  classes            Class[]
+  departments        Department[]
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  isActive           Boolean  @default(true)
+}
+
+// ============================================
+// DEPARTMENT MODEL - For department heads
+// ============================================
+
+model Department {
+  id                 String   @id @default(cuid())
+  name               String   // e.g., "Mathematics Department"
+  code               String   // e.g., "MATH"
+  schoolId           String
+  school             School   @relation(fields: [schoolId], references: [id])
+
+  categoryId         String?  // Link to SubjectCategory
+
+  headId             String?  // Department head (User with DEPARTMENT_HEAD role)
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  isActive           Boolean  @default(true)
+
+  @@unique([schoolId, code])
+}
+
+// ============================================
+// USER MODEL
+// ============================================
+
+// ============================================
+// USER ROLES (stored as String, validated in app)
+// ============================================
+// SUPER_ADMIN (100)     - Platform owner
+// DISTRICT_ADMIN (90)   - Oversees multiple schools
+// PRINCIPAL (85)        - School leadership
+// VICE_PRINCIPAL (75)   - Assistant principal
+// DEPARTMENT_HEAD (65)  - Lead teacher, curriculum oversight
+// TEACHER (60)          - Classroom instruction
+// STUDENT (40)          - Learning
+
+model User {
+  id                 String    @id @default(cuid())
+  email              String    @unique
+  passwordHash       String?
+  firstName          String
+  lastName           String
+  role               String    @default("STUDENT") // See roles above
+
+  schoolId           String?
+  school             School?   @relation(fields: [schoolId], references: [id])
+
+  // For DISTRICT_ADMIN - which district they manage
+  districtId         String?
+
+  // For DEPARTMENT_HEAD - which department they lead
+  departmentCode     String?   // Links to Department.code
+
+  // Teacher/Staff specific fields
+  employeeId         String?   // School employee ID
+  certifications     String?   // JSON array of certifications
+  hireDate           DateTime?
+
+  // Student specific fields
+  gradeLevel         Int?
+  studentId          String?   // School student ID
+
+  // Preferences
+  preferredVoice     String?
+  preferredLanguage  String    @default("en")
+  textSize           String    @default("normal")
+  highContrast       Boolean   @default(false)
+  dyslexiaFont       Boolean   @default(false)
+
+  isActive           Boolean   @default(true)
+  emailVerified      Boolean   @default(false)
+  lastLoginAt        DateTime?
+
+  tutoringSessionsAsStudent TutoringSession[]
+  classesAsStudent   ClassStudent[]
+  classesAsTeacher   ClassTeacher[]
+  progress           StudentProgress[]
+  uploads            Upload[]
+
+  // Relations for lessons, assignments, quizzes
+  lessonsCreated     Lesson[]       @relation("LessonCreator")
+  assignmentsCreated Assignment[]   @relation("AssignmentCreator")
+  individualAssignments Assignment[] @relation("IndividualAssignments")
+  submissions        Submission[]   @relation("StudentSubmissions")
+  submissionsGraded  Submission[]   @relation("SubmissionGrader")
+  quizzesCreated     Quiz[]         @relation("QuizCreator")
+  quizAttempts       QuizAttempt[]  @relation("QuizAttempts")
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+// ============================================
+// CLASS MODELS
+// ============================================
+
+model Class {
+  id                 String    @id @default(cuid())
+  name               String
+  schoolId           String
+  school             School    @relation(fields: [schoolId], references: [id])
+  subjectId          String?
+  subject            Subject?  @relation(fields: [subjectId], references: [id])
+  gradeLevel         Int?
+  academicYear       String?
+  description        String?
+
+  students           ClassStudent[]
+  teachers           ClassTeacher[]
+
+  // New relations for lessons, assignments, quizzes
+  lessons            Lesson[]
+  assignments        Assignment[]
+  quizzes            Quiz[]
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  isActive           Boolean   @default(true)
+}
+
+model ClassStudent {
+  id                 String    @id @default(cuid())
+  classId            String
+  class              Class     @relation(fields: [classId], references: [id])
+  studentId          String
+  student            User      @relation(fields: [studentId], references: [id])
+  enrolledAt         DateTime  @default(now())
+
+  @@unique([classId, studentId])
+}
+
+model ClassTeacher {
+  id                 String    @id @default(cuid())
+  classId            String
+  class              Class     @relation(fields: [classId], references: [id])
+  teacherId          String
+  teacher            User      @relation(fields: [teacherId], references: [id])
+  isPrimary          Boolean   @default(false)
+  assignedAt         DateTime  @default(now())
+
+  @@unique([classId, teacherId])
+}
+
+// ============================================
+// CURRICULUM MODELS
+// ============================================
+
+model SubjectCategory {
+  id                 String    @id @default(cuid())
+  code               String    @unique
+  name               String
+  description        String?
+  icon               String?
+  color              String?
+  order              Int       @default(0)
+  isActive           Boolean   @default(true)
+
+  subjects           Subject[]
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+model Subject {
+  id                 String    @id @default(cuid())
+  code               String    @unique
+  name               String
+  description        String?
+  categoryId         String
+  category           SubjectCategory @relation(fields: [categoryId], references: [id])
+  gradeRange         String?
+  order              Int       @default(0)
+  isActive           Boolean   @default(true)
+
+  topics             Topic[]
+  classes            Class[]
+  sessions           TutoringSession[]
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+model Topic {
+  id                 String    @id @default(cuid())
+  code               String    @unique
+  name               String
+  description        String?
+  subjectId          String
+  subject            Subject   @relation(fields: [subjectId], references: [id])
+  gradeLevel         Int?
+  difficulty         Int       @default(1)
+  order              Int       @default(0)
+  isActive           Boolean   @default(true)
+
+  sessions           TutoringSession[]
+  progress           StudentProgress[]
+
+  // New relations for lessons, assignments, quizzes
+  lessons            Lesson[]
+  assignments        Assignment[]
+  quizzes            Quiz[]
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+// ============================================
+// SESSION MODELS
+// ============================================
+
+model TutoringSession {
+  id                 String    @id @default(cuid())
+  studentId          String
+  student            User      @relation(fields: [studentId], references: [id])
+  subjectId          String?
+  subject            Subject?  @relation(fields: [subjectId], references: [id])
+  topicId            String?
+  topic              Topic?    @relation(fields: [topicId], references: [id])
+  gradeLevel         Int?
+
+  // Lesson context for AI - allows tutoring based on specific lesson content
+  lessonId           String?
+  lesson             Lesson?   @relation(fields: [lessonId], references: [id])
+
+  mode               String    @default("TEXT")
+  status             String    @default("ACTIVE")
+  startedAt          DateTime  @default(now())
+  endedAt            DateTime?
+  duration           Int?
+  summary            String?
+
+  messages           SessionMessage[]
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+model SessionMessage {
+  id                 String    @id @default(cuid())
+  sessionId          String
+  session            TutoringSession @relation(fields: [sessionId], references: [id])
+  role               String    @default("USER")
+  content            String
+  visualAids         String?
+  uploadId           String?
+  upload             Upload?   @relation(fields: [uploadId], references: [id])
+
+  createdAt          DateTime  @default(now())
+}
+
+// ============================================
+// UPLOAD MODEL
+// ============================================
+
+model Upload {
+  id                 String    @id @default(cuid())
+  userId             String
+  user               User      @relation(fields: [userId], references: [id])
+  sessionId          String?
+  filename           String
+  originalName       String
+  mimeType           String
+  size               Int
+  storageUrl         String
+  processingStatus   String    @default("PENDING")
+  extractedText      String?
+
+  messages           SessionMessage[]
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+// ============================================
+// PROGRESS MODEL
+// ============================================
+
+model StudentProgress {
+  id                 String    @id @default(cuid())
+  studentId          String
+  student            User      @relation(fields: [studentId], references: [id])
+  topicId            String
+  topic              Topic     @relation(fields: [topicId], references: [id])
+  masteryLevel       Int       @default(0)
+  totalTime          Int       @default(0)
+  questionsAttempted Int       @default(0)
+  questionsCorrect   Int       @default(0)
+  lastActivityAt     DateTime  @default(now())
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@unique([studentId, topicId])
+}
+
+// ============================================
+// CONFIG MODELS
+// ============================================
+
+model AIConfig {
+  id                 String    @id @default("default")
+  provider           String    @default("openai")
+  model              String    @default("gpt-4")
+  temperature        Float     @default(0.7)
+  maxTokens          Int       @default(1024)
+  voiceId            String    @default("alloy")
+  enableVoice        Boolean   @default(true)
+  enableVision       Boolean   @default(true)
+  enableRealtime     Boolean   @default(true)
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+model Language {
+  id                 String    @id @default(cuid())
+  code               String    @unique
+  name               String
+  nativeName         String
+  enabled            Boolean   @default(true)
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+model Branding {
+  id                 String    @id @default("default")
+  logoUrl            String    @default("")
+  faviconUrl         String    @default("")
+  primaryColor       String    @default("#0ea5e9")
+  secondaryColor     String    @default("#0284c7")
+  accentColor        String    @default("#38bdf8")
+  headingFont        String    @default("Inter")
+  bodyFont           String    @default("Inter")
+  customCss          String?
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+model Greeting {
+  id                 String    @id @default("default")
+  welcomeTitle       String    @default("Welcome to TutorAI!")
+  welcomeMessage     String    @default("I'm your AI tutor. What would you like to learn today?")
+  voiceGreeting      String    @default("Hello! I'm your AI tutor. How can I help you today?")
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+model StoreInfo {
+  id                 String    @id @default("default")
+  businessName       String    @default("TutorAI")
+  tagline            String    @default("AI-Powered Learning for Every Student")
+  description        String    @default("")
+  address            String    @default("")
+  phone              String    @default("")
+  email              String    @default("")
+  website            String    @default("")
+  businessHours      String    @default("")
+  timezone           String    @default("America/New_York")
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+// ============================================
+// KNOWLEDGE BASE
+// ============================================
+
+model KnowledgeDocument {
+  id                 String    @id @default(cuid())
+  title              String
+  content            String
+  category           String    @default("general")
+  subjectId          String?
+  topicId            String?
+  tags               String?
+  isActive           Boolean   @default(true)
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+// ============================================
+// LOGIC RULES
+// ============================================
+
+model LogicRule {
+  id                 String    @id @default(cuid())
+  name               String
+  description        String?
+  condition          String
+  action             String
+  priority           Int       @default(0)
+  isActive           Boolean   @default(true)
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+// ============================================
+// FUNCTIONS
+// ============================================
+
+model AIFunction {
+  id                 String    @id @default(cuid())
+  name               String    @unique
+  description        String?
+  parameters         String?
+  triggerType        String    @default("manual")
+  isActive           Boolean   @default(true)
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+// ============================================
+// LESSON MODEL - Teacher-created content
+// ============================================
+
+model Lesson {
+  id                 String    @id @default(cuid())
+  code               String    @unique
+  title              String
+  description        String?
+  content            String    // Rich text/markdown content
+
+  // Learning objectives (JSON array)
+  objectives         String?   // ["Understand X", "Apply Y", "Analyze Z"]
+
+  // Lesson materials and resources
+  materials          String?   // JSON array of resource links/files
+  prerequisites      String?   // JSON array of prerequisite lesson codes
+
+  topicId            String
+  topic              Topic     @relation(fields: [topicId], references: [id])
+  classId            String?
+  class              Class?    @relation(fields: [classId], references: [id])
+
+  gradeLevel         Int?      // Target grade level
+  duration           Int?      // Estimated minutes
+  order              Int       @default(0)
+
+  // System-generated vs teacher-created
+  isSystemLesson     Boolean   @default(false)  // True for pre-seeded curriculum lessons
+
+  createdById        String
+  createdBy          User      @relation("LessonCreator", fields: [createdById], references: [id])
+
+  assignments        Assignment[]
+  tutoringSessions   TutoringSession[]  // AI tutoring sessions using this lesson
+
+  isActive           Boolean   @default(true)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+// ============================================
+// ASSIGNMENT MODEL - Teacher-assigned work
+// ============================================
+
+model Assignment {
+  id                 String    @id @default(cuid())
+  code               String    @unique
+  title              String
+  instructions       String
+
+  lessonId           String?
+  lesson             Lesson?   @relation(fields: [lessonId], references: [id])
+  topicId            String
+  topic              Topic     @relation(fields: [topicId], references: [id])
+
+  // Can assign to class OR individual student
+  classId            String?
+  class              Class?    @relation(fields: [classId], references: [id])
+  studentId          String?   // For individual assignments
+  student            User?     @relation("IndividualAssignments", fields: [studentId], references: [id])
+
+  type               String    @default("homework") // homework, project, practice
+  dueDate            DateTime?
+  maxPoints          Int       @default(100)
+  allowLate          Boolean   @default(true)
+
+  createdById        String
+  createdBy          User      @relation("AssignmentCreator", fields: [createdById], references: [id])
+
+  submissions        Submission[]
+
+  isActive           Boolean   @default(true)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+// ============================================
+// SUBMISSION MODEL - Student assignment submissions
+// ============================================
+
+model Submission {
+  id                 String    @id @default(cuid())
+
+  assignmentId       String
+  assignment         Assignment @relation(fields: [assignmentId], references: [id])
+  studentId          String
+  student            User      @relation("StudentSubmissions", fields: [studentId], references: [id])
+
+  content            String?   // Text response
+  attachments        String?   // JSON array of upload IDs
+
+  submittedAt        DateTime  @default(now())
+  isLate             Boolean   @default(false)
+
+  grade              Int?      // 0-100
+  feedback           String?
+  gradedAt           DateTime?
+  gradedById         String?
+  gradedBy           User?     @relation("SubmissionGrader", fields: [gradedById], references: [id])
+
+  status             String    @default("submitted") // draft, submitted, graded, returned
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@unique([assignmentId, studentId])
+}
+
+// ============================================
+// QUIZ MODEL - Assessment tool
+// ============================================
+
+model Quiz {
+  id                 String    @id @default(cuid())
+  code               String    @unique
+  title              String
+  description        String?
+
+  topicId            String
+  topic              Topic     @relation(fields: [topicId], references: [id])
+  classId            String?
+  class              Class?    @relation(fields: [classId], references: [id])
+
+  timeLimit          Int?      // Minutes, null = unlimited
+  passingScore       Int       @default(70) // Percentage
+  maxAttempts        Int       @default(3)
+  randomize          Boolean   @default(false)
+  showAnswers        Boolean   @default(true) // Show correct answers after
+
+  createdById        String
+  createdBy          User      @relation("QuizCreator", fields: [createdById], references: [id])
+
+  questions          QuizQuestion[]
+  attempts           QuizAttempt[]
+
+  isActive           Boolean   @default(true)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+// ============================================
+// QUIZ QUESTION MODEL
+// ============================================
+
+model QuizQuestion {
+  id                 String    @id @default(cuid())
+
+  quizId             String
+  quiz               Quiz      @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  questionNum        Int
+  questionText       String
+  questionType       String    // multiple_choice, true_false, fill_blank
+  options            String?   // JSON array for multiple choice
+  correctAnswer      String
+  explanation        String?
+  points             Int       @default(1)
+
+  answers            QuizAnswer[]
+
+  @@unique([quizId, questionNum])
+}
+
+// ============================================
+// QUIZ ATTEMPT MODEL - Student quiz sessions
+// ============================================
+
+model QuizAttempt {
+  id                 String    @id @default(cuid())
+
+  quizId             String
+  quiz               Quiz      @relation(fields: [quizId], references: [id])
+  studentId          String
+  student            User      @relation("QuizAttempts", fields: [studentId], references: [id])
+
+  attemptNum         Int       @default(1)
+  startedAt          DateTime  @default(now())
+  submittedAt        DateTime?
+
+  score              Int?      // Points earned
+  percentage         Float?    // Score percentage
+  passed             Boolean?
+
+  answers            QuizAnswer[]
+
+  status             String    @default("in_progress") // in_progress, submitted, graded
+
+  @@unique([quizId, studentId, attemptNum])
+}
+
+// ============================================
+// QUIZ ANSWER MODEL - Individual responses
+// ============================================
+
+model QuizAnswer {
+  id                 String    @id @default(cuid())
+
+  attemptId          String
+  attempt            QuizAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  questionId         String
+  question           QuizQuestion @relation(fields: [questionId], references: [id])
+
+  answer             String?
+  isCorrect          Boolean?
+  pointsEarned       Int?
+
+  answeredAt         DateTime  @default(now())
+}
+
+// ============================================
+// PAYMENT GATEWAY CONFIGURATION
+// ============================================
+
+model PaymentGateway {
+  id                  String   @id @default(cuid())
+  provider            String   @default("stripe") @unique // stripe, paypal, braintree, square, authorize
+  isEnabled           Boolean  @default(false)
+  testMode            Boolean  @default(true)
+
+  // Stripe fields
+  publishableKey      String?
+  secretKey           String?
+  webhookSecret       String?
+  achEnabled          Boolean  @default(false)
+
+  // PayPal fields
+  clientId            String?
+  clientSecret        String?
+  webhookId           String?
+
+  // Braintree fields
+  merchantId          String?
+  publicKey           String?
+  privateKey          String?
+
+  // Square fields
+  applicationId       String?
+  accessToken         String?
+  locationId          String?
+  webhookSignatureKey String?
+
+  // Authorize.net fields
+  apiLoginId          String?
+  transactionKey      String?
+  signatureKey        String?
+
+  additionalConfig    String   @default("{}") // JSON for provider-specific settings
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+// ============================================
+// PAYMENT/SUBSCRIPTION RECORDS
+// ============================================
+
+model Payment {
+  id                 String    @id @default(cuid())
+  amount             Float
+  currency           String    @default("USD")
+  status             String    @default("pending") // pending, completed, failed, refunded
+  method             String?   // card, bank, paypal
+  gateway            String?   // stripe, paypal, braintree, square, authorize
+  transactionId      String?
+  description        String?
+
+  schoolId           String?
+  userId             String?
+
+  subscriptionPlan   String?   // basic, standard, premium, school
+  billingPeriod      String?   // monthly, yearly
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+// ============================================
+// SUBSCRIPTION PLANS
+// ============================================
+
+model SubscriptionPlan {
+  id                 String    @id @default(cuid())
+  name               String
+  code               String    @unique // basic, standard, premium, school
+  description        String?
+  price              Float
+  currency           String    @default("USD")
+  billingPeriod      String    @default("monthly") // monthly, yearly
+  sessionsPerMonth   Int?      // null = unlimited
+  subjectsAllowed    Int?      // null = all
+  features           String?   // JSON array of features
+  isActive           Boolean   @default(true)
+  sortOrder          Int       @default(0)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}

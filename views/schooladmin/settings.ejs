@@ -1,0 +1,146 @@
+<%- include('../layouts/schooladmin', { body: `
+<div class="mb-4">
+  <h4 class="mb-0">School Settings</h4>
+  <p class="text-muted">Configure your school's TutorAI settings</p>
+</div>
+
+<div class="row g-4">
+  <!-- School Information -->
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-building me-2"></i>School Information</h5>
+      </div>
+      <div class="card-body">
+        <form>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">School Name</label>
+              <input type="text" class="form-control" value="${school?.name || ''}" readonly>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">School ID</label>
+              <input type="text" class="form-control" value="${school?.id || ''}" readonly>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Address</label>
+              <input type="text" class="form-control" value="${school?.address || ''}" placeholder="Enter school address">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">City</label>
+              <input type="text" class="form-control" value="${school?.city || ''}" placeholder="City">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">State</label>
+              <input type="text" class="form-control" value="${school?.state || ''}" placeholder="State">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Zip Code</label>
+              <input type="text" class="form-control" value="${school?.zipCode || ''}" placeholder="Zip">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Phone</label>
+              <input type="tel" class="form-control" value="${school?.phone || ''}" placeholder="School phone number">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Website</label>
+              <input type="url" class="form-control" value="${school?.website || ''}" placeholder="https://...">
+            </div>
+          </div>
+          <div class="mt-4">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-check-lg me-2"></i>Save Changes
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Notification Settings -->
+    <div class="card mt-4">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-bell me-2"></i>Notification Settings</h5>
+      </div>
+      <div class="card-body">
+        <div class="form-check form-switch mb-3">
+          <input class="form-check-input" type="checkbox" id="emailNotifications" checked>
+          <label class="form-check-label" for="emailNotifications">
+            Email notifications for new user registrations
+          </label>
+        </div>
+        <div class="form-check form-switch mb-3">
+          <input class="form-check-input" type="checkbox" id="weeklyReports" checked>
+          <label class="form-check-label" for="weeklyReports">
+            Weekly analytics reports
+          </label>
+        </div>
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="alertNotifications">
+          <label class="form-check-label" for="alertNotifications">
+            Alert when students are struggling
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar Info -->
+  <div class="col-lg-4">
+    <!-- Subscription Info -->
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-credit-card me-2"></i>Subscription</h5>
+      </div>
+      <div class="card-body">
+        <div class="d-flex align-items-center mb-3">
+          <div class="rounded-circle bg-success bg-opacity-10 p-3 me-3">
+            <i class="bi bi-check-circle text-success fs-4"></i>
+          </div>
+          <div>
+            <h6 class="mb-0">Active</h6>
+            <small class="text-muted">${school?.subscriptionTier || 'Standard'} Plan</small>
+          </div>
+        </div>
+        <hr>
+        <p class="small text-muted mb-0">Contact your TutorAI account manager to upgrade or modify your subscription.</p>
+      </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="card mt-4">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Quick Stats</h5>
+      </div>
+      <div class="card-body">
+        <ul class="list-unstyled mb-0">
+          <li class="d-flex justify-content-between py-2 border-bottom">
+            <span class="text-muted">Total Users</span>
+            <strong>-</strong>
+          </li>
+          <li class="d-flex justify-content-between py-2 border-bottom">
+            <span class="text-muted">Active Classes</span>
+            <strong>-</strong>
+          </li>
+          <li class="d-flex justify-content-between py-2">
+            <span class="text-muted">This Month Sessions</span>
+            <strong>-</strong>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Support -->
+    <div class="card mt-4">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-question-circle me-2"></i>Need Help?</h5>
+      </div>
+      <div class="card-body">
+        <p class="small text-muted">Contact TutorAI support for assistance with your school setup.</p>
+        <a href="mailto:support@tutorai.com" class="btn btn-outline-primary btn-sm w-100">
+          <i class="bi bi-envelope me-2"></i>Contact Support
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+`, activePage: 'settings', pageTitle: 'School Settings' }) %>

@@ -1,0 +1,12 @@
+<%- include('../layouts/student', { body: `
+<div class="row mb-4">
+  <div class="col">
+    <h4 class="mb-1">Explore Subjects</h4>
+    <p class="text-muted">Choose a subject to start learning</p>
+  </div>
+</div>
+
+<div class="row g-4">
+  ${categories && categories.map(category => '<div class="col-md-6 col-lg-4"><div class="card h-100"><div class="card-body text-center p-4"><div class="subject-icon mx-auto mb-3" style="width: 80px; height: 80px; border-radius: 20px; background: ' + (category.color || '#0ea5e9') + '20; display: flex; align-items: center; justify-content: center; font-size: 2.5rem;">' + (category.icon || '&#x1F4DA;') + '</div><h5 class="card-title">' + category.name + '</h5><p class="text-muted small">' + (category.description || '') + '</p><div class="d-flex flex-wrap gap-1 justify-content-center mb-3">' + (category.subjects?.slice(0,3).map(s => '<span class="badge bg-light text-dark">' + s.name + '</span>').join('') || '') + (category.subjects?.length > 3 ? '<span class="badge bg-light text-dark">+' + (category.subjects.length - 3) + ' more</span>' : '') + '</div><a href="' + (typeof basePath !== 'undefined' ? basePath : '') + '/student/subjects/' + category.code + '" class="btn btn-primary">Explore<i class="bi bi-arrow-right ms-2"></i></a></div></div></div>').join('') || '<div class="col-12"><div class="text-center py-5 text-muted"><i class="bi bi-inbox fs-1 d-block mb-3"></i><p>No subjects available yet.</p></div></div>'}
+</div>
+`, activePage: 'subjects', pageTitle: 'Subjects' }) %>

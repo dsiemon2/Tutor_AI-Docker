@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Logic Rules - TutorAI Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .sidebar { min-height: 100vh; max-height: 100vh; overflow-y: auto; position: sticky; top: 0; }
+    .sidebar .nav-link { color: rgba(255,255,255,0.8); padding: 0.75rem 1rem; }
+    .sidebar .nav-link:hover, .sidebar .nav-link.active { color: #fff; background: rgba(255,255,255,0.1); }
+    .sidebar .nav-link i { margin-right: 0.5rem; }
+    .main-content { background: #f8f9fa; min-height: 100vh; }
+    .nav-divider { border-top: 1px solid rgba(255,255,255,0.2); margin: 0.5rem 0; }
+    .nav-section { color: rgba(255,255,255,0.5); font-size: 0.75rem; padding: 0.5rem 1rem; text-transform: uppercase; }
+    .card { border: none; box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075); }
+    .rule-card { border-left: 4px solid #dee2e6; transition: all 0.2s; }
+    .rule-card:hover { border-left-color: #0ea5e9; }
+    .rule-card.active { border-left-color: #198754; }
+  </style>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <%- include('_sidebar', { token, active: 'logic-rules', branding, basePath }) %>
+
+      <main class="col-md-10 ms-sm-auto main-content p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2><i class="bi bi-diagram-3 text-primary me-2"></i>Logic Rules</h2>
+          <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addRuleModal">
+            <i class="bi bi-plus-lg me-1"></i>Add Rule
+          </button>
+        </div>
+
+        <p class="text-muted mb-4">Define conditional logic rules that control AI tutor behavior based on student interactions.</p>
+
+        <div class="row g-4">
+          <!-- Struggling Student Rule -->
+          <div class="col-md-6">
+            <div class="card rule-card h-100 active">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                  <h5><i class="bi bi-exclamation-triangle text-warning me-2"></i>Struggling Student</h5>
+                  <span class="badge bg-success">Active</span>
+                </div>
+                <div class="bg-light rounded p-3 mb-3">
+                  <small class="text-muted">IF</small>
+                  <p class="mb-1"><code>student.incorrectAnswers >= 3</code> AND <code>topic.same == true</code></p>
+                  <small class="text-muted">THEN</small>
+                  <p class="mb-0"><code>switchToSupportiveMode()</code>, <code>offerAlternativeExplanation()</code></p>
+                </div>
+                <small class="text-muted">Triggered 45 times this week</small>
+              </div>
+              <div class="card-footer bg-transparent">
+                <button class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i> Edit</button>
+                <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-copy"></i> Duplicate</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Advanced Student Rule -->
+          <div class="col-md-6">
+            <div class="card rule-card h-100 active">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                  <h5><i class="bi bi-star text-success me-2"></i>Advanced Student</h5>
+                  <span class="badge bg-success">Active</span>
+                </div>
+                <div class="bg-light rounded p-3 mb-3">
+                  <small class="text-muted">IF</small>
+                  <p class="mb-1"><code>student.correctStreak >= 5</code> AND <code>topic.difficulty == current</code></p>
+                  <small class="text-muted">THEN</small>
+                  <p class="mb-0"><code>increaseDifficulty()</code>, <code>offerBonusChallenge()</code></p>
+                </div>
+                <small class="text-muted">Triggered 28 times this week</small>
+              </div>
+              <div class="card-footer bg-transparent">
+                <button class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i> Edit</button>
+                <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-copy"></i> Duplicate</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Session Time Rule -->
+          <div class="col-md-6">
+            <div class="card rule-card h-100 active">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                  <h5><i class="bi bi-clock text-info me-2"></i>Session Duration</h5>
+                  <span class="badge bg-success">Active</span>
+                </div>
+                <div class="bg-light rounded p-3 mb-3">
+                  <small class="text-muted">IF</small>
+                  <p class="mb-1"><code>session.duration >= 45min</code></p>
+                  <small class="text-muted">THEN</small>
+                  <p class="mb-0"><code>suggestBreak()</code>, <code>summarizeProgress()</code></p>
+                </div>
+                <small class="text-muted">Triggered 12 times this week</small>
+              </div>
+              <div class="card-footer bg-transparent">
+                <button class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i> Edit</button>
+                <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-copy"></i> Duplicate</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Topic Mastery Rule -->
+          <div class="col-md-6">
+            <div class="card rule-card h-100">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                  <h5><i class="bi bi-trophy text-primary me-2"></i>Topic Mastery</h5>
+                  <span class="badge bg-secondary">Inactive</span>
+                </div>
+                <div class="bg-light rounded p-3 mb-3">
+                  <small class="text-muted">IF</small>
+                  <p class="mb-1"><code>topic.masteryLevel >= 90%</code></p>
+                  <small class="text-muted">THEN</small>
+                  <p class="mb-0"><code>celebrateAchievement()</code>, <code>suggestNextTopic()</code></p>
+                </div>
+                <small class="text-muted">Never triggered</small>
+              </div>
+              <div class="card-footer bg-transparent">
+                <button class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i> Edit</button>
+                <button class="btn btn-sm btn-success"><i class="bi bi-play"></i> Activate</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Add Rule Modal -->
+  <div class="modal fade" id="addRuleModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-plus-lg me-2"></i>Add Logic Rule</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label">Rule Name</label>
+              <input type="text" class="form-control" placeholder="e.g., Struggling Student Support">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Condition (IF)</label>
+              <textarea class="form-control font-monospace" rows="2" placeholder="student.incorrectAnswers >= 3"></textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Action (THEN)</label>
+              <textarea class="form-control font-monospace" rows="2" placeholder="switchToSupportiveMode()"></textarea>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Priority</label>
+              <select class="form-select">
+                <option>High</option>
+                <option selected>Medium</option>
+                <option>Low</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Status</label>
+              <select class="form-select">
+                <option>Active</option>
+                <option>Inactive</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary">Save Rule</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

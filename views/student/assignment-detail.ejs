@@ -1,0 +1,65 @@
+<%- include('../layouts/student', { body: `
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-4">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="${typeof basePath !== 'undefined' ? basePath : ''}/student/assignments">Assignments</a></li>
+    <li class="breadcrumb-item active">${assignment.title}</li>
+  </ol>
+</nav>
+
+<div class="row g-4">
+  <!-- Assignment Details -->
+  <div class="col-lg-8">
+    <div class="card mb-4">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">${assignment.title}</h5>
+        <span class="badge ${mySubmission ? (mySubmission.status === 'graded' ? 'bg-success' : 'bg-info') : (assignment.dueDate && new Date(assignment.dueDate) < new Date() ? 'bg-danger' : 'bg-warning text-dark')}">${mySubmission ? (mySubmission.status === 'graded' ? 'Graded' : 'Submitted') : (assignment.dueDate && new Date(assignment.dueDate) < new Date() ? 'Overdue' : 'Pending')}</span>
+      </div>
+      <div class="card-body">
+        <div class="d-flex gap-2 flex-wrap mb-3">
+          <span class="badge bg-secondary">${assignment.type}</span>
+          <span class="badge bg-primary">${assignment.maxPoints} points max</span>
+          ${assignment.allowLate ? '<span class="badge bg-success">Late OK</span>' : '<span class="badge bg-warning text-dark">No late</span>'}
+        </div>
+
+        <p class="text-muted mb-3">
+          <strong>Subject:</strong> ${assignment.topic?.subject?.name || 'N/A'} - ${assignment.topic?.name || 'N/A'}
+          ${assignment.lesson ? '<br><strong>Related Lesson:</strong> ' + assignment.lesson.title : ''}
+        </p>
+
+        <hr>
+
+        <h6><i class="bi bi-list-task me-2"></i>Instructions</h6>
+        <div class="p-3 bg-light rounded" style="white-space: pre-wrap;">${assignment.instructions}</div>
+      </div>
+    </div>
+
+    <!-- Submission Form -->
+    ${!mySubmission || mySubmission.status !== 'graded' ? '<div class="card"><div class="card-header bg-white"><h6 class="mb-0"><i class="bi bi-upload me-2"></i>' + (mySubmission ? 'Update Your Submission' : 'Submit Your Work') + '</h6></div><div class="card-body"><form action="' + (typeof basePath !== 'undefined' ? basePath : '') + '/student/assignments/' + assignment.id + '/submit" method="POST"><div class="mb-3"><label class="form-label">Your Response</label><textarea name="content" class="form-control" rows="10" placeholder="Enter your work here..." required>' + (mySubmission?.content || '') + '</textarea><small class="text-muted">You can update your submission until it has been graded.</small></div><button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-2"></i>' + (mySubmission ? 'Update Submission' : 'Submit Assignment') + '</button></form></div></div>' : ''}
+
+    <!-- Submitted Work (if graded) -->
+    ${mySubmission && mySubmission.status === 'graded' ? '<div class="card"><div class="card-header bg-white"><h6 class="mb-0"><i class="bi bi-file-text me-2"></i>Your Submission</h6></div><div class="card-body"><div class="p-3 bg-light rounded" style="white-space: pre-wrap;">' + (mySubmission.content || 'No content') + '</div></div></div>' : ''}
+  </div>
+
+  <!-- Sidebar -->
+  <div class="col-lg-4">
+    <!-- Due Date Card -->
+    <div class="card mb-4">
+      <div class="card-body text-center">
+        <i class="bi bi-calendar-event fs-1 text-${assignment.dueDate && new Date(assignment.dueDate) < new Date() ? 'danger' : 'primary'} mb-2"></i>
+        <h6 class="mb-1">Due Date</h6>
+        ${assignment.dueDate ? '<p class="fs-5 mb-0 ' + (new Date(assignment.dueDate) < new Date() ? 'text-danger' : '') + '">' + new Date(assignment.dueDate).toLocaleDateString() + '</p><p class="text-muted mb-0">' + new Date(assignment.dueDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) + '</p>' + (new Date(assignment.dueDate) < new Date() ? '<span class="badge bg-danger mt-2">Past Due</span>' : '') : '<p class="text-muted mb-0">No due date</p>'}
+      </div>
+    </div>
+
+    <!-- Grade Card (if graded) -->
+    ${mySubmission && mySubmission.status === 'graded' ? '<div class="card mb-4 border-success"><div class="card-body text-center"><i class="bi bi-award fs-1 text-success mb-2"></i><h6 class="mb-2">Your Grade</h6><div class="fs-1 fw-bold text-success">' + mySubmission.grade + '<small class="fs-5 text-muted">/' + assignment.maxPoints + '</small></div><div class="progress mt-2" style="height: 8px;"><div class="progress-bar bg-success" style="width: ' + Math.round((mySubmission.grade/assignment.maxPoints)*100) + '%"></div></div><p class="text-muted mt-2 mb-0">' + Math.round((mySubmission.grade/assignment.maxPoints)*100) + '%</p>' + (mySubmission.gradedBy ? '<small class="text-muted">Graded by ' + mySubmission.gradedBy.firstName + ' ' + mySubmission.gradedBy.lastName + '</small>' : '') + '</div></div>' : ''}
+
+    <!-- Feedback (if any) -->
+    ${mySubmission?.feedback ? '<div class="card mb-4"><div class="card-header bg-white"><h6 class="mb-0"><i class="bi bi-chat-quote me-2"></i>Teacher Feedback</h6></div><div class="card-body"><div style="white-space: pre-wrap;">' + mySubmission.feedback + '</div></div></div>' : ''}
+
+    <!-- Submission Status -->
+    ${mySubmission ? '<div class="card"><div class="card-body"><h6 class="mb-3">Submission Details</h6><p class="mb-2"><strong>Submitted:</strong><br>' + new Date(mySubmission.submittedAt).toLocaleString() + '</p>' + (mySubmission.isLate ? '<span class="badge bg-warning text-dark">Late Submission</span>' : '<span class="badge bg-success">On Time</span>') + '</div></div>' : ''}
+  </div>
+</div>
+`, activePage: 'assignments', pageTitle: assignment.title, branding, user }) %>

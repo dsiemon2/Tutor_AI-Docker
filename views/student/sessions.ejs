@@ -1,0 +1,33 @@
+<%- include('../layouts/student', { body: `
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h4 class="mb-1">Session History</h4>
+    <p class="text-muted mb-0">Review your past tutoring sessions</p>
+  </div>
+  <a href="${typeof basePath !== 'undefined' ? basePath : ''}/student/tutor" class="btn btn-primary">
+    <i class="bi bi-plus-lg me-2"></i>New Session
+  </a>
+</div>
+
+<div class="card">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Subject</th>
+            <th>Topic</th>
+            <th>Date</th>
+            <th>Duration</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${sessions && sessions.length > 0 ? sessions.map(session => '<tr><td><i class="bi bi-book me-2 text-primary"></i>' + (session.subject?.name || 'General') + '</td><td class="text-muted">' + (session.topic?.name || '-') + '</td><td>' + new Date(session.startedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + '</td><td>' + (session.duration ? Math.floor(session.duration / 60) + ' min' : '-') + '</td><td><span class="badge bg-' + (session.status === 'COMPLETED' ? 'success' : session.status === 'ACTIVE' ? 'primary' : 'secondary') + '">' + session.status + '</span></td><td class="text-end"><a href="' + (typeof basePath !== 'undefined' ? basePath : '') + '/student/sessions/' + session.id + '" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a></td></tr>').join('') : '<tr><td colspan="6" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-1 d-block mb-3"></i>No sessions yet<br><small>Start a tutoring session to see your history</small></td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+`, activePage: 'sessions', pageTitle: 'Session History' }) %>

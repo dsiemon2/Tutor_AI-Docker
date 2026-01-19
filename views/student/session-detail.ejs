@@ -1,0 +1,53 @@
+<%- include('../layouts/student', { body: `
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-4">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="${typeof basePath !== 'undefined' ? basePath : ''}/student/sessions">Sessions</a></li>
+    <li class="breadcrumb-item active">Session Details</li>
+  </ol>
+</nav>
+
+<!-- Session Header -->
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="row align-items-center">
+      <div class="col-md-8">
+        <h4 class="mb-2">
+          <i class="bi bi-book me-2 text-primary"></i>
+          ${session.subject?.name || 'General Tutoring'}
+        </h4>
+        <p class="text-muted mb-0">
+          ${session.topic?.name ? '<span class="badge bg-primary me-2">' + session.topic.name + '</span>' : ''}
+          ${new Date(session.startedAt).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+          ${session.duration ? ' &bull; ' + Math.floor(session.duration / 60) + ' minutes' : ''}
+        </p>
+      </div>
+      <div class="col-md-4 text-md-end mt-3 mt-md-0">
+        <span class="badge bg-${session.status === 'COMPLETED' ? 'success' : session.status === 'ACTIVE' ? 'primary' : 'secondary'} fs-6">
+          ${session.status}
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Messages -->
+<div class="card">
+  <div class="card-header">
+    <h5 class="mb-0"><i class="bi bi-chat-dots me-2"></i>Conversation</h5>
+  </div>
+  <div class="card-body p-0">
+    ${session.messages && session.messages.length > 0 ? '<div class="list-group list-group-flush">' + session.messages.map(msg => '<div class="list-group-item ' + (msg.role === 'USER' ? 'bg-light' : '') + '"><div class="d-flex gap-3"><div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px; background: ' + (msg.role === 'USER' ? '#e2e8f0' : '#0ea5e920') + ';"><i class="bi bi-' + (msg.role === 'USER' ? 'person' : 'robot') + ' ' + (msg.role === 'USER' ? 'text-secondary' : 'text-primary') + '"></i></div><div class="flex-grow-1"><div class="d-flex justify-content-between"><strong>' + (msg.role === 'USER' ? 'You' : 'TutorAI') + '</strong><small class="text-muted">' + new Date(msg.createdAt).toLocaleTimeString() + '</small></div><div class="mt-1">' + msg.content + '</div></div></div></div>').join('') + '</div>' : '<div class="text-center py-5 text-muted"><i class="bi bi-chat fs-1 d-block mb-3"></i><p>No messages in this session</p></div>'}
+  </div>
+</div>
+
+<!-- Action Buttons -->
+<div class="mt-4 d-flex gap-2">
+  <a href="${typeof basePath !== 'undefined' ? basePath : ''}/student/tutor?topicId=${session.topic?.id || ''}" class="btn btn-primary">
+    <i class="bi bi-arrow-repeat me-2"></i>Continue Learning
+  </a>
+  <a href="${typeof basePath !== 'undefined' ? basePath : ''}/student/sessions" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left me-2"></i>Back to History
+  </a>
+</div>
+`, activePage: 'sessions', pageTitle: 'Session Details' }) %>
