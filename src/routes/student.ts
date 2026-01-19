@@ -65,6 +65,96 @@ function getEffectiveStudentId(session: any): string | null {
   return null;
 }
 
+// Helper: Get class IDs that a user has access to (for teachers/admins)
+async function getAccessibleClassIds(session: any): Promise<string[]> {
+  const { role, userId, schoolId, districtId } = session;
+
+  // TEACHER: get classes they teach
+  if (role === 'TEACHER') {
+    const teacherClasses = await prisma.classTeacher.findMany({
+      where: { teacherId: userId },
+      select: { classId: true }
+    });
+    return teacherClasses.map(tc => tc.classId);
+  }
+
+  // DEPARTMENT_HEAD, VP, PRINCIPAL: get all classes in their school
+  if (['DEPARTMENT_HEAD', 'VICE_PRINCIPAL', 'PRINCIPAL'].includes(role) && schoolId) {
+    const schoolClasses = await prisma.class.findMany({
+      where: { schoolId },
+      select: { id: true }
+    });
+    return schoolClasses.map(c => c.id);
+  }
+
+  // DISTRICT_ADMIN: get all classes in their district
+  if (role === 'DISTRICT_ADMIN' && districtId) {
+    const districtClasses = await prisma.class.findMany({
+      where: { school: { districtId } },
+      select: { id: true }
+    });
+    return districtClasses.map(c => c.id);
+  }
+
+  // SUPER_ADMIN: get all classes
+  if (role === 'SUPER_ADMIN') {
+    const allClasses = await prisma.class.findMany({
+      select: { id: true }
+    });
+    return allClasses.map(c => c.id);
+  }
+
+  return [];
+}
+
+// Helper: Get student IDs that a user has access to (for viewing data)
+async function getAccessibleStudentIds(session: any): Promise<string[]> {
+  const { role, userId, schoolId, districtId } = session;
+
+  // TEACHER: get students in their classes
+  if (role === 'TEACHER') {
+    const teacherClasses = await prisma.classTeacher.findMany({
+      where: { teacherId: userId },
+      select: { classId: true }
+    });
+    const classIds = teacherClasses.map(tc => tc.classId);
+    const students = await prisma.classStudent.findMany({
+      where: { classId: { in: classIds } },
+      select: { studentId: true }
+    });
+    return [...new Set(students.map(s => s.studentId))];
+  }
+
+  // School leadership: get all students in their school
+  if (['DEPARTMENT_HEAD', 'VICE_PRINCIPAL', 'PRINCIPAL'].includes(role) && schoolId) {
+    const students = await prisma.user.findMany({
+      where: { schoolId, role: 'STUDENT' },
+      select: { id: true }
+    });
+    return students.map(s => s.id);
+  }
+
+  // DISTRICT_ADMIN: get all students in their district
+  if (role === 'DISTRICT_ADMIN' && districtId) {
+    const students = await prisma.user.findMany({
+      where: { school: { districtId }, role: 'STUDENT' },
+      select: { id: true }
+    });
+    return students.map(s => s.id);
+  }
+
+  // SUPER_ADMIN: get all students
+  if (role === 'SUPER_ADMIN') {
+    const students = await prisma.user.findMany({
+      where: { role: 'STUDENT' },
+      select: { id: true }
+    });
+    return students.map(s => s.id);
+  }
+
+  return [];
+}
+
 // Helper: Check view-as permission based on role
 async function checkViewAsPermission(session: any, student: any): Promise<boolean> {
   const { role, schoolId, districtId, userId } = session;
@@ -685,15 +775,36 @@ router.get('/sessions', async (req, res) => {
       include: { school: true }
     });
 
-    const sessions = effectiveStudentId ? await prisma.tutoringSession.findMany({
-      where: { studentId: effectiveStudentId },
-      include: {
-        subject: { include: { category: true } },
-        topic: true,
-        messages: { take: 1 }
-      },
-      orderBy: { startedAt: 'desc' }
-    }) : [];
+    let sessions: any[] = [];
+
+    if (effectiveStudentId) {
+      // Viewing as a specific student - show their sessions
+      sessions = await prisma.tutoringSession.findMany({
+        where: { studentId: effectiveStudentId },
+        include: {
+          subject: { include: { category: true } },
+          topic: true,
+          student: true,
+          messages: { take: 1 }
+        },
+        orderBy: { startedAt: 'desc' }
+      });
+    } else if (canViewAs) {
+      // Admin/Teacher viewing without specific student - show all accessible sessions
+      const accessibleStudentIds = await getAccessibleStudentIds(req.session);
+
+      sessions = await prisma.tutoringSession.findMany({
+        where: accessibleStudentIds.length > 0 ? { studentId: { in: accessibleStudentIds } } : {},
+        include: {
+          subject: { include: { category: true } },
+          topic: true,
+          student: true,
+          messages: { take: 1 }
+        },
+        orderBy: { startedAt: 'desc' },
+        take: 50
+      });
+    }
 
     res.render('student/sessions', {
       title: 'Session History - TutorAI',
@@ -728,17 +839,39 @@ router.get('/sessions/:id', async (req, res) => {
       include: { school: true }
     });
 
-    const session = effectiveStudentId ? await prisma.tutoringSession.findFirst({
-      where: {
-        id: req.params.id,
-        studentId: effectiveStudentId
-      },
-      include: {
-        subject: { include: { category: true } },
-        topic: true,
-        messages: { orderBy: { createdAt: 'asc' } }
-      }
-    }) : null;
+    let session: any = null;
+
+    if (effectiveStudentId) {
+      // Viewing as a specific student - get their session
+      session = await prisma.tutoringSession.findFirst({
+        where: {
+          id: req.params.id,
+          studentId: effectiveStudentId
+        },
+        include: {
+          subject: { include: { category: true } },
+          topic: true,
+          student: true,
+          messages: { orderBy: { createdAt: 'asc' } }
+        }
+      });
+    } else if (canViewAs) {
+      // Admin/Teacher viewing - check if they have access to this session's student
+      const accessibleStudentIds = await getAccessibleStudentIds(req.session);
+
+      session = await prisma.tutoringSession.findFirst({
+        where: {
+          id: req.params.id,
+          studentId: accessibleStudentIds.length > 0 ? { in: accessibleStudentIds } : undefined
+        },
+        include: {
+          subject: { include: { category: true } },
+          topic: true,
+          student: true,
+          messages: { orderBy: { createdAt: 'asc' } }
+        }
+      });
+    }
 
     if (!session) {
       return res.status(404).render('errors/404', {
@@ -780,19 +913,44 @@ router.get('/progress', async (req, res) => {
       include: { school: true }
     });
 
-    const progress = effectiveStudentId ? await prisma.studentProgress.findMany({
-      where: { studentId: effectiveStudentId },
-      include: {
-        topic: {
-          include: {
-            subject: {
-              include: { category: true }
+    let progress: any[] = [];
+
+    if (effectiveStudentId) {
+      // Viewing as a specific student - show their progress
+      progress = await prisma.studentProgress.findMany({
+        where: { studentId: effectiveStudentId },
+        include: {
+          student: true,
+          topic: {
+            include: {
+              subject: {
+                include: { category: true }
+              }
             }
           }
-        }
-      },
-      orderBy: { lastActivityAt: 'desc' }
-    }) : [];
+        },
+        orderBy: { lastActivityAt: 'desc' }
+      });
+    } else if (canViewAs) {
+      // Admin/Teacher viewing without specific student - show all accessible progress
+      const accessibleStudentIds = await getAccessibleStudentIds(req.session);
+
+      progress = await prisma.studentProgress.findMany({
+        where: accessibleStudentIds.length > 0 ? { studentId: { in: accessibleStudentIds } } : {},
+        include: {
+          student: true,
+          topic: {
+            include: {
+              subject: {
+                include: { category: true }
+              }
+            }
+          }
+        },
+        orderBy: { lastActivityAt: 'desc' },
+        take: 100
+      });
+    }
 
     // Group by subject
     const progressBySubject: Record<string, any[]> = {};
@@ -870,14 +1028,13 @@ router.get('/assignments', async (req, res) => {
     let assignments: any[] = [];
 
     if (effectiveStudentId) {
-      // Get student's class enrollments
+      // Viewing as a specific student - show their assignments
       const enrollments = await prisma.classStudent.findMany({
         where: { studentId: effectiveStudentId },
         select: { classId: true }
       });
       const classIds = enrollments.map(e => e.classId);
 
-      // Get assignments for student's classes OR individual assignments
       assignments = await prisma.assignment.findMany({
         where: {
           isActive: true,
@@ -890,6 +1047,7 @@ router.get('/assignments', async (req, res) => {
           topic: { include: { subject: true } },
           class: true,
           lesson: true,
+          student: true,
           submissions: {
             where: { studentId: effectiveStudentId }
           }
@@ -898,6 +1056,31 @@ router.get('/assignments', async (req, res) => {
           { dueDate: 'asc' },
           { createdAt: 'desc' }
         ]
+      });
+    } else if (canViewAs) {
+      // Admin/Teacher viewing without specific student - show all accessible assignments
+      const accessibleClassIds = await getAccessibleClassIds(req.session);
+
+      assignments = await prisma.assignment.findMany({
+        where: {
+          isActive: true,
+          classId: accessibleClassIds.length > 0 ? { in: accessibleClassIds } : undefined
+        },
+        include: {
+          topic: { include: { subject: true } },
+          class: true,
+          lesson: true,
+          student: true,
+          submissions: {
+            include: { student: true },
+            take: 5
+          }
+        },
+        orderBy: [
+          { dueDate: 'asc' },
+          { createdAt: 'desc' }
+        ],
+        take: 50
       });
     }
 
@@ -1045,14 +1228,13 @@ router.get('/quizzes', async (req, res) => {
     let quizzes: any[] = [];
 
     if (effectiveStudentId) {
-      // Get student's class enrollments
+      // Viewing as a specific student - show their quizzes
       const enrollments = await prisma.classStudent.findMany({
         where: { studentId: effectiveStudentId },
         select: { classId: true }
       });
       const classIds = enrollments.map(e => e.classId);
 
-      // Get quizzes for student's classes OR quizzes with no class (all students)
       quizzes = await prisma.quiz.findMany({
         where: {
           isActive: true,
@@ -1071,6 +1253,31 @@ router.get('/quizzes', async (req, res) => {
           }
         },
         orderBy: { createdAt: 'desc' }
+      });
+    } else if (canViewAs) {
+      // Admin/Teacher viewing without specific student - show all accessible quizzes
+      const accessibleClassIds = await getAccessibleClassIds(req.session);
+
+      quizzes = await prisma.quiz.findMany({
+        where: {
+          isActive: true,
+          OR: [
+            { classId: accessibleClassIds.length > 0 ? { in: accessibleClassIds } : undefined },
+            { classId: null }
+          ]
+        },
+        include: {
+          topic: { include: { subject: true } },
+          class: true,
+          questions: true,
+          attempts: {
+            include: { student: true },
+            orderBy: { attemptNum: 'desc' },
+            take: 5
+          }
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 50
       });
     }
 

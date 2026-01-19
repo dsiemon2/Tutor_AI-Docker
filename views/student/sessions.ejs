@@ -15,6 +15,7 @@
       <table class="table table-hover mb-0">
         <thead class="table-light">
           <tr>
+            ${!isViewingAs && canViewAs ? '<th>Student</th>' : ''}
             <th>Subject</th>
             <th>Topic</th>
             <th>Date</th>
@@ -24,7 +25,7 @@
           </tr>
         </thead>
         <tbody>
-          ${sessions && sessions.length > 0 ? sessions.map(session => '<tr><td><i class="bi bi-book me-2 text-primary"></i>' + (session.subject?.name || 'General') + '</td><td class="text-muted">' + (session.topic?.name || '-') + '</td><td>' + new Date(session.startedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + '</td><td>' + (session.duration ? Math.floor(session.duration / 60) + ' min' : '-') + '</td><td><span class="badge bg-' + (session.status === 'COMPLETED' ? 'success' : session.status === 'ACTIVE' ? 'primary' : 'secondary') + '">' + session.status + '</span></td><td class="text-end"><a href="' + (typeof basePath !== 'undefined' ? basePath : '') + '/student/sessions/' + session.id + '" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a></td></tr>').join('') : '<tr><td colspan="6" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-1 d-block mb-3"></i>No sessions yet<br><small>Start a tutoring session to see your history</small></td></tr>'}
+          ${sessions && sessions.length > 0 ? sessions.map(session => '<tr>' + (!isViewingAs && canViewAs ? '<td><i class="bi bi-person me-2 text-secondary"></i>' + (session.student ? session.student.firstName + ' ' + session.student.lastName : '-') + '</td>' : '') + '<td><i class="bi bi-book me-2 text-primary"></i>' + (session.subject?.name || 'General') + '</td><td class="text-muted">' + (session.topic?.name || '-') + '</td><td>' + new Date(session.startedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + '</td><td>' + (session.duration ? Math.floor(session.duration / 60) + ' min' : '-') + '</td><td><span class="badge bg-' + (session.status === 'COMPLETED' ? 'success' : session.status === 'ACTIVE' ? 'primary' : 'secondary') + '">' + session.status + '</span></td><td class="text-end"><a href="' + (typeof basePath !== 'undefined' ? basePath : '') + '/student/sessions/' + session.id + '" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a></td></tr>').join('') : '<tr><td colspan="' + (!isViewingAs && canViewAs ? '7' : '6') + '" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-1 d-block mb-3"></i>No sessions yet<br><small>Start a tutoring session to see your history</small></td></tr>'}
         </tbody>
       </table>
     </div>
