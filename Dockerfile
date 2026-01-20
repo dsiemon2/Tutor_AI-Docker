@@ -1,7 +1,7 @@
 FROM node:20-slim
 
-# Install OpenSSL for Prisma and build tools for bcrypt
-RUN apt-get update && apt-get install -y openssl python3 make g++ && rm -rf /var/lib/apt/lists/*
+# Install OpenSSL for Prisma, build tools for bcrypt, and wget for health checks
+RUN apt-get update && apt-get install -y openssl python3 make g++ wget && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 

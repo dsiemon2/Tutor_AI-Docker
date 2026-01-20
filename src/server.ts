@@ -75,6 +75,9 @@ app.use((req, res, next) => {
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+app.get('/healthz', (req, res) => {
+  res.status(200).send('OK');
+});
 app.get(`${config.basePath}/health`, (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });

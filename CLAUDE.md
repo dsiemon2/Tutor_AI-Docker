@@ -55,7 +55,7 @@ TutorAI is a multi-tenant K-12 AI tutoring platform that provides personalized l
 ## Tech Stack
 
 - **Backend**: Node.js + Express + TypeScript
-- **Database**: SQLite (Prisma ORM)
+- **Database**: PostgreSQL (Prisma ORM)
 - **Sessions**: Redis
 - **Frontend**: EJS templates + Bootstrap 5
 - **Voice**: OpenAI Realtime API

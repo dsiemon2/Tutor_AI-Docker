@@ -1262,7 +1262,7 @@ router.get('/quizzes', async (req, res) => {
     const isViewingAs = !!req.session.viewAsStudentId;
     const canViewAs = canViewAsStudent(req.session.role || '');
 
-    logger.debug({ req.session.role }, 'DEBUG quizzes session.role:');
+    logger.debug({ sessionRole: req.session.role }, 'DEBUG quizzes session.role:');
     logger.debug({ effectiveStudentId }, 'DEBUG quizzes effectiveStudentId:');
     logger.debug({ canViewAs }, 'DEBUG quizzes canViewAs:');
 
@@ -1303,7 +1303,7 @@ router.get('/quizzes', async (req, res) => {
     } else if (canViewAs) {
       // Admin/Teacher viewing without specific student - show all accessible quizzes
       const accessibleClassIds = await getAccessibleClassIds(req.session);
-      logger.debug({ accessibleClassIds.length }, 'DEBUG quizzes accessibleClassIds:');
+      logger.debug({ classCount: accessibleClassIds.length }, 'DEBUG quizzes accessibleClassIds:');
 
       quizzes = await prisma.quiz.findMany({
         where: {
@@ -1341,7 +1341,7 @@ router.get('/quizzes', async (req, res) => {
         orderBy: { createdAt: 'desc' },
         take: 50
       });
-      logger.debug({ quizzes.length }, 'DEBUG quizzes fallback quizzes found:');
+      logger.debug({ quizCount: quizzes.length }, 'DEBUG quizzes fallback quizzes found:');
     }
 
     res.render('student/quizzes', {

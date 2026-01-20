@@ -17,7 +17,8 @@
     "docker:build": "docker compose build --no-cache",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
-    "docker:logs": "docker compose logs -f"
+    "docker:logs": "docker compose logs -f",
+    "migrate:sqlite-to-postgres": "tsx scripts/migrate-sqlite-to-postgres.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

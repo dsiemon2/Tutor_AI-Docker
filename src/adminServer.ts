@@ -43,6 +43,11 @@ app.use((req, res, next) => {
 app.use('/admin', adminRoutes);
 app.use(`${config.basePath}/admin`, adminRoutes);
 
+// Health check endpoint for Docker
+app.get('/healthz', (req, res) => {
+  res.status(200).send('OK');
+});
+
 // Redirect root to admin with token
 app.get('/', (req, res) => {
   res.redirect(`${config.basePath}/admin?token=${config.adminToken}`);
