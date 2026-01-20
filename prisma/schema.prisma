@@ -867,3 +867,44 @@ model TrialCode {
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 }
+
+// ============================================
+// PAYMENT SETTINGS (Unified gateway config)
+// ============================================
+
+model PaymentSettings {
+  id                      String   @id @default(cuid())
+  enabled                 Boolean  @default(false)
+  // Stripe
+  stripeEnabled           Boolean  @default(false)
+  stripePublishableKey    String   @default("")
+  stripeSecretKey         String   @default("")
+  stripeTestMode          Boolean  @default(true)
+  stripeWebhookSecret     String   @default("")
+  // PayPal
+  paypalEnabled           Boolean  @default(false)
+  paypalClientId          String   @default("")
+  paypalClientSecret      String   @default("")
+  paypalSandbox           Boolean  @default(true)
+  paypalWebhookId         String   @default("")
+  // Square
+  squareEnabled           Boolean  @default(false)
+  squareAppId             String   @default("")
+  squareAccessToken       String   @default("")
+  squareLocationId        String   @default("")
+  squareSandbox           Boolean  @default(true)
+  squareWebhookSignature  String   @default("")
+  // Braintree
+  braintreeEnabled        Boolean  @default(false)
+  braintreeMerchantId     String   @default("")
+  braintreePublicKey      String   @default("")
+  braintreePrivateKey     String   @default("")
+  braintreeTestMode       Boolean  @default(true)
+  // Authorize.net
+  authorizeEnabled        Boolean  @default(false)
+  authorizeApiLoginId     String   @default("")
+  authorizeTransactionKey String   @default("")
+  authorizeTestMode       Boolean  @default(true)
+  authorizeSignatureKey   String   @default("")
+  updatedAt               DateTime @updatedAt
+}

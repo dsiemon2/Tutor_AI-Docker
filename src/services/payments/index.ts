@@ -1,11 +1,16 @@
-// @ts-nocheck
 // ===========================================
-// Payment Services Index
+// Payment Services - Main Export
 // ===========================================
 
-export * as stripe from './stripe.service';
-export * as paypal from './paypal.service';
-export * as braintree from './braintree.service';
-export * as square from './square.service';
-export * as authorize from './authorize.service';
+// Individual service exports
+export * as stripeService from './stripe.service';
+export * as paypalService from './paypal.service';
+export * as squareService from './square.service';
+export * as braintreeService from './braintree.service';
+export * as authorizeService from './authorize.service';
+
+// Unified payment service
 export * from './payment.service';
+
+// Re-export types
+export type { PaymentProvider, PaymentResult, RefundResult } from './payment.service';

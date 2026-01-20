@@ -4,6 +4,8 @@
 **Port:** 8091
 **URL Prefix:** /TutorAI/
 **Status:** Active (Development)
+**Live URL:** https://www.tutorableai.com
+**Last Updated:** 2026-01-19
 
 ---
 
@@ -377,6 +379,41 @@ src/services/payments/
 ├── payment.service.ts      # Unified payment orchestrator
 └── index.ts                # Service exports
 ```
+
+## Logging
+
+Comprehensive Winston logging with daily rotation:
+
+```
+src/utils/logger.ts
+```
+
+### Features
+- **Console Output**: Colorized logs in all environments
+- **File Rotation**: Daily log files in production
+- **Error Logs**: Separate error-level log files (`error-%DATE%.log`)
+- **Combined Logs**: All levels in combined files (`combined-%DATE%.log`)
+- **HTTP Logging**: Morgan stream integration for request logging
+- **Stack Traces**: Full stack traces for errors
+- **Retention**: 14 days, 20MB max per file
+
+### Log Levels
+- `error` - Error conditions
+- `warn` - Warning conditions
+- `info` - Informational messages
+- `http` - HTTP request logging
+- `debug` - Debug information
+
+### Usage
+```typescript
+import logger from '../utils/logger';
+
+logger.info('Server started on port 8091');
+logger.error('Database connection failed', { error: err.message });
+logger.debug({ userId, action }, 'User action logged');
+```
+
+---
 
 ## Docker Architecture
 

@@ -38,7 +38,10 @@
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(docker ps:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(docker logs:*)",
+      "Bash(timeout:*)",
+      "Bash(docker exec:*)"
     ]
   }
 }
