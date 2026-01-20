@@ -2,6 +2,7 @@
 // Redis client for session storage
 
 import Redis from 'ioredis';
+import { logger } from '../utils/logger';
 
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 
@@ -17,19 +18,19 @@ export const redis = new Redis(REDIS_URL, {
 
 // Error handling
 redis.on('error', (err) => {
-  console.error('Redis connection error:', err);
+  logger.error({ error: err.message }, 'Redis connection error');
 });
 
 redis.on('connect', () => {
-  console.log('Redis connected successfully');
+  logger.info({}, 'Redis connected successfully');
 });
 
 redis.on('ready', () => {
-  console.log('Redis ready to accept commands');
+  logger.info({}, 'Redis ready to accept commands');
 });
 
 redis.on('close', () => {
-  console.log('Redis connection closed');
+  logger.info({}, 'Redis connection closed');
 });
 
 // Connect to Redis

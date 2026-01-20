@@ -214,7 +214,7 @@ router.get('/', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Admin dashboard error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Admin dashboard error:');
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -240,7 +240,7 @@ router.get('/users', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Users error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Users error:');
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -265,7 +265,7 @@ router.get('/schools', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Schools error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Schools error:');
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -295,7 +295,7 @@ router.get('/subjects', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Subjects error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Subjects error:');
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -319,7 +319,7 @@ router.get('/greeting', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Greeting error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Greeting error:');
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -347,7 +347,7 @@ router.get('/ai-config', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('AI config error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'AI config error:');
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -369,7 +369,7 @@ router.get('/voices', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Voices error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Voices error:');
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -393,7 +393,7 @@ router.get('/settings', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Settings error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Settings error:');
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -409,7 +409,7 @@ router.get('/analytics', async (req, res) => {
       basePath: config.basePath
     });
   } catch (error) {
-    console.error('Analytics error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Analytics error:');
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -425,7 +425,7 @@ router.get('/sessions', async (req, res) => {
       basePath: config.basePath
     });
   } catch (error) {
-    console.error('Sessions error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Sessions error:');
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -441,7 +441,7 @@ router.get('/ai-tools', async (req, res) => {
       basePath: config.basePath
     });
   } catch (error) {
-    console.error('AI Tools error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'AI Tools error:');
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -457,7 +457,7 @@ router.get('/ai-agents', async (req, res) => {
       basePath: config.basePath
     });
   } catch (error) {
-    console.error('AI Agents error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'AI Agents error:');
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -473,7 +473,7 @@ router.get('/knowledge-base', async (req, res) => {
       basePath: config.basePath
     });
   } catch (error) {
-    console.error('Knowledge Base error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Knowledge Base error:');
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -489,7 +489,7 @@ router.get('/functions', async (req, res) => {
       basePath: config.basePath
     });
   } catch (error) {
-    console.error('Functions error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Functions error:');
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -505,7 +505,7 @@ router.get('/logic-rules', async (req, res) => {
       basePath: config.basePath
     });
   } catch (error) {
-    console.error('Logic Rules error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Logic Rules error:');
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -521,7 +521,7 @@ router.get('/sms-settings', async (req, res) => {
       basePath: config.basePath
     });
   } catch (error) {
-    console.error('SMS Settings error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'SMS Settings error:');
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -537,7 +537,7 @@ router.get('/webhooks', async (req, res) => {
       basePath: config.basePath
     });
   } catch (error) {
-    console.error('Webhooks error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Webhooks error:');
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -558,7 +558,7 @@ router.get('/payment-gateways', async (req, res) => {
       gateways
     });
   } catch (error) {
-    console.error('Payment gateways error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Payment gateways error:');
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -595,7 +595,7 @@ router.get('/subscriptions', async (req, res) => {
       stats
     });
   } catch (error) {
-    console.error('Subscriptions error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Subscriptions error:');
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -611,7 +611,7 @@ router.get('/features', async (req, res) => {
       basePath: config.basePath
     });
   } catch (error) {
-    console.error('Features error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Features error:');
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -633,7 +633,7 @@ router.post('/greeting', async (req, res) => {
 
     res.json({ success: true });
   } catch (error) {
-    console.error('Update greeting error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Update greeting error:');
     res.status(500).json({ error: 'Failed to update greeting' });
   }
 });
@@ -668,7 +668,7 @@ router.post('/ai-config', async (req, res) => {
 
     res.json({ success: true });
   } catch (error) {
-    console.error('Update AI config error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Update AI config error:');
     res.status(500).json({ error: 'Failed to update AI config' });
   }
 });
@@ -686,7 +686,7 @@ router.post('/branding', async (req, res) => {
 
     res.json({ success: true });
   } catch (error) {
-    console.error('Update branding error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Update branding error:');
     res.status(500).json({ error: 'Failed to update branding' });
   }
 });
@@ -704,7 +704,7 @@ router.post('/store-info', async (req, res) => {
 
     res.json({ success: true });
   } catch (error) {
-    console.error('Update store info error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Update store info error:');
     res.status(500).json({ error: 'Failed to update store info' });
   }
 });
@@ -726,7 +726,7 @@ router.post('/languages/:code/toggle', async (req, res) => {
 
     res.json({ success: true, enabled: !language.enabled });
   } catch (error) {
-    console.error('Toggle language error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Toggle language error:');
     res.status(500).json({ error: 'Failed to toggle language' });
   }
 });
@@ -789,7 +789,7 @@ router.post('/payment-gateways/:provider', async (req, res) => {
 
     res.json({ success: true });
   } catch (error) {
-    console.error('Update payment gateway error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Update payment gateway error:');
     res.status(500).json({ error: 'Failed to update payment gateway' });
   }
 });
@@ -834,7 +834,7 @@ router.post('/payment-gateways/test/:provider', async (req, res) => {
       res.json({ success: false, message: `${provider} is missing required credentials` });
     }
   } catch (error) {
-    console.error('Test gateway error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Test gateway error:');
     res.status(500).json({ success: false, message: 'Connection test failed' });
   }
 });
@@ -857,7 +857,7 @@ router.post('/subscriptions/plans', async (req, res) => {
 
     res.json({ success: true });
   } catch (error) {
-    console.error('Add subscription plan error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Add subscription plan error:');
     res.status(500).json({ error: 'Failed to add subscription plan' });
   }
 });
@@ -891,7 +891,7 @@ router.get('/trial-codes', async (req, res) => {
       stats
     });
   } catch (error) {
-    console.error('Trial codes page error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Trial codes page error:');
     res.status(500).send('Error loading trial codes');
   }
 });
@@ -920,7 +920,7 @@ router.post('/trial-codes', async (req, res) => {
 
     res.json({ success: true, message: 'Trial code created and sent' });
   } catch (error) {
-    console.error('Create trial code error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Create trial code error:');
     res.status(500).json({ error: 'Failed to create trial code' });
   }
 });
@@ -933,7 +933,7 @@ router.post('/trial-codes/:id/revoke', async (req, res) => {
     });
     res.json({ success: true });
   } catch (error) {
-    console.error('Revoke trial code error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Revoke trial code error:');
     res.status(500).json({ error: 'Failed to revoke trial code' });
   }
 });
@@ -955,7 +955,7 @@ router.post('/trial-codes/:id/extend', async (req, res) => {
 
     res.json({ success: true, newExpiresAt });
   } catch (error) {
-    console.error('Extend trial code error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Extend trial code error:');
     res.status(500).json({ error: 'Failed to extend trial code' });
   }
 });
@@ -978,7 +978,7 @@ router.get('/account', async (req, res) => {
       user
     });
   } catch (error) {
-    console.error('Account page error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Account page error:');
     res.status(500).send('Error loading account settings');
   }
 });
@@ -999,7 +999,7 @@ router.post('/account/update', async (req, res) => {
 
     res.json({ success: true });
   } catch (error) {
-    console.error('Update account error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Update account error:');
     res.status(500).json({ error: 'Failed to update account' });
   }
 });
@@ -1031,7 +1031,7 @@ router.post('/account/change-password', async (req, res) => {
 
     res.json({ success: true });
   } catch (error) {
-    console.error('Change password error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Change password error:');
     res.status(500).json({ error: 'Failed to change password' });
   }
 });
@@ -1071,7 +1071,7 @@ router.get('/my-subscription', async (req, res) => {
       plans
     });
   } catch (error) {
-    console.error('My subscription page error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'My subscription page error:');
     res.status(500).send('Error loading subscription');
   }
 });
@@ -1108,7 +1108,7 @@ router.get('/pricing', async (req, res) => {
       currentPlan
     });
   } catch (error) {
-    console.error('Pricing page error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Pricing page error:');
     res.status(500).send('Error loading pricing');
   }
 });
