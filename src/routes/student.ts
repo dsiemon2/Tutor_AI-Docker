@@ -4,6 +4,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { prisma } from '../config/database';
 import { config } from '../config';
+import { logger } from '../utils/logger';
 import { requireAuth, requireRole, requireMinRole } from '../middleware/auth';
 import { SUBJECT_CATEGORIES, GRADE_LEVELS, ROLE_HIERARCHY } from '../config/constants';
 
