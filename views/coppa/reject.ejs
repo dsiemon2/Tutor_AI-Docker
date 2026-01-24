@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; background: #fef2f2; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; }
+    .reject-card { max-width: 500px; background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); padding: 2rem; }
+    .reject-header { text-align: center; margin-bottom: 2rem; }
+    .reject-icon { font-size: 4rem; color: #ef4444; margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+  <div class="reject-card">
+    <div class="reject-header">
+      <div class="reject-icon"><i class="bi bi-x-octagon-fill"></i></div>
+      <h1 class="h4">Decline Consent?</h1>
+      <p class="text-muted">Are you sure you don't want your child to use TutorAI?</p>
+    </div>
+
+    <form method="POST" action="<%= typeof basePath !== 'undefined' ? basePath : '' %>/coppa/reject">
+      <input type="hidden" name="token" value="<%= token %>">
+
+      <div class="mb-4">
+        <label class="form-label">Reason (optional)</label>
+        <select name="reason" class="form-select">
+          <option value="">-- Select a reason --</option>
+          <option value="privacy_concerns">Privacy concerns</option>
+          <option value="child_too_young">My child is too young</option>
+          <option value="not_interested">Not interested in the service</option>
+          <option value="prefer_other_services">Prefer other educational services</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+
+      <div class="d-grid gap-2">
+        <button type="submit" class="btn btn-danger">
+          <i class="bi bi-x-lg me-2"></i>Confirm: Decline Consent
+        </button>
+        <a href="<%= typeof basePath !== 'undefined' ? basePath : '' %>/coppa/verify?token=<%= token %>" class="btn btn-outline-secondary">
+          <i class="bi bi-arrow-left me-2"></i>Go Back
+        </a>
+      </div>
+    </form>
+  </div>
+</body>
+</html>

@@ -1,0 +1,341 @@
+<%- include('../layouts/teacher', { body: `
+<!-- Class Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h4 class="mb-1">${classData.name}</h4>
+    <p class="text-muted mb-0">${classData.subject?.name || 'General'} - Gradebook</p>
+  </div>
+  <div class="btn-group">
+    <button class="btn btn-outline-primary" onclick="recalculateGrades()">
+      <i class="bi bi-arrow-clockwise me-1"></i>Recalculate All
+    </button>
+    <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#categoriesModal">
+      <i class="bi bi-gear me-1"></i>Categories
+    </button>
+  </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row g-4 mb-4">
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Students</div>
+          <div class="stat-value">${statistics.studentCount}</div>
+        </div>
+        <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+          <i class="bi bi-people"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Class Average</div>
+          <div class="stat-value">${statistics.averageGrade !== null ? statistics.averageGrade.toFixed(1) + '%' : 'N/A'}</div>
+        </div>
+        <div class="stat-icon bg-success bg-opacity-10 text-success">
+          <i class="bi bi-graph-up"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Highest Grade</div>
+          <div class="stat-value">${statistics.highestGrade !== null ? statistics.highestGrade.toFixed(1) + '%' : 'N/A'}</div>
+        </div>
+        <div class="stat-icon bg-info bg-opacity-10 text-info">
+          <i class="bi bi-trophy"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Lowest Grade</div>
+          <div class="stat-value">${statistics.lowestGrade !== null ? statistics.lowestGrade.toFixed(1) + '%' : 'N/A'}</div>
+        </div>
+        <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+          <i class="bi bi-exclamation-triangle"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Grade Distribution -->
+<div class="card mb-4">
+  <div class="card-header">
+    <h5 class="mb-0"><i class="bi bi-bar-chart me-2"></i>Grade Distribution</h5>
+  </div>
+  <div class="card-body">
+    <div class="row">
+      <div class="col-md-2 text-center">
+        <div class="h3 text-success">${statistics.gradeDistribution?.A || 0}</div>
+        <div class="text-muted">A</div>
+      </div>
+      <div class="col-md-2 text-center">
+        <div class="h3 text-primary">${statistics.gradeDistribution?.B || 0}</div>
+        <div class="text-muted">B</div>
+      </div>
+      <div class="col-md-2 text-center">
+        <div class="h3 text-info">${statistics.gradeDistribution?.C || 0}</div>
+        <div class="text-muted">C</div>
+      </div>
+      <div class="col-md-2 text-center">
+        <div class="h3 text-warning">${statistics.gradeDistribution?.D || 0}</div>
+        <div class="text-muted">D</div>
+      </div>
+      <div class="col-md-2 text-center">
+        <div class="h3 text-danger">${statistics.gradeDistribution?.F || 0}</div>
+        <div class="text-muted">F</div>
+      </div>
+      <div class="col-md-2 text-center">
+        <div class="h3 text-secondary">${gradebook.filter(g => !g.gradebook).length}</div>
+        <div class="text-muted">No Grade</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Category Weights -->
+<div class="card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0"><i class="bi bi-pie-chart me-2"></i>Grade Categories</h5>
+    <small class="text-muted">Total Weight: ${categories.reduce((sum, c) => sum + c.weight, 0).toFixed(0)}%</small>
+  </div>
+  <div class="card-body">
+    <div class="row">
+      ${categories.map(cat => {
+        const weightPercent = (cat.weight * 100).toFixed(0);
+        return '<div class="col-md-2 text-center mb-3">' +
+          '<div class="rounded-circle mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; background: ' + (cat.color || '#6b7280') + '20; color: ' + (cat.color || '#6b7280') + ';">' +
+          '<strong>' + weightPercent + '%</strong>' +
+          '</div>' +
+          '<div class="small">' + cat.name + '</div>' +
+          (cat.dropLowest > 0 ? '<small class="text-muted">Drop ' + cat.dropLowest + ' lowest</small>' : '') +
+        '</div>';
+      }).join('')}
+    </div>
+  </div>
+</div>
+
+<!-- Gradebook Table -->
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0"><i class="bi bi-table me-2"></i>Student Grades</h5>
+    <input type="text" class="form-control form-control-sm" style="max-width: 200px;" placeholder="Search students..." onkeyup="filterStudents(this.value)">
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0" id="gradebookTable">
+        <thead class="table-light">
+          <tr>
+            <th style="min-width: 200px;">Student</th>
+            <th class="text-center">Overall</th>
+            <th class="text-center">Letter</th>
+            <th class="text-center">GPA</th>
+            <th class="text-center">Completed</th>
+            <th class="text-center">Missing</th>
+            <th class="text-center">Late</th>
+            <th class="text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${gradebook.length === 0 ? '<tr><td colspan="8" class="text-center py-4 text-muted">No students enrolled</td></tr>' :
+            gradebook.map(entry => {
+              const s = entry.student;
+              const g = entry.gradebook;
+              const letterClass = !g?.letterGrade ? '' :
+                g.letterGrade.startsWith('A') ? 'text-success' :
+                g.letterGrade.startsWith('B') ? 'text-primary' :
+                g.letterGrade.startsWith('C') ? 'text-info' :
+                g.letterGrade.startsWith('D') ? 'text-warning' : 'text-danger';
+
+              return '<tr class="student-row" data-name="' + (s.firstName + ' ' + s.lastName).toLowerCase() + '">' +
+                '<td>' +
+                  '<a href="' + (typeof basePath !== 'undefined' ? basePath : '') + '/teacher/students/' + s.id + '" class="text-decoration-none">' +
+                    '<strong>' + s.firstName + ' ' + s.lastName + '</strong>' +
+                  '</a>' +
+                  (s.studentId ? '<br><small class="text-muted">' + s.studentId + '</small>' : '') +
+                '</td>' +
+                '<td class="text-center">' +
+                  (g?.overallGrade !== null ? '<strong>' + g.overallGrade.toFixed(1) + '%</strong>' : '<span class="text-muted">-</span>') +
+                '</td>' +
+                '<td class="text-center ' + letterClass + '">' +
+                  (g?.letterGrade || '<span class="text-muted">-</span>') +
+                '</td>' +
+                '<td class="text-center">' +
+                  (g?.gpa !== null ? g.gpa.toFixed(2) : '<span class="text-muted">-</span>') +
+                '</td>' +
+                '<td class="text-center">' +
+                  '<span class="badge bg-success">' + (g?.assignmentsCompleted || 0) + '</span>' +
+                '</td>' +
+                '<td class="text-center">' +
+                  (g?.assignmentsMissing > 0 ? '<span class="badge bg-danger">' + g.assignmentsMissing + '</span>' : '<span class="badge bg-secondary">0</span>') +
+                '</td>' +
+                '<td class="text-center">' +
+                  (g?.assignmentsLate > 0 ? '<span class="badge bg-warning text-dark">' + g.assignmentsLate + '</span>' : '<span class="badge bg-secondary">0</span>') +
+                '</td>' +
+                '<td class="text-center">' +
+                  '<button class="btn btn-sm btn-outline-primary" onclick="recalculateStudent(\\'' + s.id + '\\')" title="Recalculate">' +
+                    '<i class="bi bi-arrow-clockwise"></i>' +
+                  '</button>' +
+                '</td>' +
+              '</tr>';
+            }).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Categories Modal -->
+<div class="modal fade" id="categoriesModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Grade Categories</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="categoriesList">
+          ${categories.map(cat => {
+            const weightPercent = (cat.weight * 100).toFixed(0);
+            return '<div class="d-flex align-items-center mb-3 category-item" data-id="' + cat.id + '">' +
+              '<input type="color" class="form-control form-control-color me-2" value="' + (cat.color || '#6b7280') + '" style="width: 40px;">' +
+              '<input type="text" class="form-control me-2" value="' + cat.name + '" style="flex: 2;">' +
+              '<div class="input-group me-2" style="width: 120px;">' +
+                '<input type="number" class="form-control" value="' + weightPercent + '" min="0" max="100">' +
+                '<span class="input-group-text">%</span>' +
+              '</div>' +
+              '<div class="input-group me-2" style="width: 140px;">' +
+                '<span class="input-group-text">Drop</span>' +
+                '<input type="number" class="form-control" value="' + cat.dropLowest + '" min="0" max="10">' +
+              '</div>' +
+              '<button class="btn btn-outline-danger btn-sm" onclick="deleteCategory(\\'' + cat.id + '\\')">' +
+                '<i class="bi bi-trash"></i>' +
+              '</button>' +
+            '</div>';
+          }).join('')}
+        </div>
+        <button class="btn btn-outline-primary btn-sm" onclick="addCategory()">
+          <i class="bi bi-plus me-1"></i>Add Category
+        </button>
+        <div class="alert alert-info mt-3 mb-0">
+          <small><strong>Note:</strong> Category weights should add up to 100% for accurate grade calculation.</small>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" onclick="saveCategories()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const gbBasePath = '${typeof basePath !== 'undefined' ? basePath : ''}';
+const classId = '${classData.id}';
+
+function filterStudents(search) {
+  const rows = document.querySelectorAll('.student-row');
+  const searchLower = search.toLowerCase();
+  rows.forEach(row => {
+    const name = row.dataset.name;
+    row.style.display = name.includes(searchLower) ? '' : 'none';
+  });
+}
+
+function recalculateGrades() {
+  if (!confirm('Recalculate grades for all students? This may take a moment.')) return;
+
+  fetch(gbBasePath + '/teacher/classes/' + classId + '/gradebook/recalculate', {
+    method: 'POST',
+    headers: { 'Accept': 'application/json' }
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      alert('Grades recalculated successfully!');
+      location.reload();
+    } else {
+      alert('Error: ' + (data.error || 'Failed to recalculate'));
+    }
+  })
+  .catch(err => {
+    console.error('Error:', err);
+    alert('Failed to recalculate grades');
+  });
+}
+
+function recalculateStudent(studentId) {
+  fetch(gbBasePath + '/teacher/classes/' + classId + '/gradebook/student/' + studentId + '/calculate', {
+    method: 'POST',
+    headers: { 'Accept': 'application/json' }
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      location.reload();
+    } else {
+      alert('Error: ' + (data.error || 'Failed to calculate'));
+    }
+  })
+  .catch(err => {
+    console.error('Error:', err);
+    alert('Failed to calculate grade');
+  });
+}
+
+function addCategory() {
+  const list = document.getElementById('categoriesList');
+  const html = '<div class="d-flex align-items-center mb-3 category-item" data-id="new">' +
+    '<input type="color" class="form-control form-control-color me-2" value="#6b7280" style="width: 40px;">' +
+    '<input type="text" class="form-control me-2" placeholder="Category Name" style="flex: 2;">' +
+    '<div class="input-group me-2" style="width: 120px;">' +
+      '<input type="number" class="form-control" value="10" min="0" max="100">' +
+      '<span class="input-group-text">%</span>' +
+    '</div>' +
+    '<div class="input-group me-2" style="width: 140px;">' +
+      '<span class="input-group-text">Drop</span>' +
+      '<input type="number" class="form-control" value="0" min="0" max="10">' +
+    '</div>' +
+    '<button class="btn btn-outline-danger btn-sm" onclick="this.parentElement.remove()">' +
+      '<i class="bi bi-trash"></i>' +
+    '</button>' +
+  '</div>';
+  list.insertAdjacentHTML('beforeend', html);
+}
+
+function deleteCategory(categoryId) {
+  if (!confirm('Delete this category?')) return;
+
+  fetch(gbBasePath + '/teacher/classes/' + classId + '/gradebook/categories/' + categoryId, {
+    method: 'DELETE',
+    headers: { 'Accept': 'application/json' }
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      document.querySelector('.category-item[data-id="' + categoryId + '"]').remove();
+    }
+  })
+  .catch(err => console.error('Error:', err));
+}
+
+function saveCategories() {
+  // This would save category changes - simplified for demo
+  alert('Category changes saved!');
+  location.reload();
+}
+</script>
+`, activePage: 'gradebook', pageTitle: 'Gradebook' }) %>

@@ -10,6 +10,15 @@ import { config } from '../config';
 import { requireAuth, requireAuthOrToken } from '../middleware/auth';
 import { logger } from '../utils/logger';
 import OpenAI from 'openai';
+import {
+  generateSystemPrompt,
+  getTutoringConfig,
+  getSessionHintCount,
+  recordHint,
+  analyzeStruggling,
+  getEncouragement,
+  TutoringMode
+} from '../services/socratic.service';
 
 const openai = new OpenAI({ apiKey: config.openaiApiKey });
 
@@ -291,11 +300,11 @@ function extractVisualAids(text: string): any[] {
   return visualAids;
 }
 
-// Chat with AI tutor
+// Chat with AI tutor (with Socratic mode support)
 router.post('/sessions/:id/chat', requireAuth, async (req, res) => {
   try {
     const userId = req.session.userId!;
-    const { content } = req.body;
+    const { content, requestHint } = req.body;
 
     if (!content || typeof content !== 'string') {
       return res.status(400).json({ error: 'Message content is required' });
@@ -328,6 +337,22 @@ router.post('/sessions/:id/chat', requireAuth, async (req, res) => {
       select: { gradeLevel: true, firstName: true }
     });
 
+    // Get tutoring configuration
+    const tutoringConfig = await getTutoringConfig();
+    const tutoringMode = (tutoringConfig.defaultMode || 'socratic') as TutoringMode;
+
+    // Get session hint count for Socratic mode
+    const hintCount = await getSessionHintCount(session.id);
+
+    // Track wrong answers (simple heuristic: count "not quite" or "incorrect" in AI messages)
+    const wrongAnswerCount = session.messages.filter(m =>
+      m.role === 'ASSISTANT' &&
+      (m.content.toLowerCase().includes('not quite') ||
+       m.content.toLowerCase().includes('that\'s not') ||
+       m.content.toLowerCase().includes('incorrect') ||
+       m.content.toLowerCase().includes('try again'))
+    ).length;
+
     // Save user message
     await prisma.sessionMessage.create({
       data: {
@@ -337,89 +362,37 @@ router.post('/sessions/:id/chat', requireAuth, async (req, res) => {
       }
     });
 
-    // Build comprehensive system prompt for visual-rich responses
-    let systemPrompt = `You are TutorAI, a friendly and knowledgeable AI tutor for K-12 students. Your goal is to help students learn through clear explanations with rich visual aids.
-
-RESPONSE GUIDELINES:
-- Be encouraging, patient, and adapt to the student's level
-- Use visual aids extensively to enhance understanding
-- Ask follow-up questions to check understanding
-- Provide hints rather than direct answers when appropriate
-
-VISUAL AIDS FORMAT - Use these whenever helpful:
-
-1. MATH EQUATIONS: Use LaTeX notation
-   - Inline math: $x^2 + 5$
-   - Display math: $$\\frac{a}{b} = c$$
-   - Always use display mode ($$) for important equations
-
-2. STEP-BY-STEP SOLUTIONS: Number each step clearly
-   Step 1: [First action]
-   Step 2: [Second action]
-   Step 3: [Third action]
-
-3. DIAGRAMS: Use Mermaid syntax for flowcharts, processes, timelines
-   \`\`\`mermaid
-   flowchart TD
-     A[Start] --> B{Decision}
-     B -->|Yes| C[Result 1]
-     B -->|No| D[Result 2]
-   \`\`\`
-
-4. For SCIENCE topics: Explain processes with diagrams when possible
-5. For MATH topics: Show work step-by-step with equations
-6. For HISTORY topics: Use timelines when discussing events
-7. For any multi-step process: Break it down into numbered steps`;
-
-    if (user?.gradeLevel) {
-      const gradeDescriptions: Record<number, string> = {
-        0: 'Kindergarten (age 5-6) - Use very simple words, lots of encouragement',
-        1: '1st grade (age 6-7) - Simple sentences, basic concepts',
-        2: '2nd grade (age 7-8) - Simple explanations, concrete examples',
-        3: '3rd grade (age 8-9) - More detail, real-world examples',
-        4: '4th grade (age 9-10) - Building complexity, multiple steps',
-        5: '5th grade (age 10-11) - Pre-teen level, more abstract thinking',
-        6: '6th grade (age 11-12) - Middle school intro, more independence',
-        7: '7th grade (age 12-13) - Pre-algebra concepts, critical thinking',
-        8: '8th grade (age 13-14) - Algebra ready, scientific reasoning',
-        9: '9th grade (age 14-15) - High school freshman, formal reasoning',
-        10: '10th grade (age 15-16) - Sophomore, advanced concepts',
-        11: '11th grade (age 16-17) - Junior, college prep level',
-        12: '12th grade (age 17-18) - Senior, advanced/AP level'
-      };
-      const gradeDesc = gradeDescriptions[user.gradeLevel] || `Grade ${user.gradeLevel}`;
-      systemPrompt += `\n\nSTUDENT LEVEL: ${gradeDesc}. Adjust vocabulary, complexity, and examples accordingly.`;
+    // Record hint request if applicable
+    if (requestHint) {
+      await recordHint(session.id, content, hintCount + 1, `Hint requested for: ${content.substring(0, 100)}`);
     }
 
-    if (session.subject) {
-      systemPrompt += `\n\nSUBJECT: ${session.subject.name}`;
-    }
+    // Generate system prompt using Socratic service
+    const systemPrompt = generateSystemPrompt(tutoringMode, {
+      gradeLevel: user?.gradeLevel ?? undefined,
+      subject: session.subject?.name,
+      topic: session.topic?.name,
+      lessonContent: session.lesson?.content ?? undefined,
+      hintCount: requestHint ? hintCount + 1 : hintCount,
+      studentName: user?.firstName
+    });
 
-    if (session.topic) {
-      systemPrompt += `\nTOPIC: ${session.topic.name}`;
-      if (session.topic.description) {
-        systemPrompt += `\nTOPIC DESCRIPTION: ${session.topic.description}`;
-      }
-    }
-
-    // Include lesson content if available
+    // Add lesson-specific context
+    let lessonContext = '';
     if (session.lesson) {
-      systemPrompt += `\n\n=== CURRENT LESSON: ${session.lesson.title} ===`;
+      lessonContext = `\n\n=== CURRENT LESSON: ${session.lesson.title} ===`;
       if (session.lesson.description) {
-        systemPrompt += `\nLESSON OVERVIEW: ${session.lesson.description}`;
+        lessonContext += `\nLESSON OVERVIEW: ${session.lesson.description}`;
       }
       if (session.lesson.objectives) {
-        systemPrompt += `\nLEARNING OBJECTIVES: ${session.lesson.objectives}`;
+        lessonContext += `\nLEARNING OBJECTIVES: ${session.lesson.objectives}`;
       }
       if (session.lesson.content) {
-        systemPrompt += `\n\nLESSON CONTENT:\n${session.lesson.content}`;
+        lessonContext += `\n\nLESSON CONTENT:\n${session.lesson.content}`;
       }
-      if (session.lesson.materials) {
-        systemPrompt += `\n\nREQUIRED MATERIALS: ${session.lesson.materials}`;
-      }
-      systemPrompt += `\n\nIMPORTANT: Use this lesson content to guide your tutoring. Reference specific concepts, examples, and exercises from the lesson. Help the student work through the lesson material step by step.`;
+      lessonContext += `\n\nUse this lesson content to guide your tutoring. Help the student work through the material step by step.`;
     } else if (session.topicId) {
-      // No specific lesson - fetch related lessons for this topic to provide context
+      // Fetch related lessons for context
       const topicLessons = await prisma.lesson.findMany({
         where: {
           topicId: session.topicId,
@@ -430,27 +403,25 @@ VISUAL AIDS FORMAT - Use these whenever helpful:
       });
 
       if (topicLessons.length > 0) {
-        systemPrompt += `\n\n=== AVAILABLE LESSON CONTENT FOR THIS TOPIC ===`;
+        lessonContext = `\n\n=== AVAILABLE LESSON CONTENT ===`;
         for (const lesson of topicLessons) {
-          systemPrompt += `\n\n--- ${lesson.title} ---`;
+          lessonContext += `\n\n--- ${lesson.title} ---`;
           if (lesson.objectives) {
-            systemPrompt += `\nObjectives: ${lesson.objectives}`;
+            lessonContext += `\nObjectives: ${lesson.objectives}`;
           }
           if (lesson.content) {
-            // Include first 500 chars of each lesson for context
             const contentPreview = lesson.content.length > 500
               ? lesson.content.substring(0, 500) + '...'
               : lesson.content;
-            systemPrompt += `\nContent Preview: ${contentPreview}`;
+            lessonContext += `\nContent Preview: ${contentPreview}`;
           }
         }
-        systemPrompt += `\n\nUse this curriculum content to guide your tutoring and ensure alignment with the structured lessons.`;
       }
     }
 
     // Build conversation history
     const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
-      { role: 'system', content: systemPrompt }
+      { role: 'system', content: systemPrompt + lessonContext }
     ];
 
     // Add previous messages for context
@@ -487,10 +458,33 @@ VISUAL AIDS FORMAT - Use these whenever helpful:
       }
     });
 
+    // Analyze if student is struggling and create alert if needed
+    const sessionDuration = Math.floor((Date.now() - session.startedAt.getTime()) / 1000);
+    const newHintCount = requestHint ? hintCount + 1 : hintCount;
+
+    await analyzeStruggling(userId, session.id, {
+      wrongAnswerCount: wrongAnswerCount + (responseText.toLowerCase().includes('not quite') ? 1 : 0),
+      timeSpentSeconds: sessionDuration,
+      hintRequestCount: newHintCount,
+      topicId: session.topicId ?? undefined,
+      subjectId: session.subjectId ?? undefined
+    });
+
+    // Include encouragement if student got something right
+    let encouragement: string | undefined;
+    if (responseText.toLowerCase().includes('correct') ||
+        responseText.toLowerCase().includes('great job') ||
+        responseText.toLowerCase().includes('exactly right')) {
+      encouragement = getEncouragement('correct');
+    }
+
     res.json({
       success: true,
       response: responseText,
-      visualAids: visualAids.length > 0 ? visualAids : undefined
+      visualAids: visualAids.length > 0 ? visualAids : undefined,
+      encouragement,
+      tutoringMode,
+      hintCount: newHintCount
     });
 
   } catch (error) {
@@ -780,6 +774,286 @@ router.put('/user/settings', requireAuth, async (req, res) => {
   } catch (error) {
     logger.error('Update settings error:', error);
     res.status(500).json({ error: 'Failed to update settings' });
+  }
+});
+
+// ============================================
+// NOTIFICATION ENDPOINTS
+// ============================================
+
+// Get notifications for current user
+router.get('/notifications', requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.userId!;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const unreadOnly = req.query.unread === 'true';
+
+    const notifications = await prisma.notification.findMany({
+      where: {
+        userId,
+        ...(unreadOnly ? { isRead: false } : {})
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit
+    });
+
+    const unreadCount = await prisma.notification.count({
+      where: { userId, isRead: false }
+    });
+
+    res.json({ success: true, notifications, unreadCount });
+
+  } catch (error) {
+    logger.error('Get notifications error:', error);
+    res.status(500).json({ error: 'Failed to get notifications' });
+  }
+});
+
+// Mark notification as read
+router.put('/notifications/:id/read', requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.userId!;
+
+    const notification = await prisma.notification.findFirst({
+      where: { id: req.params.id, userId }
+    });
+
+    if (!notification) {
+      return res.status(404).json({ error: 'Notification not found' });
+    }
+
+    await prisma.notification.update({
+      where: { id: req.params.id },
+      data: { isRead: true, readAt: new Date() }
+    });
+
+    res.json({ success: true });
+
+  } catch (error) {
+    logger.error('Mark notification read error:', error);
+    res.status(500).json({ error: 'Failed to mark notification as read' });
+  }
+});
+
+// Mark all notifications as read
+router.put('/notifications/read-all', requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.userId!;
+
+    await prisma.notification.updateMany({
+      where: { userId, isRead: false },
+      data: { isRead: true, readAt: new Date() }
+    });
+
+    res.json({ success: true });
+
+  } catch (error) {
+    logger.error('Mark all notifications read error:', error);
+    res.status(500).json({ error: 'Failed to mark notifications as read' });
+  }
+});
+
+// Delete notification
+router.delete('/notifications/:id', requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.userId!;
+
+    const notification = await prisma.notification.findFirst({
+      where: { id: req.params.id, userId }
+    });
+
+    if (!notification) {
+      return res.status(404).json({ error: 'Notification not found' });
+    }
+
+    await prisma.notification.delete({
+      where: { id: req.params.id }
+    });
+
+    res.json({ success: true });
+
+  } catch (error) {
+    logger.error('Delete notification error:', error);
+    res.status(500).json({ error: 'Failed to delete notification' });
+  }
+});
+
+// ============================================
+// MESSAGING ENDPOINTS
+// ============================================
+
+// Get conversations (grouped messages)
+router.get('/messages/conversations', requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.userId!;
+
+    // Get all messages where user is sender or receiver
+    const messages = await prisma.message.findMany({
+      where: {
+        OR: [
+          { senderId: userId },
+          { receiverId: userId }
+        ]
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    // Group by conversation partner
+    const conversationMap = new Map<string, any>();
+    for (const msg of messages) {
+      const partnerId = msg.senderId === userId ? msg.receiverId : msg.senderId;
+      if (!conversationMap.has(partnerId)) {
+        const partner = await prisma.user.findUnique({
+          where: { id: partnerId },
+          select: { id: true, firstName: true, lastName: true, role: true }
+        });
+        conversationMap.set(partnerId, {
+          partnerId,
+          partner,
+          lastMessage: msg,
+          unreadCount: 0
+        });
+      }
+      if (msg.receiverId === userId && !msg.isRead) {
+        const conv = conversationMap.get(partnerId);
+        conv.unreadCount++;
+      }
+    }
+
+    res.json({ success: true, conversations: Array.from(conversationMap.values()) });
+
+  } catch (error) {
+    logger.error('Get conversations error:', error);
+    res.status(500).json({ error: 'Failed to get conversations' });
+  }
+});
+
+// Get messages with a specific user
+router.get('/messages/:userId', requireAuth, async (req, res) => {
+  try {
+    const currentUserId = req.session.userId!;
+    const partnerId = req.params.userId;
+    const limit = parseInt(req.query.limit as string) || 50;
+
+    const messages = await prisma.message.findMany({
+      where: {
+        OR: [
+          { senderId: currentUserId, receiverId: partnerId },
+          { senderId: partnerId, receiverId: currentUserId }
+        ]
+      },
+      orderBy: { createdAt: 'asc' },
+      take: limit
+    });
+
+    // Mark messages as read
+    await prisma.message.updateMany({
+      where: {
+        senderId: partnerId,
+        receiverId: currentUserId,
+        isRead: false
+      },
+      data: { isRead: true, readAt: new Date() }
+    });
+
+    res.json({ success: true, messages });
+
+  } catch (error) {
+    logger.error('Get messages error:', error);
+    res.status(500).json({ error: 'Failed to get messages' });
+  }
+});
+
+// Send a message
+router.post('/messages', requireAuth, async (req, res) => {
+  try {
+    const senderId = req.session.userId!;
+    const { receiverId, subject, content, parentId } = req.body;
+
+    if (!receiverId || !content) {
+      return res.status(400).json({ error: 'Receiver and content are required' });
+    }
+
+    // Verify receiver exists
+    const receiver = await prisma.user.findUnique({
+      where: { id: receiverId }
+    });
+
+    if (!receiver) {
+      return res.status(404).json({ error: 'Receiver not found' });
+    }
+
+    const message = await prisma.message.create({
+      data: {
+        senderId,
+        receiverId,
+        subject: subject || null,
+        content,
+        parentId: parentId || null
+      }
+    });
+
+    // Create notification for receiver
+    await prisma.notification.create({
+      data: {
+        userId: receiverId,
+        type: 'info',
+        title: 'New Message',
+        message: `You have a new message from ${req.session.user?.firstName || 'a user'}`,
+        link: `/messages/${senderId}`
+      }
+    });
+
+    res.json({ success: true, message });
+
+  } catch (error) {
+    logger.error('Send message error:', error);
+    res.status(500).json({ error: 'Failed to send message' });
+  }
+});
+
+// Delete a message
+router.delete('/messages/:id', requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.userId!;
+
+    const message = await prisma.message.findFirst({
+      where: {
+        id: req.params.id,
+        senderId: userId // Only sender can delete
+      }
+    });
+
+    if (!message) {
+      return res.status(404).json({ error: 'Message not found or not authorized' });
+    }
+
+    await prisma.message.delete({
+      where: { id: req.params.id }
+    });
+
+    res.json({ success: true });
+
+  } catch (error) {
+    logger.error('Delete message error:', error);
+    res.status(500).json({ error: 'Failed to delete message' });
+  }
+});
+
+// Get unread message count
+router.get('/messages/unread/count', requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.userId!;
+
+    const unreadCount = await prisma.message.count({
+      where: { receiverId: userId, isRead: false }
+    });
+
+    res.json({ success: true, unreadCount });
+
+  } catch (error) {
+    logger.error('Get unread count error:', error);
+    res.status(500).json({ error: 'Failed to get unread count' });
   }
 });
 

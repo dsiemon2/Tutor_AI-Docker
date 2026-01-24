@@ -202,6 +202,20 @@
             <i class="bi bi-person-badge"></i> Students
           </a>
         </li>
+        <li class="nav-item">
+          <a class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'alerts' ? 'active' : '' %>" href="<%= typeof basePath !== 'undefined' ? basePath : '' %>/teacher/alerts">
+            <i class="bi bi-exclamation-triangle"></i> Student Alerts
+          </a>
+        </li>
+      </ul>
+
+      <div class="nav-section">Grading</div>
+      <ul class="nav flex-column">
+        <li class="nav-item">
+          <a class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'gradebook' ? 'active' : '' %>" href="<%= typeof basePath !== 'undefined' ? basePath : '' %>/teacher/classes">
+            <i class="bi bi-journal-bookmark"></i> Gradebook
+          </a>
+        </li>
       </ul>
 
       <div class="nav-section">Content</div>

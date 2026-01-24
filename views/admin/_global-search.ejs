@@ -1,0 +1,300 @@
+<%
+  const _basePath = typeof basePath !== 'undefined' ? basePath : '/TutorAI';
+  const _token = typeof token !== 'undefined' ? token : '';
+%>
+
+<!-- Global Search Modal -->
+<div class="modal fade" id="globalSearchModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <div class="input-group input-group-lg">
+          <span class="input-group-text bg-transparent border-0">
+            <i class="bi bi-search"></i>
+          </span>
+          <input type="text" class="form-control border-0 shadow-none" id="globalSearchInput" placeholder="Search users, schools, classes, sessions..." autofocus>
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+            <kbd>Esc</kbd>
+          </button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div id="searchLoading" class="text-center py-4 d-none">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Searching...</span>
+          </div>
+        </div>
+
+        <div id="searchHint" class="text-center py-4 text-muted">
+          <i class="bi bi-lightbulb fs-3"></i>
+          <p class="mb-0 mt-2">Type at least 2 characters to search</p>
+          <small>Search across users, schools, classes, subjects, and sessions</small>
+        </div>
+
+        <div id="searchResults" class="d-none">
+          <div id="noResults" class="text-center py-4 text-muted d-none">
+            <i class="bi bi-search fs-3"></i>
+            <p class="mb-0 mt-2">No results found</p>
+          </div>
+
+          <div id="resultsList"></div>
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <small class="text-muted">
+          <kbd>Enter</kbd> to select &middot; <kbd>&uarr;</kbd><kbd>&darr;</kbd> to navigate &middot; <kbd>Esc</kbd> to close
+        </small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  #globalSearchModal .modal-content {
+    border-radius: 12px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  }
+  #globalSearchModal .modal-header {
+    padding: 1rem 1rem 0;
+  }
+  #globalSearchModal #globalSearchInput {
+    font-size: 1.25rem;
+  }
+  #globalSearchModal .search-result-item {
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  #globalSearchModal .search-result-item:hover,
+  #globalSearchModal .search-result-item.active {
+    background: #f1f5f9;
+  }
+  #globalSearchModal .search-result-item .result-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+  }
+  #globalSearchModal .search-result-item .result-icon.user { background: #dbeafe; color: #2563eb; }
+  #globalSearchModal .search-result-item .result-icon.school { background: #dcfce7; color: #16a34a; }
+  #globalSearchModal .search-result-item .result-icon.class { background: #fef3c7; color: #d97706; }
+  #globalSearchModal .search-result-item .result-icon.session { background: #f3e8ff; color: #9333ea; }
+  #globalSearchModal .search-result-item .result-icon.subject { background: #fee2e2; color: #dc2626; }
+  #globalSearchModal .search-result-item .result-icon.topic { background: #e0e7ff; color: #4f46e5; }
+</style>
+
+<script>
+(function() {
+  const modal = document.getElementById('globalSearchModal');
+  const input = document.getElementById('globalSearchInput');
+  const loading = document.getElementById('searchLoading');
+  const hint = document.getElementById('searchHint');
+  const results = document.getElementById('searchResults');
+  const noResults = document.getElementById('noResults');
+  const resultsList = document.getElementById('resultsList');
+
+  let searchTimeout;
+  let currentResults = [];
+  let selectedIndex = -1;
+
+  const typeIcons = {
+    user: 'bi-person',
+    school: 'bi-building',
+    class: 'bi-people',
+    session: 'bi-chat-dots',
+    subject: 'bi-book',
+    topic: 'bi-bookmark'
+  };
+
+  // Open modal with Ctrl+K or Cmd+K
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      e.preventDefault();
+      const bsModal = new bootstrap.Modal(modal);
+      bsModal.show();
+    }
+  });
+
+  // Focus input when modal opens
+  modal.addEventListener('shown.bs.modal', () => {
+    input.focus();
+    input.select();
+  });
+
+  // Clear on close
+  modal.addEventListener('hidden.bs.modal', () => {
+    input.value = '';
+    showHint();
+    currentResults = [];
+    selectedIndex = -1;
+  });
+
+  // Search on input
+  input.addEventListener('input', (e) => {
+    const query = e.target.value.trim();
+
+    if (searchTimeout) clearTimeout(searchTimeout);
+
+    if (query.length < 2) {
+      showHint();
+      return;
+    }
+
+    showLoading();
+
+    searchTimeout = setTimeout(() => {
+      performSearch(query);
+    }, 300);
+  });
+
+  // Keyboard navigation
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      selectNext();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      selectPrevious();
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      selectCurrent();
+    }
+  });
+
+  async function performSearch(query) {
+    try {
+      const response = await fetch(`<%= _basePath %>/admin/api/search?token=<%= _token %>&q=${encodeURIComponent(query)}&limit=20`);
+      const data = await response.json();
+
+      currentResults = data.results || [];
+      selectedIndex = -1;
+      renderResults();
+    } catch (error) {
+      console.error('Search error:', error);
+      showNoResults();
+    }
+  }
+
+  function showHint() {
+    hint.classList.remove('d-none');
+    loading.classList.add('d-none');
+    results.classList.add('d-none');
+  }
+
+  function showLoading() {
+    hint.classList.add('d-none');
+    loading.classList.remove('d-none');
+    results.classList.add('d-none');
+  }
+
+  function showNoResults() {
+    hint.classList.add('d-none');
+    loading.classList.add('d-none');
+    results.classList.remove('d-none');
+    noResults.classList.remove('d-none');
+    resultsList.innerHTML = '';
+  }
+
+  function renderResults() {
+    hint.classList.add('d-none');
+    loading.classList.add('d-none');
+    results.classList.remove('d-none');
+
+    if (currentResults.length === 0) {
+      noResults.classList.remove('d-none');
+      resultsList.innerHTML = '';
+      return;
+    }
+
+    noResults.classList.add('d-none');
+
+    const grouped = {};
+    currentResults.forEach(r => {
+      if (!grouped[r.type]) grouped[r.type] = [];
+      grouped[r.type].push(r);
+    });
+
+    let html = '';
+    const typeLabels = {
+      user: 'Users',
+      school: 'Schools',
+      class: 'Classes',
+      session: 'Sessions',
+      subject: 'Subjects',
+      topic: 'Topics'
+    };
+
+    let globalIndex = 0;
+    for (const [type, items] of Object.entries(grouped)) {
+      html += `<div class="mb-3">
+        <small class="text-muted text-uppercase fw-semibold">${typeLabels[type] || type}</small>
+      </div>`;
+
+      items.forEach((item, i) => {
+        html += `
+          <div class="search-result-item d-flex align-items-center" data-index="${globalIndex}" data-url="${item.url || '#'}">
+            <div class="result-icon ${type} me-3">
+              <i class="bi ${typeIcons[type] || 'bi-file'}"></i>
+            </div>
+            <div class="flex-grow-1">
+              <div class="fw-semibold">${escapeHtml(item.title)}</div>
+              ${item.subtitle ? `<small class="text-muted">${escapeHtml(item.subtitle)}</small>` : ''}
+            </div>
+            <small class="text-muted">${escapeHtml(item.description || '')}</small>
+          </div>
+        `;
+        globalIndex++;
+      });
+    }
+
+    resultsList.innerHTML = html;
+
+    // Add click handlers
+    resultsList.querySelectorAll('.search-result-item').forEach(el => {
+      el.addEventListener('click', () => {
+        const url = el.dataset.url;
+        if (url && url !== '#') {
+          window.location.href = `${url}?token=<%= _token %>`;
+        }
+      });
+    });
+  }
+
+  function selectNext() {
+    if (currentResults.length === 0) return;
+    selectedIndex = Math.min(selectedIndex + 1, currentResults.length - 1);
+    updateSelection();
+  }
+
+  function selectPrevious() {
+    if (currentResults.length === 0) return;
+    selectedIndex = Math.max(selectedIndex - 1, 0);
+    updateSelection();
+  }
+
+  function updateSelection() {
+    resultsList.querySelectorAll('.search-result-item').forEach((el, i) => {
+      el.classList.toggle('active', i === selectedIndex);
+    });
+  }
+
+  function selectCurrent() {
+    if (selectedIndex >= 0 && selectedIndex < currentResults.length) {
+      const url = currentResults[selectedIndex].url;
+      if (url) {
+        window.location.href = `${url}?token=<%= _token %>`;
+      }
+    }
+  }
+
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+})();
+</script>

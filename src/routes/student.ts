@@ -7,6 +7,70 @@ import { config } from '../config';
 import { logger } from '../utils/logger';
 import { requireAuth, requireRole, requireMinRole } from '../middleware/auth';
 import { SUBJECT_CATEGORIES, GRADE_LEVELS, ROLE_HIERARCHY } from '../config/constants';
+import { exportUserData, requestAccountDeletion, cancelDeletionRequest, getDeletionStatus } from '../services/gdpr.service';
+import { logUserAction, AuditAction } from '../services/audit.service';
+import {
+  exportStudentProgressCSV,
+  exportSessionsCSV,
+  generateProgressReportHTML,
+  generateSessionTranscriptHTML,
+  generateAssignmentsIcal,
+  generateSessionsIcal
+} from '../services/report.service';
+import {
+  getUserBadges,
+  getEarnedBadges,
+  getAllBadges,
+  getStreak,
+  updateStreak,
+  getPointBalance,
+  getPointHistory,
+  getLeaderboard,
+  getUserRank,
+  getUserActivity,
+  getPublicActivity,
+  getAnnouncementsForUser,
+  markAnnouncementRead,
+  getUnreadAnnouncementCount
+} from '../services/gamification.service';
+import {
+  getDiagnosticTests,
+  getDiagnosticTest,
+  startDiagnosticAttempt,
+  getNextQuestion,
+  submitAnswer,
+  completeAttempt,
+  getStudentDiagnosticHistory,
+  getStudentSkillGaps,
+  getPlacementRecommendation
+} from '../services/diagnostic.service';
+import {
+  startPracticeSession,
+  submitPracticeAnswer,
+  endPracticeSession,
+  getPracticeItem,
+  getPracticeStats,
+  getDueItems,
+  DEFAULT_PRACTICE_SETTINGS,
+  type PracticeSession,
+  type PracticeItem
+} from '../services/practice.service';
+import {
+  getAllLearningPaths,
+  getLearningPathsBySubject,
+  getStudentMastery,
+  getStudentPathProgress,
+  getStudentDashboardData,
+  calculatePathProgress,
+  getAvailableNodes,
+  getNextRecommendedNode,
+  recommendPaths,
+  formatMasteryLevel,
+  getMasteryColor,
+  getMasteryBadge,
+  MASTERY_THRESHOLDS,
+  type LearningPath
+} from '../services/learningPath.service';
 
 const router = Router();
 
@@ -1192,11 +1256,11 @@ router.get('/assignments/:id', async (req, res) => {
   }
 });
 
-// Submit assignment
+// Submit assignment (with file upload support)
 router.post('/assignments/:id/submit', async (req, res) => {
   try {
     const userId = req.session.userId!;
-    const { content } = req.body;
+    const { content, attachments } = req.body;
 
     const assignment = await prisma.assignment.findUnique({
       where: { id: req.params.id }
@@ -1204,6 +1268,16 @@ router.post('/assignments/:id/submit', async (req, res) => {
 
     if (!assignment) {
       return res.status(404).json({ error: 'Assignment not found' });
+    }
+
+    // Parse attachments - can be JSON array of upload IDs
+    let attachmentIds: string[] = [];
+    if (attachments) {
+      try {
+        attachmentIds = typeof attachments === 'string' ? JSON.parse(attachments) : attachments;
+      } catch {
+        attachmentIds = Array.isArray(attachments) ? attachments : [attachments];
+      }
     }
 
     // Check if already submitted
@@ -1216,16 +1290,19 @@ router.post('/assignments/:id/submit', async (req, res) => {
       }
     });
 
+    const submissionData = {
+      content: content || null,
+      attachments: attachmentIds.length > 0 ? JSON.stringify(attachmentIds) : null,
+      submittedAt: new Date(),
+      isLate: assignment.dueDate ? new Date() > assignment.dueDate : false,
+      status: 'submitted'
+    };
+
     if (existing) {
       // Update existing submission
       await prisma.submission.update({
         where: { id: existing.id },
-        data: {
-          content,
-          submittedAt: new Date(),
-          isLate: assignment.dueDate ? new Date() > assignment.dueDate : false,
-          status: 'submitted'
-        }
+        data: submissionData
       });
     } else {
       // Create new submission
@@ -1233,9 +1310,7 @@ router.post('/assignments/:id/submit', async (req, res) => {
         data: {
           assignmentId: req.params.id,
           studentId: userId,
-          content,
-          isLate: assignment.dueDate ? new Date() > assignment.dueDate : false,
-          status: 'submitted'
+          ...submissionData
         }
       });
     }
@@ -1370,15 +1445,38 @@ router.get('/quizzes/:id', async (req, res) => {
   try {
     const userId = req.session.userId!;
     const branding = await getBranding();
+    const effectiveStudentId = getEffectiveStudentId(req.session);
+    const isViewingAs = !!req.session.viewAsStudentId;
+    const canViewAs = canViewAsStudent(req.session.role || '');
 
-    const quiz = await prisma.quiz.findUnique({
-      where: { id: req.params.id },
+    // Get enrolled class IDs for access control
+    let accessibleClassIds: string[] = [];
+    if (effectiveStudentId) {
+      const enrollments = await prisma.classStudent.findMany({
+        where: { studentId: effectiveStudentId },
+        select: { classId: true }
+      });
+      accessibleClassIds = enrollments.map(e => e.classId);
+    } else if (canViewAs) {
+      accessibleClassIds = await getAccessibleClassIds(req.session);
+    }
+
+    // Find quiz with access control - must be in student's class or global
+    const quiz = await prisma.quiz.findFirst({
+      where: {
+        id: req.params.id,
+        isActive: true,
+        OR: [
+          { classId: { in: accessibleClassIds } },
+          { classId: null } // Global quizzes accessible to all
+        ]
+      },
       include: {
         topic: { include: { subject: true } },
         class: true,
         questions: { orderBy: { questionNum: 'asc' } },
         attempts: {
-          where: { studentId: userId },
+          where: { studentId: effectiveStudentId || userId },
           orderBy: { attemptNum: 'desc' }
         }
       }
@@ -1418,12 +1516,34 @@ router.get('/quizzes/:id', async (req, res) => {
 router.post('/quizzes/:id/start', async (req, res) => {
   try {
     const userId = req.session.userId!;
+    const effectiveStudentId = getEffectiveStudentId(req.session);
+    const canViewAs = canViewAsStudent(req.session.role || '');
 
-    const quiz = await prisma.quiz.findUnique({
-      where: { id: req.params.id },
+    // Get enrolled class IDs for access control
+    let accessibleClassIds: string[] = [];
+    if (effectiveStudentId) {
+      const enrollments = await prisma.classStudent.findMany({
+        where: { studentId: effectiveStudentId },
+        select: { classId: true }
+      });
+      accessibleClassIds = enrollments.map(e => e.classId);
+    } else if (canViewAs) {
+      accessibleClassIds = await getAccessibleClassIds(req.session);
+    }
+
+    // Find quiz with access control
+    const quiz = await prisma.quiz.findFirst({
+      where: {
+        id: req.params.id,
+        isActive: true,
+        OR: [
+          { classId: { in: accessibleClassIds } },
+          { classId: null }
+        ]
+      },
       include: {
         attempts: {
-          where: { studentId: userId }
+          where: { studentId: effectiveStudentId || userId }
         }
       }
     });
@@ -1469,9 +1589,31 @@ router.get('/quizzes/:id/take', async (req, res) => {
   try {
     const userId = req.session.userId!;
     const branding = await getBranding();
+    const effectiveStudentId = getEffectiveStudentId(req.session);
+    const canViewAs = canViewAsStudent(req.session.role || '');
 
-    const quiz = await prisma.quiz.findUnique({
-      where: { id: req.params.id },
+    // Get enrolled class IDs for access control
+    let accessibleClassIds: string[] = [];
+    if (effectiveStudentId) {
+      const enrollments = await prisma.classStudent.findMany({
+        where: { studentId: effectiveStudentId },
+        select: { classId: true }
+      });
+      accessibleClassIds = enrollments.map(e => e.classId);
+    } else if (canViewAs) {
+      accessibleClassIds = await getAccessibleClassIds(req.session);
+    }
+
+    // Find quiz with access control
+    const quiz = await prisma.quiz.findFirst({
+      where: {
+        id: req.params.id,
+        isActive: true,
+        OR: [
+          { classId: { in: accessibleClassIds } },
+          { classId: null }
+        ]
+      },
       include: {
         topic: { include: { subject: true } },
         questions: { orderBy: { questionNum: 'asc' } }
@@ -1530,9 +1672,31 @@ router.post('/quizzes/:id/submit', async (req, res) => {
   try {
     const userId = req.session.userId!;
     const { answers } = req.body;
+    const effectiveStudentId = getEffectiveStudentId(req.session);
+    const canViewAs = canViewAsStudent(req.session.role || '');
 
-    const quiz = await prisma.quiz.findUnique({
-      where: { id: req.params.id },
+    // Get enrolled class IDs for access control
+    let accessibleClassIds: string[] = [];
+    if (effectiveStudentId) {
+      const enrollments = await prisma.classStudent.findMany({
+        where: { studentId: effectiveStudentId },
+        select: { classId: true }
+      });
+      accessibleClassIds = enrollments.map(e => e.classId);
+    } else if (canViewAs) {
+      accessibleClassIds = await getAccessibleClassIds(req.session);
+    }
+
+    // Find quiz with access control
+    const quiz = await prisma.quiz.findFirst({
+      where: {
+        id: req.params.id,
+        isActive: true,
+        OR: [
+          { classId: { in: accessibleClassIds } },
+          { classId: null }
+        ]
+      },
       include: {
         questions: true
       }
@@ -1546,7 +1710,7 @@ router.post('/quizzes/:id/submit', async (req, res) => {
     const attempt = await prisma.quizAttempt.findFirst({
       where: {
         quizId: req.params.id,
-        studentId: userId,
+        studentId: effectiveStudentId || userId,
         status: 'in_progress'
       }
     });
@@ -1661,6 +1825,1636 @@ router.get('/quizzes/:id/results/:attemptId', async (req, res) => {
       basePath: config.basePath,
       title: 'Error'
     });
+  }
+});
+
+// ==========================================
+// MESSAGES ROUTES
+// ==========================================
+
+// Messages page
+router.get('/messages', async (req, res) => {
+  try {
+    const branding = await getBranding();
+    const userId = req.session.userId!;
+
+    const loggedInUser = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { school: true }
+    });
+
+    // Get conversations
+    const messages = await prisma.message.findMany({
+      where: {
+        OR: [
+          { senderId: userId },
+          { receiverId: userId }
+        ]
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    // Group by conversation partner
+    const conversationMap = new Map<string, any>();
+    for (const msg of messages) {
+      const partnerId = msg.senderId === userId ? msg.receiverId : msg.senderId;
+      if (!conversationMap.has(partnerId)) {
+        const partner = await prisma.user.findUnique({
+          where: { id: partnerId },
+          select: { id: true, firstName: true, lastName: true, role: true }
+        });
+        conversationMap.set(partnerId, {
+          partnerId,
+          partner,
+          lastMessage: msg,
+          unreadCount: 0
+        });
+      }
+      if (msg.receiverId === userId && !msg.isRead) {
+        const conv = conversationMap.get(partnerId);
+        if (conv) conv.unreadCount++;
+      }
+    }
+
+    // Get teachers the student can message
+    // Find teachers from classes the student is enrolled in
+    const enrollments = await prisma.classStudent.findMany({
+      where: { studentId: userId },
+      select: { classId: true }
+    });
+    const classIds = enrollments.map(e => e.classId);
+
+    const teacherAssignments = await prisma.classTeacher.findMany({
+      where: { classId: { in: classIds } },
+      include: {
+        teacher: {
+          select: { id: true, firstName: true, lastName: true, role: true }
+        }
+      }
+    });
+
+    // Deduplicate teachers
+    const teacherMap = new Map();
+    for (const ta of teacherAssignments) {
+      if (!teacherMap.has(ta.teacher.id)) {
+        teacherMap.set(ta.teacher.id, ta.teacher);
+      }
+    }
+
+    res.render('student/messages', {
+      title: 'Messages - TutorAI',
+      branding,
+      user: loggedInUser,
+      conversations: Array.from(conversationMap.values()),
+      teachers: Array.from(teacherMap.values()),
+      basePath: config.basePath
+    });
+
+  } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Messages error:');
+    res.status(500).render('errors/500', {
+      basePath: config.basePath,
+      title: 'Error'
+    });
+  }
+});
+
+// ==========================================
+// GDPR / DATA PRIVACY ROUTES
+// ==========================================
+
+// Get GDPR status (deletion request status)
+router.get('/privacy/status', async (req, res) => {
+  try {
+    const userId = req.session.userId!;
+    const status = await getDeletionStatus(userId);
+    res.json(status);
+  } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'GDPR status error:');
+    res.status(500).json({ error: 'Failed to get privacy status' });
+  }
+});
+
+// Export user data (GDPR Article 20 - Right to Data Portability)
+router.get('/privacy/export', async (req, res) => {
+  try {
+    const userId = req.session.userId!;
+
+    // Don't allow export in view-as mode
+    if (req.session.viewAsStudentId) {
+      return res.status(403).json({ error: 'Cannot export data while viewing as another student' });
+    }
+
+    const result = await exportUserData(userId);
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.error });
+    }
+
+    // Log the data export
+    await logUserAction(req, AuditAction.DATA_EXPORTED, 'User', userId);
+
+    // Set headers for file download
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="tutorai-data-export-${new Date().toISOString().split('T')[0]}.json"`);
+
+    res.json(result.data);
+  } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'GDPR export error:');
+    res.status(500).json({ error: 'Failed to export data' });
+  }
+});
+
+// Request account deletion (GDPR Article 17 - Right to Erasure)
+router.post('/privacy/delete-request', async (req, res) => {
+  try {
+    const userId = req.session.userId!;
+    const { reason } = req.body;
+
+    // Don't allow deletion request in view-as mode
+    if (req.session.viewAsStudentId) {
+      return res.status(403).json({ error: 'Cannot request deletion while viewing as another student' });
+    }
+
+    const result = await requestAccountDeletion(userId, reason);
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.error });
+    }
+
+    // Log the deletion request
+    await logUserAction(req, AuditAction.DELETION_REQUESTED, 'User', userId, { reason });
+
+    res.json({
+      success: true,
+      message: 'Your account deletion has been scheduled. You have 30 days to cancel this request.',
+      deletionId: result.deletionId
+    });
+  } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'GDPR deletion request error:');
+    res.status(500).json({ error: 'Failed to process deletion request' });
+  }
+});
+
+// Cancel deletion request
+router.post('/privacy/cancel-deletion', async (req, res) => {
+  try {
+    const userId = req.session.userId!;
+
+    // Don't allow cancel in view-as mode
+    if (req.session.viewAsStudentId) {
+      return res.status(403).json({ error: 'Cannot cancel deletion while viewing as another student' });
+    }
+
+    const result = await cancelDeletionRequest(userId);
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.error });
+    }
+
+    // Log the cancellation
+    await logUserAction(req, AuditAction.DELETION_CANCELLED, 'User', userId);
+
+    res.json({ success: true, message: 'Your deletion request has been cancelled.' });
+  } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'GDPR cancel deletion error:');
+    res.status(500).json({ error: 'Failed to cancel deletion request' });
+  }
+});
+
+// ============================================
+// REPORT EXPORT ROUTES
+// ============================================
+
+// Export progress as CSV
+router.get('/reports/progress/csv', async (req, res) => {
+  try {
+    const userId = req.session.viewAsStudentId || req.session.userId!;
+    const { subjectId } = req.query;
+
+    const csvContent = await exportStudentProgressCSV(userId, {
+      subjectId: subjectId as string
+    });
+
+    const filename = `progress-report-${new Date().toISOString().split('T')[0]}.csv`;
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(csvContent);
+
+  } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Export progress CSV error:');
+    res.status(500).json({ error: 'Export failed' });
+  }
+});
+
+// Export progress as printable HTML (for PDF)
+router.get('/reports/progress/pdf', async (req, res) => {
+  try {
+    const userId = req.session.viewAsStudentId || req.session.userId!;
+    const { subjectId } = req.query;
+
+    const htmlContent = await generateProgressReportHTML(userId, {
+      subjectId: subjectId as string
+    });
+
+    res.setHeader('Content-Type', 'text/html');
+    res.send(htmlContent);
+
+  } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Generate progress report error:');
+    res.status(500).json({ error: 'Report generation failed' });
+  }
+});
+
+// Export sessions as CSV
+router.get('/reports/sessions/csv', async (req, res) => {
+  try {
+    const userId = req.session.viewAsStudentId || req.session.userId!;
+    const { subjectId, startDate, endDate } = req.query;
+
+    const csvContent = await exportSessionsCSV({
+      studentId: userId,
+      subjectId: subjectId as string,
+      startDate: startDate ? new Date(startDate as string) : undefined,
+      endDate: endDate ? new Date(endDate as string) : undefined
+    });
+
+    const filename = `sessions-export-${new Date().toISOString().split('T')[0]}.csv`;
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(csvContent);
+
+  } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Export sessions CSV error:');
+    res.status(500).json({ error: 'Export failed' });
+  }
+});
+
+// Export session transcript as HTML (for PDF)
+router.get('/reports/session/:sessionId/transcript', async (req, res) => {
+  try {
+    const userId = req.session.viewAsStudentId || req.session.userId!;
+    const { sessionId } = req.params;
+
+    // Verify student owns this session
+    const session = await prisma.tutoringSession.findFirst({
+      where: { id: sessionId, studentId: userId }
+    });
+
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+
+    const htmlContent = await generateSessionTranscriptHTML(sessionId);
+
+    res.setHeader('Content-Type', 'text/html');
+    res.send(htmlContent);
+
+  } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Generate transcript error:');
+    res.status(500).json({ error: 'Transcript generation failed' });
+  }
+});
+
+// Export assignments as iCal
+router.get('/reports/assignments/ical', async (req, res) => {
+  try {
+    const userId = req.session.viewAsStudentId || req.session.userId!;
+    const { classIds } = req.query;
+
+    const icalContent = await generateAssignmentsIcal(userId, {
+      classIds: classIds ? (classIds as string).split(',') : undefined
+    });
+
+    const filename = `assignments-${new Date().toISOString().split('T')[0]}.ics`;
+    res.setHeader('Content-Type', 'text/calendar');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(icalContent);
+
+  } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Generate assignments iCal error:');
+    res.status(500).json({ error: 'Calendar export failed' });
+  }
+});
+
+// Export sessions as iCal
+router.get('/reports/sessions/ical', async (req, res) => {
+  try {
+    const userId = req.session.viewAsStudentId || req.session.userId!;
+    const { startDate, endDate } = req.query;
+
+    const icalContent = await generateSessionsIcal(userId, {
+      startDate: startDate ? new Date(startDate as string) : undefined,
+      endDate: endDate ? new Date(endDate as string) : undefined
+    });
+
+    const filename = `tutoring-sessions-${new Date().toISOString().split('T')[0]}.ics`;
+    res.setHeader('Content-Type', 'text/calendar');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(icalContent);
+
+  } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Generate sessions iCal error:');
+    res.status(500).json({ error: 'Calendar export failed' });
+  }
+});
+
+// ============================================
+// GAMIFICATION ROUTES
+// ============================================
+
+// Get all available badges
+router.get('/api/badges', async (req, res) => {
+  try {
+    const { category, tier } = req.query;
+    const badges = await getAllBadges({
+      category: category as string,
+      tier: tier as string
+    });
+    res.json(badges);
+  } catch (error) {
+    logger.error({ error }, 'Get badges error');
+    res.status(500).json({ error: 'Failed to fetch badges' });
+  }
+});
+
+// Get user's badges
+router.get('/api/my-badges', async (req, res) => {
+  try {
+    const studentId = getEffectiveStudentId(req.session);
+    if (!studentId) {
+      return res.status(400).json({ error: 'No student context' });
+    }
+
+    const [badges, allBadges] = await Promise.all([
+      getUserBadges(studentId),
+      getAllBadges()
+    ]);
+
+    const earnedIds = new Set(badges.filter(b => b.earnedAt).map(b => b.badgeId));
+
+    res.json({
+      earned: badges.filter(b => b.earnedAt),
+      inProgress: badges.filter(b => !b.earnedAt),
+      available: allBadges.filter(b => !earnedIds.has(b.id)),
+      totalEarned: badges.filter(b => b.earnedAt).length,
+      totalAvailable: allBadges.length
+    });
+  } catch (error) {
+    logger.error({ error }, 'Get user badges error');
+    res.status(500).json({ error: 'Failed to fetch badges' });
+  }
+});
+
+// Get user's streak
+router.get('/api/streak', async (req, res) => {
+  try {
+    const studentId = getEffectiveStudentId(req.session);
+    if (!studentId) {
+      return res.status(400).json({ error: 'No student context' });
+    }
+
+    const streak = await getStreak(studentId);
+    res.json(streak);
+  } catch (error) {
+    logger.error({ error }, 'Get streak error');
+    res.status(500).json({ error: 'Failed to fetch streak' });
+  }
+});
+
+// Update streak (called on activity)
+router.post('/api/streak/update', async (req, res) => {
+  try {
+    const studentId = getEffectiveStudentId(req.session);
+    if (!studentId) {
+      return res.status(400).json({ error: 'No student context' });
+    }
+
+    const streak = await updateStreak(studentId);
+    res.json(streak);
+  } catch (error) {
+    logger.error({ error }, 'Update streak error');
+    res.status(500).json({ error: 'Failed to update streak' });
+  }
+});
+
+// Get user's points
+router.get('/api/points', async (req, res) => {
+  try {
+    const studentId = getEffectiveStudentId(req.session);
+    if (!studentId) {
+      return res.status(400).json({ error: 'No student context' });
+    }
+
+    const balance = await getPointBalance(studentId);
+    res.json(balance);
+  } catch (error) {
+    logger.error({ error }, 'Get points error');
+    res.status(500).json({ error: 'Failed to fetch points' });
+  }
+});
+
+// Get point history
+router.get('/api/points/history', async (req, res) => {
+  try {
+    const studentId = getEffectiveStudentId(req.session);
+    if (!studentId) {
+      return res.status(400).json({ error: 'No student context' });
+    }
+
+    const { limit, offset, category } = req.query;
+    const history = await getPointHistory(studentId, {
+      limit: limit ? parseInt(limit as string) : 50,
+      offset: offset ? parseInt(offset as string) : 0,
+      category: category as string
+    });
+
+    res.json(history);
+  } catch (error) {
+    logger.error({ error }, 'Get point history error');
+    res.status(500).json({ error: 'Failed to fetch point history' });
+  }
+});
+
+// Get leaderboard
+router.get('/api/leaderboard', async (req, res) => {
+  try {
+    const { scope = 'global', period = 'all_time', limit } = req.query;
+    const session = req.session as any;
+
+    let scopeId: string | undefined;
+    if (scope === 'school' && session.schoolId) {
+      scopeId = session.schoolId;
+    } else if (scope === 'class') {
+      // Get first class the student is in
+      const enrollment = await prisma.classStudent.findFirst({
+        where: { studentId: session.userId },
+        select: { classId: true }
+      });
+      scopeId = enrollment?.classId;
+    }
+
+    const leaderboard = await getLeaderboard({
+      scope: scope as 'global' | 'school' | 'class',
+      scopeId,
+      period: period as 'all_time' | 'monthly' | 'weekly' | 'daily',
+      limit: limit ? parseInt(limit as string) : 10
+    });
+
+    // Get user's rank
+    const studentId = getEffectiveStudentId(session);
+    let userRank = null;
+    if (studentId) {
+      userRank = await getUserRank(studentId, {
+        scope: scope as 'global' | 'school' | 'class',
+        scopeId,
+        period: period as 'all_time' | 'monthly' | 'weekly' | 'daily'
+      });
+    }
+
+    res.json({ leaderboard, userRank });
+  } catch (error) {
+    logger.error({ error }, 'Get leaderboard error');
+    res.status(500).json({ error: 'Failed to fetch leaderboard' });
+  }
+});
+
+// Get user's activity feed
+router.get('/api/activity', async (req, res) => {
+  try {
+    const studentId = getEffectiveStudentId(req.session);
+    if (!studentId) {
+      return res.status(400).json({ error: 'No student context' });
+    }
+
+    const { limit, offset } = req.query;
+    const activity = await getUserActivity(studentId, {
+      limit: limit ? parseInt(limit as string) : 20,
+      offset: offset ? parseInt(offset as string) : 0
+    });
+
+    res.json(activity);
+  } catch (error) {
+    logger.error({ error }, 'Get activity error');
+    res.status(500).json({ error: 'Failed to fetch activity' });
+  }
+});
+
+// Get class/school activity feed
+router.get('/api/activity/:scope/:scopeId', async (req, res) => {
+  try {
+    const { scope, scopeId } = req.params;
+    const { limit, offset } = req.query;
+
+    if (!['school', 'class'].includes(scope)) {
+      return res.status(400).json({ error: 'Invalid scope' });
+    }
+
+    const activity = await getPublicActivity(
+      scope as 'school' | 'class',
+      scopeId,
+      {
+        limit: limit ? parseInt(limit as string) : 50,
+        offset: offset ? parseInt(offset as string) : 0
+      }
+    );
+
+    res.json(activity);
+  } catch (error) {
+    logger.error({ error }, 'Get public activity error');
+    res.status(500).json({ error: 'Failed to fetch activity' });
+  }
+});
+
+// Get announcements
+router.get('/api/announcements', async (req, res) => {
+  try {
+    const session = req.session as any;
+    const studentId = getEffectiveStudentId(session);
+
+    // Get class IDs for student
+    let classIds: string[] = [];
+    if (studentId) {
+      const enrollments = await prisma.classStudent.findMany({
+        where: { studentId },
+        select: { classId: true }
+      });
+      classIds = enrollments.map(e => e.classId);
+    }
+
+    const announcements = await getAnnouncementsForUser(
+      studentId || session.userId,
+      session.schoolId,
+      classIds,
+      session.role
+    );
+
+    res.json(announcements);
+  } catch (error) {
+    logger.error({ error }, 'Get announcements error');
+    res.status(500).json({ error: 'Failed to fetch announcements' });
+  }
+});
+
+// Mark announcement as read
+router.post('/api/announcements/:id/read', async (req, res) => {
+  try {
+    const session = req.session as any;
+    await markAnnouncementRead(session.userId, req.params.id);
+    res.json({ success: true });
+  } catch (error) {
+    logger.error({ error }, 'Mark announcement read error');
+    res.status(500).json({ error: 'Failed to mark announcement as read' });
+  }
+});
+
+// Get unread announcement count
+router.get('/api/announcements/unread-count', async (req, res) => {
+  try {
+    const session = req.session as any;
+    const studentId = getEffectiveStudentId(session);
+
+    let classIds: string[] = [];
+    if (studentId) {
+      const enrollments = await prisma.classStudent.findMany({
+        where: { studentId },
+        select: { classId: true }
+      });
+      classIds = enrollments.map(e => e.classId);
+    }
+
+    const count = await getUnreadAnnouncementCount(
+      studentId || session.userId,
+      session.schoolId,
+      classIds
+    );
+
+    res.json({ count });
+  } catch (error) {
+    logger.error({ error }, 'Get unread count error');
+    res.status(500).json({ error: 'Failed to get unread count' });
+  }
+});
+
+// Get gamification summary (dashboard widget)
+router.get('/api/gamification/summary', async (req, res) => {
+  try {
+    const studentId = getEffectiveStudentId(req.session);
+    if (!studentId) {
+      return res.status(400).json({ error: 'No student context' });
+    }
+
+    const [badges, streak, points, recentActivity] = await Promise.all([
+      getEarnedBadges(studentId),
+      getStreak(studentId),
+      getPointBalance(studentId),
+      getUserActivity(studentId, { limit: 5 })
+    ]);
+
+    res.json({
+      badges: {
+        count: badges.length,
+        recent: badges.slice(0, 3)
+      },
+      streak: {
+        current: streak.currentStreak,
+        longest: streak.longestStreak
+      },
+      points: {
+        balance: points.currentBalance,
+        level: points.level,
+        levelProgress: points.levelProgress,
+        levelRequired: points.levelRequired
+      },
+      recentActivity
+    });
+  } catch (error) {
+    logger.error({ error }, 'Get gamification summary error');
+    res.status(500).json({ error: 'Failed to fetch gamification summary' });
+  }
+});
+
+// ============================================
+// DIAGNOSTIC ASSESSMENTS
+// ============================================
+
+// List available diagnostic tests
+router.get('/diagnostics', async (req, res) => {
+  try {
+    const userId = req.session.userId!;
+    const branding = await getBranding();
+
+    // Get user's grade level
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { gradeLevel: true }
+    });
+
+    // Get available tests
+    const tests = await getDiagnosticTests({
+      gradeLevel: user?.gradeLevel || undefined,
+      isActive: true
+    });
+
+    // Get student's diagnostic history
+    const history = await getStudentDiagnosticHistory(userId);
+
+    // Get skill gaps
+    const skillGaps = await getStudentSkillGaps(userId, { isResolved: false });
+
+    res.render('student/diagnostics', {
+      title: 'Diagnostic Assessments - TutorAI',
+      branding,
+      user: req.session.user,
+      tests,
+      history,
+      skillGaps
+    });
+
+  } catch (error) {
+    logger.error({ error }, 'Diagnostics page error');
+    res.status(500).render('errors/500', {
+      basePath: config.basePath,
+      title: 'Error'
+    });
+  }
+});
+
+// Start a diagnostic test
+router.post('/diagnostics/:testId/start', async (req, res) => {
+  try {
+    const userId = req.session.userId!;
+    const { testId } = req.params;
+
+    const attemptId = await startDiagnosticAttempt(testId, userId);
+
+    res.json({ success: true, attemptId });
+
+  } catch (error) {
+    logger.error({ error }, 'Start diagnostic error');
+    res.status(500).json({ error: 'Failed to start diagnostic' });
+  }
+});
+
+// Take a diagnostic test
+router.get('/diagnostics/attempt/:attemptId', async (req, res) => {
+  try {
+    const branding = await getBranding();
+    const { attemptId } = req.params;
+
+    // Get attempt info
+    const attempt = await prisma.diagnosticAttempt.findUnique({
+      where: { id: attemptId },
+      include: { test: true }
+    });
+
+    if (!attempt) {
+      return res.status(404).render('errors/404', {
+        basePath: config.basePath,
+        title: 'Test Not Found'
+      });
+    }
+
+    // Check if already completed
+    if (attempt.status === 'completed') {
+      return res.redirect(`${config.basePath}/student/diagnostics/results/${attemptId}`);
+    }
+
+    // Get next question
+    const questionData = await getNextQuestion(attemptId);
+
+    res.render('student/diagnostic-test', {
+      title: `${attempt.test.title} - TutorAI`,
+      branding,
+      user: req.session.user,
+      attempt,
+      test: attempt.test,
+      questionData
+    });
+
+  } catch (error) {
+    logger.error({ error }, 'Diagnostic test page error');
+    res.status(500).render('errors/500', {
+      basePath: config.basePath,
+      title: 'Error'
+    });
+  }
+});
+
+// Get next question (API)
+router.get('/diagnostics/attempt/:attemptId/next', async (req, res) => {
+  try {
+    const { attemptId } = req.params;
+
+    const questionData = await getNextQuestion(attemptId);
+
+    if (!questionData) {
+      return res.json({ complete: true });
+    }
+
+    res.json({ success: true, ...questionData });
+
+  } catch (error) {
+    logger.error({ error }, 'Get next question error');
+    res.status(500).json({ error: 'Failed to get next question' });
+  }
+});
+
+// Submit answer
+router.post('/diagnostics/attempt/:attemptId/answer', async (req, res) => {
+  try {
+    const { attemptId } = req.params;
+    const { questionId, answer, timeSpent } = req.body;
+
+    const result = await submitAnswer(attemptId, questionId, answer, timeSpent);
+
+    // Check if more questions
+    const nextQuestion = await getNextQuestion(attemptId);
+
+    res.json({
+      success: true,
+      ...result,
+      hasMore: nextQuestion !== null
+    });
+
+  } catch (error) {
+    logger.error({ error }, 'Submit answer error');
+    res.status(500).json({ error: 'Failed to submit answer' });
+  }
+});
+
+// Complete test
+router.post('/diagnostics/attempt/:attemptId/complete', async (req, res) => {
+  try {
+    const { attemptId } = req.params;
+
+    const result = await completeAttempt(attemptId);
+
+    res.json({ success: true, result });
+
+  } catch (error) {
+    logger.error({ error }, 'Complete diagnostic error');
+    res.status(500).json({ error: 'Failed to complete diagnostic' });
+  }
+});
+
+// View results
+router.get('/diagnostics/results/:attemptId', async (req, res) => {
+  try {
+    const branding = await getBranding();
+    const { attemptId } = req.params;
+
+    const attempt = await prisma.diagnosticAttempt.findUnique({
+      where: { id: attemptId },
+      include: {
+        test: true,
+        result: true,
+        responses: {
+          include: { question: true }
+        }
+      }
+    });
+
+    if (!attempt) {
+      return res.status(404).render('errors/404', {
+        basePath: config.basePath,
+        title: 'Results Not Found'
+      });
+    }
+
+    // Parse result data
+    const resultData = attempt.result ? {
+      ...attempt.result,
+      skillBreakdown: attempt.result.skillBreakdown ? JSON.parse(attempt.result.skillBreakdown) : {},
+      skillGaps: attempt.result.skillGaps ? JSON.parse(attempt.result.skillGaps) : [],
+      strengths: attempt.result.strengths ? JSON.parse(attempt.result.strengths) : [],
+      recommendations: attempt.result.recommendations ? JSON.parse(attempt.result.recommendations) : []
+    } : null;
+
+    res.render('student/diagnostic-results', {
+      title: 'Diagnostic Results - TutorAI',
+      branding,
+      user: req.session.user,
+      attempt,
+      test: attempt.test,
+      result: resultData,
+      responses: attempt.responses
+    });
+
+  } catch (error) {
+    logger.error({ error }, 'Diagnostic results error');
+    res.status(500).render('errors/500', {
+      basePath: config.basePath,
+      title: 'Error'
+    });
+  }
+});
+
+// Get skill gaps
+router.get('/diagnostics/skill-gaps', async (req, res) => {
+  try {
+    const userId = req.session.userId!;
+    const { subjectId, priority } = req.query;
+
+    const gaps = await getStudentSkillGaps(userId, {
+      subjectId: subjectId as string | undefined,
+      priority: priority as string | undefined,
+      isResolved: false
+    });
+
+    res.json({ success: true, gaps });
+
+  } catch (error) {
+    logger.error({ error }, 'Get skill gaps error');
+    res.status(500).json({ error: 'Failed to get skill gaps' });
+  }
+});
+
+// Get placement recommendation
+router.get('/diagnostics/placement/:subjectId', async (req, res) => {
+  try {
+    const userId = req.session.userId!;
+    const { subjectId } = req.params;
+
+    const recommendation = await getPlacementRecommendation(userId, subjectId);
+
+    res.json({ success: true, recommendation });
+
+  } catch (error) {
+    logger.error({ error }, 'Get placement error');
+    res.status(500).json({ error: 'Failed to get placement' });
+  }
+});
+
+// ============================================
+// PRACTICE MODE (Spaced Repetition)
+// ============================================
+
+// Practice session storage (in-memory for simplicity, could be Redis/DB)
+const practiceSessions = new Map<string, PracticeSession>();
+
+// Practice Mode - Main Page
+router.get('/practice', async (req, res) => {
+  try {
+    const branding = await getBranding();
+    const effectiveStudentId = getEffectiveStudentId(req.session);
+    const isViewingAs = !!req.session.viewAsStudentId;
+    const canViewAs = canViewAsStudent(req.session.role || '');
+
+    const loggedInUser = await prisma.user.findUnique({
+      where: { id: req.session.userId! },
+      include: { school: true }
+    });
+
+    // Get subjects with topics for practice
+    const categories = await prisma.subjectCategory.findMany({
+      where: { isActive: true },
+      include: {
+        subjects: {
+          where: { isActive: true },
+          include: {
+            topics: {
+              where: { isActive: true },
+              orderBy: { order: 'asc' }
+            }
+          },
+          orderBy: { order: 'asc' }
+        }
+      },
+      orderBy: { order: 'asc' }
+    });
+
+    // Get practice stats for the student
+    let stats = null;
+    if (effectiveStudentId) {
+      stats = await getPracticeStats(effectiveStudentId);
+    }
+
+    // Get due items count
+    let dueItemsCount = 0;
+    if (effectiveStudentId) {
+      const dueItems = await getDueItems(effectiveStudentId);
+      dueItemsCount = dueItems.length;
+    }
+
+    res.render('student/practice', {
+      title: 'Practice Mode - TutorAI',
+      branding,
+      user: loggedInUser,
+      roleLabel: getRoleLabel(loggedInUser?.role || 'STUDENT'),
+      isViewingAs,
+      viewAsStudentName: req.session.viewAsStudentName,
+      canViewAs,
+      categories,
+      stats,
+      dueItemsCount,
+      defaultSettings: DEFAULT_PRACTICE_SETTINGS
+    });
+
+  } catch (error) {
+    logger.error({ error }, 'Practice page error');
+    res.status(500).render('errors/500', {
+      basePath: config.basePath,
+      title: 'Error'
+    });
+  }
+});
+
+// Start a practice session
+router.post('/practice/start', async (req, res) => {
+  try {
+    const userId = req.session.userId!;
+    const { topicId, subjectId, itemCount, difficulty, mode } = req.body;
+
+    // Get questions for practice from quizzes and create practice items
+    const whereClause: any = { isActive: true };
+
+    if (topicId) {
+      whereClause.quiz = { topicId };
+    } else if (subjectId) {
+      whereClause.quiz = { topic: { subjectId } };
+    }
+
+    const questions = await prisma.quizQuestion.findMany({
+      where: whereClause,
+      include: {
+        quiz: {
+          include: {
+            topic: { include: { subject: true } }
+          }
+        }
+      },
+      take: parseInt(itemCount) || 10
+    });
+
+    if (questions.length === 0) {
+      return res.status(400).json({
+        error: 'No practice questions available for this topic'
+      });
+    }
+
+    // Convert questions to practice items
+    const practiceItems: PracticeItem[] = questions.map((q, idx) => ({
+      id: q.id,
+      type: q.type as 'multiple_choice' | 'true_false' | 'short_answer' | 'fill_blank',
+      question: q.question,
+      options: q.options ? JSON.parse(q.options) : undefined,
+      correctAnswer: q.correctAnswer,
+      explanation: q.explanation || undefined,
+      difficulty: (q.difficulty || 'medium') as 'easy' | 'medium' | 'hard' | 'expert',
+      topicId: q.quiz.topicId || undefined,
+      topicName: q.quiz.topic?.name,
+      subjectName: q.quiz.topic?.subject?.name,
+      easeFactor: 2.5,
+      interval: 0,
+      repetitions: 0,
+      nextReviewDate: new Date()
+    }));
+
+    // Start session with settings
+    const session = startPracticeSession(userId, practiceItems, {
+      itemCount: parseInt(itemCount) || 10,
+      adaptiveDifficulty: mode === 'adaptive',
+      targetAccuracy: 0.8
+    });
+
+    // Store session
+    practiceSessions.set(session.id, session);
+
+    res.json({
+      success: true,
+      sessionId: session.id,
+      totalItems: session.totalItems
+    });
+
+  } catch (error) {
+    logger.error({ error }, 'Start practice session error');
+    res.status(500).json({ error: 'Failed to start practice session' });
+  }
+});
+
+// Take practice session
+router.get('/practice/session/:sessionId', async (req, res) => {
+  try {
+    const branding = await getBranding();
+    const { sessionId } = req.params;
+
+    const session = practiceSessions.get(sessionId);
+    if (!session) {
+      return res.redirect(`${config.basePath}/student/practice?error=session_not_found`);
+    }
+
+    // Get current item
+    const currentItem = getPracticeItem(session, session.currentIndex);
+    if (!currentItem) {
+      // Session complete, redirect to results
+      return res.redirect(`${config.basePath}/student/practice/results/${sessionId}`);
+    }
+
+    res.render('student/practice-session', {
+      title: 'Practice Session - TutorAI',
+      branding,
+      user: req.session.user,
+      session,
+      currentItem,
+      progress: {
+        current: session.currentIndex + 1,
+        total: session.totalItems,
+        correct: session.correctCount,
+        incorrect: session.incorrectCount,
+        streak: session.streak
+      }
+    });
+
+  } catch (error) {
+    logger.error({ error }, 'Practice session page error');
+    res.status(500).render('errors/500', {
+      basePath: config.basePath,
+      title: 'Error'
+    });
+  }
+});
+
+// Get current practice item (API)
+router.get('/practice/session/:sessionId/current', async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+
+    const session = practiceSessions.get(sessionId);
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+
+    const currentItem = getPracticeItem(session, session.currentIndex);
+    if (!currentItem) {
+      return res.json({
+        complete: true,
+        stats: {
+          correct: session.correctCount,
+          incorrect: session.incorrectCount,
+          accuracy: session.totalItems > 0
+            ? (session.correctCount / session.totalItems) * 100
+            : 0,
+          streak: session.streak,
+          points: session.points
+        }
+      });
+    }
+
+    // Don't send the correct answer to the client
+    const safeItem = {
+      id: currentItem.id,
+      type: currentItem.type,
+      question: currentItem.question,
+      options: currentItem.options,
+      difficulty: currentItem.difficulty,
+      topicName: currentItem.topicName,
+      subjectName: currentItem.subjectName
+    };
+
+    res.json({
+      item: safeItem,
+      progress: {
+        current: session.currentIndex + 1,
+        total: session.totalItems,
+        correct: session.correctCount,
+        incorrect: session.incorrectCount,
+        streak: session.streak,
+        points: session.points
+      }
+    });
+
+  } catch (error) {
+    logger.error({ error }, 'Get current practice item error');
+    res.status(500).json({ error: 'Failed to get current item' });
+  }
+});
+
+// Submit practice answer
+router.post('/practice/session/:sessionId/answer', async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const { answer, timeSpent } = req.body;
+
+    const session = practiceSessions.get(sessionId);
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+
+    // Submit the answer
+    const result = submitPracticeAnswer(session, answer, timeSpent || 0);
+
+    // Update session in storage
+    practiceSessions.set(sessionId, session);
+
+    res.json({
+      success: true,
+      isCorrect: result.isCorrect,
+      correctAnswer: result.correctAnswer,
+      explanation: result.explanation,
+      pointsEarned: result.pointsEarned,
+      quality: result.quality,
+      nextReviewDate: result.nextReviewDate,
+      streak: session.streak,
+      hasMore: session.currentIndex < session.totalItems
+    });
+
+  } catch (error) {
+    logger.error({ error }, 'Submit practice answer error');
+    res.status(500).json({ error: 'Failed to submit answer' });
+  }
+});
+
+// Skip practice item
+router.post('/practice/session/:sessionId/skip', async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+
+    const session = practiceSessions.get(sessionId);
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+
+    if (!session.settings.allowSkip) {
+      return res.status(400).json({ error: 'Skipping is not allowed in this session' });
+    }
+
+    // Move to next item
+    session.currentIndex++;
+    session.skippedCount = (session.skippedCount || 0) + 1;
+
+    practiceSessions.set(sessionId, session);
+
+    res.json({
+      success: true,
+      hasMore: session.currentIndex < session.totalItems
+    });
+
+  } catch (error) {
+    logger.error({ error }, 'Skip practice item error');
+    res.status(500).json({ error: 'Failed to skip item' });
+  }
+});
+
+// End practice session
+router.post('/practice/session/:sessionId/end', async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+
+    const session = practiceSessions.get(sessionId);
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+
+    // End the session
+    const result = endPracticeSession(session);
+
+    // Keep session for results page
+    practiceSessions.set(sessionId, session);
+
+    res.json({ success: true, result });
+
+  } catch (error) {
+    logger.error({ error }, 'End practice session error');
+    res.status(500).json({ error: 'Failed to end session' });
+  }
+});
+
+// Practice results page
+router.get('/practice/results/:sessionId', async (req, res) => {
+  try {
+    const branding = await getBranding();
+    const { sessionId } = req.params;
+
+    const session = practiceSessions.get(sessionId);
+    if (!session) {
+      return res.redirect(`${config.basePath}/student/practice?error=session_not_found`);
+    }
+
+    // Calculate final stats
+    const totalAnswered = session.correctCount + session.incorrectCount;
+    const accuracy = totalAnswered > 0
+      ? Math.round((session.correctCount / totalAnswered) * 100)
+      : 0;
+
+    // Generate recommendations
+    let recommendation = '';
+    if (accuracy >= 90) {
+      recommendation = 'Excellent work! You have mastered this material. Consider moving to harder topics.';
+    } else if (accuracy >= 70) {
+      recommendation = 'Good progress! Keep practicing to reinforce your knowledge.';
+    } else if (accuracy >= 50) {
+      recommendation = 'You\'re making progress. Review the topics you struggled with and try again.';
+    } else {
+      recommendation = 'Consider reviewing the fundamentals before continuing practice.';
+    }
+
+    res.render('student/practice-results', {
+      title: 'Practice Results - TutorAI',
+      branding,
+      user: req.session.user,
+      session,
+      stats: {
+        totalItems: session.totalItems,
+        answered: totalAnswered,
+        correct: session.correctCount,
+        incorrect: session.incorrectCount,
+        skipped: session.skippedCount || 0,
+        accuracy,
+        points: session.points,
+        streak: session.streak,
+        longestStreak: session.longestStreak || session.streak,
+        duration: session.endTime && session.startTime
+          ? Math.round((new Date(session.endTime).getTime() - new Date(session.startTime).getTime()) / 1000)
+          : 0
+      },
+      recommendation,
+      responses: session.responses
+    });
+
+  } catch (error) {
+    logger.error({ error }, 'Practice results page error');
+    res.status(500).render('errors/500', {
+      basePath: config.basePath,
+      title: 'Error'
+    });
+  }
+});
+
+// Get practice stats API
+router.get('/api/practice/stats', async (req, res) => {
+  try {
+    const studentId = getEffectiveStudentId(req.session);
+    if (!studentId) {
+      return res.status(400).json({ error: 'No student context' });
+    }
+
+    const stats = await getPracticeStats(studentId);
+    res.json(stats);
+
+  } catch (error) {
+    logger.error({ error }, 'Get practice stats error');
+    res.status(500).json({ error: 'Failed to get practice stats' });
+  }
+});
+
+// Get due items API
+router.get('/api/practice/due', async (req, res) => {
+  try {
+    const studentId = getEffectiveStudentId(req.session);
+    if (!studentId) {
+      return res.status(400).json({ error: 'No student context' });
+    }
+
+    const { topicId, limit } = req.query;
+    const dueItems = await getDueItems(studentId, {
+      topicId: topicId as string,
+      limit: limit ? parseInt(limit as string) : 50
+    });
+
+    res.json({ items: dueItems, count: dueItems.length });
+
+  } catch (error) {
+    logger.error({ error }, 'Get due items error');
+    res.status(500).json({ error: 'Failed to get due items' });
+  }
+});
+
+// ============================================
+// LEARNING PATHS & MASTERY
+// ============================================
+
+// Learning Paths - Main Page
+router.get('/learning-paths', async (req, res) => {
+  try {
+    const branding = await getBranding();
+    const effectiveStudentId = getEffectiveStudentId(req.session);
+    const isViewingAs = !!req.session.viewAsStudentId;
+    const canViewAs = canViewAsStudent(req.session.role || '');
+
+    const loggedInUser = await prisma.user.findUnique({
+      where: { id: req.session.userId! },
+      include: { school: true }
+    });
+
+    // Get all available learning paths
+    const paths = await getAllLearningPaths({
+      gradeLevel: loggedInUser?.gradeLevel ?? undefined
+    });
+
+    // Get student's progress on paths
+    let pathProgress: Record<string, any> = {};
+    let mastery: any[] = [];
+    let recommendations: any[] = [];
+
+    if (effectiveStudentId) {
+      // Get mastery data
+      mastery = await getStudentMastery(effectiveStudentId);
+
+      // Calculate progress for each path
+      const progressData = await getStudentPathProgress(effectiveStudentId);
+      for (const p of progressData) {
+        pathProgress[p.pathId] = p;
+      }
+
+      // Get recommendations
+      const studentProfile = {
+        gradeLevel: loggedInUser?.gradeLevel ?? undefined,
+        completedPaths: progressData.filter(p => p.status === 'completed').map(p => p.pathId),
+        interests: [],
+        strengths: [],
+        weaknesses: [],
+        currentMastery: {}
+      };
+      recommendations = recommendPaths(paths, studentProfile, 5);
+    }
+
+    res.render('student/learning-paths', {
+      title: 'Learning Paths - TutorAI',
+      branding,
+      user: loggedInUser,
+      roleLabel: getRoleLabel(loggedInUser?.role || 'STUDENT'),
+      isViewingAs,
+      viewAsStudentName: req.session.viewAsStudentName,
+      canViewAs,
+      paths,
+      pathProgress,
+      mastery,
+      recommendations,
+      formatMasteryLevel,
+      getMasteryColor,
+      getMasteryBadge,
+      MASTERY_THRESHOLDS
+    });
+
+  } catch (error) {
+    logger.error({ error }, 'Learning paths page error');
+    res.status(500).render('errors/500', {
+      basePath: config.basePath,
+      title: 'Error'
+    });
+  }
+});
+
+// Learning Path Detail
+router.get('/learning-paths/:pathId', async (req, res) => {
+  try {
+    const branding = await getBranding();
+    const { pathId } = req.params;
+    const effectiveStudentId = getEffectiveStudentId(req.session);
+    const isViewingAs = !!req.session.viewAsStudentId;
+    const canViewAs = canViewAsStudent(req.session.role || '');
+
+    const loggedInUser = await prisma.user.findUnique({
+      where: { id: req.session.userId! },
+      include: { school: true }
+    });
+
+    // Get the path (it's a subject ID)
+    const paths = await getLearningPathsBySubject(pathId);
+    const path = paths[0];
+
+    if (!path) {
+      return res.status(404).render('errors/404', {
+        basePath: config.basePath,
+        title: 'Learning Path Not Found'
+      });
+    }
+
+    // Get student's progress
+    let progress: any = null;
+    let completedNodes: string[] = [];
+    let availableNodes: any[] = [];
+    let nextNode: any = null;
+    let mastery: any[] = [];
+
+    if (effectiveStudentId) {
+      const progressData = await getStudentPathProgress(effectiveStudentId, pathId);
+      progress = progressData[0] || {
+        status: 'not_started',
+        completedNodes: [],
+        nodeScores: {}
+      };
+      completedNodes = progress.completedNodes || [];
+
+      // Get mastery for topics in this path
+      mastery = await getStudentMastery(effectiveStudentId);
+
+      // Calculate available nodes
+      availableNodes = getAvailableNodes(path, completedNodes);
+      nextNode = getNextRecommendedNode(path, completedNodes, progress.nodeScores || {});
+    }
+
+    // Calculate path progress
+    const pathProgressData = calculatePathProgress(path, completedNodes);
+
+    res.render('student/learning-path-detail', {
+      title: `${path.title} - TutorAI`,
+      branding,
+      user: loggedInUser,
+      roleLabel: getRoleLabel(loggedInUser?.role || 'STUDENT'),
+      isViewingAs,
+      viewAsStudentName: req.session.viewAsStudentName,
+      canViewAs,
+      path,
+      progress,
+      pathProgressData,
+      completedNodes,
+      availableNodes,
+      nextNode,
+      mastery,
+      formatMasteryLevel,
+      getMasteryColor,
+      getMasteryBadge,
+      MASTERY_THRESHOLDS
+    });
+
+  } catch (error) {
+    logger.error({ error }, 'Learning path detail error');
+    res.status(500).render('errors/500', {
+      basePath: config.basePath,
+      title: 'Error'
+    });
+  }
+});
+
+// Mastery Dashboard
+router.get('/mastery', async (req, res) => {
+  try {
+    const branding = await getBranding();
+    const effectiveStudentId = getEffectiveStudentId(req.session);
+    const isViewingAs = !!req.session.viewAsStudentId;
+    const canViewAs = canViewAsStudent(req.session.role || '');
+
+    const loggedInUser = await prisma.user.findUnique({
+      where: { id: req.session.userId! },
+      include: { school: true }
+    });
+
+    if (!effectiveStudentId) {
+      return res.redirect(`${config.basePath}/student/learning-paths`);
+    }
+
+    // Get comprehensive mastery data
+    const mastery = await getStudentMastery(effectiveStudentId);
+    const dashboardData = await getStudentDashboardData(effectiveStudentId);
+
+    // Group mastery by subject
+    const masteryBySubject: Record<string, any[]> = {};
+    for (const m of mastery) {
+      const topic = await prisma.topic.findUnique({
+        where: { id: m.topicId },
+        include: { subject: true }
+      });
+      if (topic) {
+        const subjectName = topic.subject.name;
+        if (!masteryBySubject[subjectName]) {
+          masteryBySubject[subjectName] = [];
+        }
+        masteryBySubject[subjectName].push({
+          ...m,
+          topicName: topic.name
+        });
+      }
+    }
+
+    res.render('student/mastery', {
+      title: 'Mastery Dashboard - TutorAI',
+      branding,
+      user: loggedInUser,
+      roleLabel: getRoleLabel(loggedInUser?.role || 'STUDENT'),
+      isViewingAs,
+      viewAsStudentName: req.session.viewAsStudentName,
+      canViewAs,
+      mastery,
+      masteryBySubject,
+      dashboardData,
+      formatMasteryLevel,
+      getMasteryColor,
+      getMasteryBadge,
+      MASTERY_THRESHOLDS
+    });
+
+  } catch (error) {
+    logger.error({ error }, 'Mastery dashboard error');
+    res.status(500).render('errors/500', {
+      basePath: config.basePath,
+      title: 'Error'
+    });
+  }
+});
+
+// API: Get mastery data
+router.get('/api/mastery', async (req, res) => {
+  try {
+    const studentId = getEffectiveStudentId(req.session);
+    if (!studentId) {
+      return res.status(400).json({ error: 'No student context' });
+    }
+
+    const { topicId } = req.query;
+    const mastery = await getStudentMastery(studentId, topicId as string);
+
+    res.json({ mastery });
+
+  } catch (error) {
+    logger.error({ error }, 'Get mastery API error');
+    res.status(500).json({ error: 'Failed to get mastery data' });
+  }
+});
+
+// API: Get learning path recommendations
+router.get('/api/learning-paths/recommendations', async (req, res) => {
+  try {
+    const studentId = getEffectiveStudentId(req.session);
+    if (!studentId) {
+      return res.status(400).json({ error: 'No student context' });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: studentId }
+    });
+
+    const paths = await getAllLearningPaths({
+      gradeLevel: user?.gradeLevel ?? undefined
+    });
+
+    const progressData = await getStudentPathProgress(studentId);
+    const studentProfile = {
+      gradeLevel: user?.gradeLevel ?? undefined,
+      completedPaths: progressData.filter(p => p.status === 'completed').map(p => p.pathId),
+      interests: [],
+      strengths: [],
+      weaknesses: [],
+      currentMastery: {}
+    };
+
+    const recommendations = recommendPaths(paths, studentProfile, 5);
+
+    res.json({ recommendations });
+
+  } catch (error) {
+    logger.error({ error }, 'Get path recommendations API error');
+    res.status(500).json({ error: 'Failed to get recommendations' });
+  }
+});
+
+// API: Get path progress
+router.get('/api/learning-paths/:pathId/progress', async (req, res) => {
+  try {
+    const studentId = getEffectiveStudentId(req.session);
+    if (!studentId) {
+      return res.status(400).json({ error: 'No student context' });
+    }
+
+    const { pathId } = req.params;
+    const progressData = await getStudentPathProgress(studentId, pathId);
+
+    res.json({ progress: progressData[0] || null });
+
+  } catch (error) {
+    logger.error({ error }, 'Get path progress API error');
+    res.status(500).json({ error: 'Failed to get progress' });
   }
 });
 

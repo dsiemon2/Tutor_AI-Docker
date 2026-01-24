@@ -1,0 +1,308 @@
+<%- include('../layouts/student', {
+  title: title,
+  branding: branding,
+  user: user,
+  activePage: 'practice',
+  content: `
+<div class="container-fluid py-4">
+  <!-- Page Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-1">Practice Mode</h1>
+      <p class="text-muted mb-0">Strengthen your knowledge with spaced repetition learning</p>
+    </div>
+    <div class="d-flex gap-2">
+      ${dueItemsCount > 0 ? `
+      <button class="btn btn-warning" onclick="startDueItems()">
+        <i class="bi bi-clock-fill me-1"></i> ${dueItemsCount} Due for Review
+      </button>
+      ` : ''}
+    </div>
+  </div>
+
+  <!-- Stats Overview -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <div class="card h-100 border-0 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3">
+              <i class="bi bi-check-circle text-primary fs-4"></i>
+            </div>
+            <div>
+              <h6 class="text-muted mb-1">Items Mastered</h6>
+              <h3 class="mb-0">${stats?.mastered || 0}</h3>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card h-100 border-0 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="rounded-circle bg-success bg-opacity-10 p-3 me-3">
+              <i class="bi bi-fire text-success fs-4"></i>
+            </div>
+            <div>
+              <h6 class="text-muted mb-1">Current Streak</h6>
+              <h3 class="mb-0">${stats?.currentStreak || 0} <small class="text-muted fs-6">days</small></h3>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card h-100 border-0 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="rounded-circle bg-info bg-opacity-10 p-3 me-3">
+              <i class="bi bi-bullseye text-info fs-4"></i>
+            </div>
+            <div>
+              <h6 class="text-muted mb-1">Accuracy Rate</h6>
+              <h3 class="mb-0">${stats?.accuracy ? Math.round(stats.accuracy) : 0}%</h3>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card h-100 border-0 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="rounded-circle bg-warning bg-opacity-10 p-3 me-3">
+              <i class="bi bi-star text-warning fs-4"></i>
+            </div>
+            <div>
+              <h6 class="text-muted mb-1">Total Points</h6>
+              <h3 class="mb-0">${stats?.totalPoints || 0}</h3>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Start Practice Form -->
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-transparent border-0 py-3">
+          <h5 class="mb-0"><i class="bi bi-play-circle me-2"></i>Start Practice Session</h5>
+        </div>
+        <div class="card-body">
+          <form id="practiceForm">
+            <!-- Subject Selection -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold">Select Subject</label>
+              <select class="form-select" id="subjectSelect" name="subjectId">
+                <option value="">All Subjects</option>
+                ${categories.map(cat => `
+                  <optgroup label="${cat.name}">
+                    ${cat.subjects.map(sub => `
+                      <option value="${sub.id}">${sub.name}</option>
+                    `).join('')}
+                  </optgroup>
+                `).join('')}
+              </select>
+            </div>
+
+            <!-- Topic Selection -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold">Select Topic (Optional)</label>
+              <select class="form-select" id="topicSelect" name="topicId" disabled>
+                <option value="">All Topics in Subject</option>
+              </select>
+              <small class="text-muted">Select a subject first to see available topics</small>
+            </div>
+
+            <!-- Practice Settings -->
+            <div class="row g-3 mb-4">
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Number of Questions</label>
+                <select class="form-select" name="itemCount">
+                  <option value="5">5 questions</option>
+                  <option value="10" selected>10 questions</option>
+                  <option value="15">15 questions</option>
+                  <option value="20">20 questions</option>
+                  <option value="30">30 questions</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Difficulty</label>
+                <select class="form-select" name="difficulty">
+                  <option value="all">All Difficulties</option>
+                  <option value="easy">Easy</option>
+                  <option value="medium">Medium</option>
+                  <option value="hard">Hard</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Practice Mode</label>
+                <select class="form-select" name="mode">
+                  <option value="adaptive">Adaptive (Recommended)</option>
+                  <option value="standard">Standard</option>
+                  <option value="review">Review Only</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Mode Description -->
+            <div class="alert alert-light border mb-4" id="modeDescription">
+              <i class="bi bi-info-circle me-2"></i>
+              <strong>Adaptive Mode:</strong> Questions get harder as you improve and easier when you struggle. Uses spaced repetition for optimal learning.
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-lg">
+              <i class="bi bi-play-fill me-2"></i>Start Practice
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tips & Information -->
+    <div class="col-lg-4">
+      <div class="card border-0 shadow-sm mb-3">
+        <div class="card-header bg-transparent border-0 py-3">
+          <h6 class="mb-0"><i class="bi bi-lightbulb me-2"></i>How It Works</h6>
+        </div>
+        <div class="card-body">
+          <ul class="list-unstyled mb-0">
+            <li class="mb-3">
+              <div class="d-flex">
+                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3" style="width: 24px; height: 24px; font-size: 12px;">1</div>
+                <div><strong>Spaced Repetition</strong><br><small class="text-muted">Questions you struggle with appear more often</small></div>
+              </div>
+            </li>
+            <li class="mb-3">
+              <div class="d-flex">
+                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3" style="width: 24px; height: 24px; font-size: 12px;">2</div>
+                <div><strong>Adaptive Difficulty</strong><br><small class="text-muted">Difficulty adjusts to your performance</small></div>
+              </div>
+            </li>
+            <li class="mb-3">
+              <div class="d-flex">
+                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3" style="width: 24px; height: 24px; font-size: 12px;">3</div>
+                <div><strong>Earn Points</strong><br><small class="text-muted">Get bonus points for streaks and accuracy</small></div>
+              </div>
+            </li>
+            <li>
+              <div class="d-flex">
+                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3" style="width: 24px; height: 24px; font-size: 12px;">4</div>
+                <div><strong>Track Progress</strong><br><small class="text-muted">See your improvement over time</small></div>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card border-0 shadow-sm bg-primary text-white">
+        <div class="card-body text-center py-4">
+          <i class="bi bi-trophy display-4 mb-3"></i>
+          <h5>Keep Your Streak!</h5>
+          <p class="mb-0 opacity-75">Practice daily to maintain your learning streak and earn bonus points.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const basePath = '${typeof basePath !== 'undefined' ? basePath : ''}';
+  const categories = ${JSON.stringify(categories)};
+
+  // Topic data by subject
+  const topicsBySubject = {};
+  categories.forEach(cat => {
+    cat.subjects.forEach(sub => {
+      topicsBySubject[sub.id] = sub.topics;
+    });
+  });
+
+  // Update topics when subject changes
+  document.getElementById('subjectSelect').addEventListener('change', function() {
+    const topicSelect = document.getElementById('topicSelect');
+    const subjectId = this.value;
+
+    if (subjectId && topicsBySubject[subjectId]) {
+      topicSelect.innerHTML = '<option value="">All Topics in Subject</option>';
+      topicsBySubject[subjectId].forEach(topic => {
+        topicSelect.innerHTML += \`<option value="\${topic.id}">\${topic.name}</option>\`;
+      });
+      topicSelect.disabled = false;
+    } else {
+      topicSelect.innerHTML = '<option value="">All Topics in Subject</option>';
+      topicSelect.disabled = true;
+    }
+  });
+
+  // Update mode description
+  document.querySelector('select[name="mode"]').addEventListener('change', function() {
+    const descriptions = {
+      'adaptive': '<strong>Adaptive Mode:</strong> Questions get harder as you improve and easier when you struggle. Uses spaced repetition for optimal learning.',
+      'standard': '<strong>Standard Mode:</strong> Questions are presented in random order at fixed difficulty. Good for general review.',
+      'review': '<strong>Review Mode:</strong> Focus on questions you have already answered. Great for reinforcing prior learning.'
+    };
+    document.getElementById('modeDescription').innerHTML = '<i class="bi bi-info-circle me-2"></i>' + descriptions[this.value];
+  });
+
+  // Handle form submission
+  document.getElementById('practiceForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData.entries());
+
+    try {
+      const response = await fetch(basePath + '/student/practice/start', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        window.location.href = basePath + '/student/practice/session/' + result.sessionId;
+      } else {
+        alert(result.error || 'Failed to start practice session');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Failed to start practice session');
+    }
+  });
+
+  // Start due items review
+  function startDueItems() {
+    // Start a review session with due items
+    fetch(basePath + '/student/practice/start', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        mode: 'review',
+        itemCount: 10
+      })
+    })
+    .then(res => res.json())
+    .then(result => {
+      if (result.success) {
+        window.location.href = basePath + '/student/practice/session/' + result.sessionId;
+      } else {
+        alert(result.error || 'No items due for review');
+      }
+    })
+    .catch(err => {
+      console.error('Error:', err);
+      alert('Failed to start review session');
+    });
+  }
+</script>
+`
+}) %>

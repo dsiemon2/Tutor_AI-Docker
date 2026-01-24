@@ -1,0 +1,247 @@
+<%- include('../layouts/public', { body: `
+<!-- Pricing Hero -->
+<section class="py-5 bg-light">
+  <div class="container">
+    <div class="text-center mb-5">
+      <span class="badge bg-primary bg-opacity-10 text-primary mb-3 px-3 py-2">
+        <i class="bi bi-tag me-1"></i> Simple Pricing
+      </span>
+      <h1 class="display-4 fw-bold text-dark mb-3">Plans for Every Learner</h1>
+      <p class="lead text-muted mx-auto" style="max-width: 600px;">
+        Choose the plan that works best for you. Start free and upgrade anytime.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- Pricing Cards -->
+<section class="py-5">
+  <div class="container">
+    <div class="row g-4 justify-content-center">
+      <!-- Free Plan -->
+      <div class="col-lg-4">
+        <div class="card h-100 border-0 shadow-sm rounded-4">
+          <div class="card-body p-4">
+            <div class="text-center mb-4">
+              <span class="badge bg-secondary bg-opacity-10 text-secondary mb-2">Free</span>
+              <h3 class="fw-bold">Starter</h3>
+              <div class="display-4 fw-bold mb-2">$0</div>
+              <p class="text-muted">Forever free</p>
+            </div>
+            <hr>
+            <ul class="list-unstyled mb-4">
+              <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-2"></i>5 tutoring sessions/month</li>
+              <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-2"></i>Basic subjects access</li>
+              <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-2"></i>Text-based tutoring</li>
+              <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-2"></i>Progress tracking</li>
+              <li class="mb-3 text-muted"><i class="bi bi-x-circle me-2"></i>Voice mode</li>
+              <li class="mb-3 text-muted"><i class="bi bi-x-circle me-2"></i>Homework photo upload</li>
+              <li class="mb-3 text-muted"><i class="bi bi-x-circle me-2"></i>Priority support</li>
+            </ul>
+            <a href="${typeof basePath !== 'undefined' ? basePath : ''}/auth/register" class="btn btn-outline-primary w-100 py-2">
+              Get Started Free
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pro Plan -->
+      <div class="col-lg-4">
+        <div class="card h-100 border-primary border-2 shadow-lg rounded-4 position-relative">
+          <div class="position-absolute top-0 start-50 translate-middle">
+            <span class="badge bg-primary px-3 py-2">Most Popular</span>
+          </div>
+          <div class="card-body p-4">
+            <div class="text-center mb-4">
+              <span class="badge bg-primary bg-opacity-10 text-primary mb-2">Pro</span>
+              <h3 class="fw-bold">Student</h3>
+              <div class="display-4 fw-bold mb-2">$9<small class="fs-5 fw-normal">/mo</small></div>
+              <p class="text-muted">Billed monthly</p>
+            </div>
+            <hr>
+            <ul class="list-unstyled mb-4">
+              <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-2"></i>Unlimited tutoring sessions</li>
+              <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-2"></i>All 74 subjects</li>
+              <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-2"></i>Voice mode included</li>
+              <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-2"></i>Homework photo upload</li>
+              <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-2"></i>Advanced progress analytics</li>
+              <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-2"></i>24 languages</li>
+              <li class="mb-3 text-muted"><i class="bi bi-x-circle me-2"></i>Priority support</li>
+            </ul>
+            <a href="${typeof basePath !== 'undefined' ? basePath : ''}/auth/register?plan=pro" class="btn btn-primary w-100 py-2">
+              Start Free Trial
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Family Plan -->
+      <div class="col-lg-4">
+        <div class="card h-100 border-0 shadow-sm rounded-4">
+          <div class="card-body p-4">
+            <div class="text-center mb-4">
+              <span class="badge bg-warning bg-opacity-10 text-warning mb-2">Best Value</span>
+              <h3 class="fw-bold">Family</h3>
+              <div class="display-4 fw-bold mb-2">$19<small class="fs-5 fw-normal">/mo</small></div>
+              <p class="text-muted">Up to 5 students</p>
+            </div>
+            <hr>
+            <ul class="list-unstyled mb-4">
+              <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-2"></i>Everything in Pro</li>
+              <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-2"></i>5 student accounts</li>
+              <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-2"></i>Parent dashboard</li>
+              <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-2"></i>Progress reports</li>
+              <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-2"></i>Screen time controls</li>
+              <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-2"></i>Priority support</li>
+              <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-2"></i>Early access to features</li>
+            </ul>
+            <a href="${typeof basePath !== 'undefined' ? basePath : ''}/auth/register?plan=family" class="btn btn-outline-primary w-100 py-2">
+              Start Free Trial
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- School Plans -->
+<section class="py-5 bg-light">
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col-lg-6 mb-4 mb-lg-0">
+        <span class="badge bg-info bg-opacity-10 text-info mb-3">For Schools</span>
+        <h2 class="fw-bold mb-3">School & District Plans</h2>
+        <p class="text-muted mb-4">
+          Get TutorAI for your entire school or district. Volume discounts available,
+          plus dedicated support and administrative tools.
+        </p>
+        <ul class="list-unstyled mb-4">
+          <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Unlimited students</li>
+          <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Teacher dashboards</li>
+          <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Class management</li>
+          <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Assignment integration</li>
+          <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>SSO/LMS integration</li>
+          <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Dedicated support</li>
+        </ul>
+        <a href="mailto:sales@tutorableai.com" class="btn btn-primary">
+          <i class="bi bi-envelope me-2"></i>Contact Sales
+        </a>
+      </div>
+      <div class="col-lg-6">
+        <div class="bg-white rounded-4 shadow p-4">
+          <div class="d-flex align-items-center gap-3 mb-4">
+            <div class="bg-info bg-opacity-10 rounded-circle p-3">
+              <i class="bi bi-building text-info fs-3"></i>
+            </div>
+            <div>
+              <h5 class="mb-0">School Plan</h5>
+              <p class="text-muted mb-0">Starting at $2/student/month</p>
+            </div>
+          </div>
+          <div class="row g-3">
+            <div class="col-6">
+              <div class="bg-light rounded-3 p-3 text-center">
+                <div class="h4 text-primary mb-0">50%</div>
+                <small class="text-muted">Volume Discount</small>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="bg-light rounded-3 p-3 text-center">
+                <div class="h4 text-success mb-0">24/7</div>
+                <small class="text-muted">Support</small>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="bg-light rounded-3 p-3 text-center">
+                <div class="h4 text-warning mb-0">Free</div>
+                <small class="text-muted">Pilot Program</small>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="bg-light rounded-3 p-3 text-center">
+                <div class="h4 text-info mb-0">FERPA</div>
+                <small class="text-muted">Compliant</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="py-5">
+  <div class="container">
+    <div class="text-center mb-5">
+      <h2 class="fw-bold">Frequently Asked Questions</h2>
+    </div>
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+        <div class="accordion" id="pricingFAQ">
+          <div class="accordion-item border-0 mb-3 rounded-3 shadow-sm">
+            <h2 class="accordion-header">
+              <button class="accordion-button rounded-3" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                Can I cancel anytime?
+              </button>
+            </h2>
+            <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#pricingFAQ">
+              <div class="accordion-body text-muted">
+                Yes! You can cancel your subscription at any time. Your access will continue until the end of your billing period.
+              </div>
+            </div>
+          </div>
+          <div class="accordion-item border-0 mb-3 rounded-3 shadow-sm">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed rounded-3" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                Is there a free trial?
+              </button>
+            </h2>
+            <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#pricingFAQ">
+              <div class="accordion-body text-muted">
+                Yes! All paid plans come with a 7-day free trial. No credit card required to start.
+              </div>
+            </div>
+          </div>
+          <div class="accordion-item border-0 mb-3 rounded-3 shadow-sm">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed rounded-3" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                What payment methods do you accept?
+              </button>
+            </h2>
+            <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#pricingFAQ">
+              <div class="accordion-body text-muted">
+                We accept all major credit cards (Visa, MasterCard, American Express), PayPal, and for schools, we also accept purchase orders.
+              </div>
+            </div>
+          </div>
+          <div class="accordion-item border-0 mb-3 rounded-3 shadow-sm">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed rounded-3" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
+                Can I switch plans?
+              </button>
+            </h2>
+            <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#pricingFAQ">
+              <div class="accordion-body text-muted">
+                Absolutely! You can upgrade or downgrade your plan at any time. When upgrading, you'll get immediate access to new features. When downgrading, changes take effect at the next billing cycle.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-5 bg-primary text-white">
+  <div class="container text-center">
+    <h2 class="fw-bold mb-3">Start Learning Today</h2>
+    <p class="lead mb-4 opacity-75">Join thousands of students improving their grades with TutorAI</p>
+    <a href="${typeof basePath !== 'undefined' ? basePath : ''}/auth/register" class="btn btn-light btn-lg px-5">
+      <i class="bi bi-rocket-takeoff me-2"></i>Get Started Free
+    </a>
+  </div>
+</section>
+` }) %>

@@ -1,0 +1,227 @@
+<%- include('../layouts/student', {
+  title: title,
+  branding: branding,
+  user: user,
+  activePage: 'learning-paths',
+  content: `
+<div class="container-fluid py-4">
+  <!-- Breadcrumb -->
+  <nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="${typeof basePath !== 'undefined' ? basePath : ''}/student/learning-paths">Learning Paths</a></li>
+      <li class="breadcrumb-item active">${path.title}</li>
+    </ol>
+  </nav>
+
+  <!-- Path Header -->
+  <div class="row mb-4">
+    <div class="col-lg-8">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+              <h1 class="h3 mb-2">${path.title}</h1>
+              <p class="text-muted mb-0">${path.description}</p>
+            </div>
+            ${pathProgressData.completionPercentage === 100 ? `
+              <span class="badge bg-success fs-6">
+                <i class="bi bi-trophy-fill me-1"></i> Completed!
+              </span>
+            ` : ''}
+          </div>
+
+          <!-- Progress -->
+          <div class="mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="fw-semibold">Overall Progress</span>
+              <span class="text-primary">${pathProgressData.completionPercentage}%</span>
+            </div>
+            <div class="progress" style="height: 12px;">
+              <div class="progress-bar" role="progressbar" style="width: ${pathProgressData.completionPercentage}%"></div>
+            </div>
+            <div class="d-flex justify-content-between text-muted small mt-1">
+              <span>${completedNodes.length} topics completed</span>
+              <span>${pathProgressData.requiredRemaining} remaining</span>
+            </div>
+          </div>
+
+          <!-- Stats Row -->
+          <div class="row text-center g-3">
+            <div class="col-4">
+              <div class="bg-light rounded p-3">
+                <i class="bi bi-clock text-primary fs-4 mb-2 d-block"></i>
+                <div class="fw-semibold">${path.estimatedHours}h</div>
+                <small class="text-muted">Total Time</small>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="bg-light rounded p-3">
+                <i class="bi bi-list-check text-success fs-4 mb-2 d-block"></i>
+                <div class="fw-semibold">${path.nodes.length}</div>
+                <small class="text-muted">Topics</small>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="bg-light rounded p-3">
+                <i class="bi bi-hourglass-split text-warning fs-4 mb-2 d-block"></i>
+                <div class="fw-semibold">${Math.ceil(pathProgressData.estimatedMinutesRemaining / 60)}h</div>
+                <small class="text-muted">Remaining</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Next Step Card -->
+    <div class="col-lg-4">
+      ${nextNode ? `
+        <div class="card border-0 shadow-sm border-start border-4 border-primary h-100">
+          <div class="card-body">
+            <h5 class="card-title">
+              <i class="bi bi-arrow-right-circle text-primary me-2"></i>
+              Continue Learning
+            </h5>
+            <hr>
+            <h6>${nextNode.title}</h6>
+            ${nextNode.description ? `<p class="text-muted small">${nextNode.description}</p>` : ''}
+            <div class="mb-3">
+              <span class="badge bg-light text-dark me-1">
+                <i class="bi bi-clock me-1"></i>${nextNode.estimatedMinutes} min
+              </span>
+              <span class="badge bg-light text-dark">
+                <i class="bi bi-star me-1"></i>${nextNode.pointsValue} pts
+              </span>
+            </div>
+            <a href="${typeof basePath !== 'undefined' ? basePath : ''}/student/tutor?topicId=${nextNode.topicId || nextNode.id}" class="btn btn-primary w-100">
+              <i class="bi bi-play-fill me-1"></i> Start Topic
+            </a>
+          </div>
+        </div>
+      ` : pathProgressData.completionPercentage === 100 ? `
+        <div class="card border-0 shadow-sm bg-success text-white h-100">
+          <div class="card-body text-center d-flex flex-column justify-content-center">
+            <i class="bi bi-trophy-fill display-3 mb-3"></i>
+            <h5>Congratulations!</h5>
+            <p class="mb-3">You've completed this learning path!</p>
+            <a href="${typeof basePath !== 'undefined' ? basePath : ''}/student/learning-paths" class="btn btn-light">
+              Explore More Paths
+            </a>
+          </div>
+        </div>
+      ` : `
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body text-center d-flex flex-column justify-content-center">
+            <i class="bi bi-rocket-takeoff display-3 text-primary mb-3"></i>
+            <h5>Ready to Start?</h5>
+            <p class="text-muted mb-3">Begin your learning journey now!</p>
+            ${path.nodes && path.nodes.length > 0 ? `
+              <a href="${typeof basePath !== 'undefined' ? basePath : ''}/student/tutor?topicId=${path.nodes[0].topicId || path.nodes[0].id}" class="btn btn-primary">
+                <i class="bi bi-play-fill me-1"></i> Start First Topic
+              </a>
+            ` : ''}
+          </div>
+        </div>
+      `}
+    </div>
+  </div>
+
+  <!-- Learning Outcomes -->
+  ${path.outcomes && path.outcomes.length > 0 ? `
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-transparent border-0 py-3">
+      <h5 class="mb-0"><i class="bi bi-bullseye me-2"></i>Learning Outcomes</h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        ${path.outcomes.map(outcome => `
+          <div class="col-md-4 mb-2">
+            <div class="d-flex align-items-start">
+              <i class="bi bi-check-circle text-success me-2 mt-1"></i>
+              <span>${outcome}</span>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  </div>
+  ` : ''}
+
+  <!-- Topics List -->
+  <div class="card border-0 shadow-sm">
+    <div class="card-header bg-transparent border-0 py-3 d-flex justify-content-between align-items-center">
+      <h5 class="mb-0"><i class="bi bi-list-ol me-2"></i>Topics in This Path</h5>
+      <span class="badge bg-primary">${completedNodes.length} / ${path.nodes.length} completed</span>
+    </div>
+    <div class="card-body p-0">
+      <div class="list-group list-group-flush">
+        ${path.nodes.map((node, idx) => {
+          const isCompleted = completedNodes.includes(node.id);
+          const isAvailable = availableNodes.some(n => n.id === node.id);
+          const isLocked = !isCompleted && !isAvailable;
+          const isCurrent = nextNode && nextNode.id === node.id;
+
+          return `
+            <div class="list-group-item ${isCurrent ? 'bg-primary bg-opacity-10' : ''} ${isLocked ? 'bg-light' : ''}">
+              <div class="d-flex align-items-center">
+                <!-- Status Icon -->
+                <div class="me-3">
+                  ${isCompleted ? `
+                    <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                      <i class="bi bi-check-lg"></i>
+                    </div>
+                  ` : isAvailable ? `
+                    <div class="rounded-circle ${isCurrent ? 'bg-primary' : 'bg-light border'} ${isCurrent ? 'text-white' : 'text-primary'} d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                      ${idx + 1}
+                    </div>
+                  ` : `
+                    <div class="rounded-circle bg-light text-muted d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                      <i class="bi bi-lock"></i>
+                    </div>
+                  `}
+                </div>
+
+                <!-- Topic Info -->
+                <div class="flex-grow-1">
+                  <h6 class="mb-1 ${isLocked ? 'text-muted' : ''}">${node.title}</h6>
+                  ${node.description ? `<p class="mb-0 text-muted small">${node.description}</p>` : ''}
+                  <div class="mt-1">
+                    <span class="badge ${isCompleted ? 'bg-success' : isAvailable ? 'bg-primary' : 'bg-light text-muted'} me-1">
+                      ${node.type}
+                    </span>
+                    <span class="badge bg-light text-dark me-1">
+                      <i class="bi bi-clock me-1"></i>${node.estimatedMinutes} min
+                    </span>
+                    <span class="badge bg-light text-dark">
+                      <i class="bi bi-star me-1"></i>${node.pointsValue} pts
+                    </span>
+                    ${node.isOptional ? '<span class="badge bg-warning text-dark ms-1">Optional</span>' : ''}
+                  </div>
+                </div>
+
+                <!-- Action Button -->
+                <div class="ms-3">
+                  ${isCompleted ? `
+                    <a href="${typeof basePath !== 'undefined' ? basePath : ''}/student/tutor?topicId=${node.topicId || node.id}" class="btn btn-outline-success btn-sm">
+                      <i class="bi bi-arrow-repeat me-1"></i> Review
+                    </a>
+                  ` : isAvailable ? `
+                    <a href="${typeof basePath !== 'undefined' ? basePath : ''}/student/tutor?topicId=${node.topicId || node.id}" class="btn btn-primary btn-sm">
+                      <i class="bi bi-play-fill me-1"></i> ${isCurrent ? 'Continue' : 'Start'}
+                    </a>
+                  ` : `
+                    <button class="btn btn-secondary btn-sm" disabled>
+                      <i class="bi bi-lock me-1"></i> Locked
+                    </button>
+                  `}
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  </div>
+</div>
+`
+}) %>

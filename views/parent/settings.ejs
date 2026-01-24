@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body { background: #f8f9fa; }
+    .navbar { background: linear-gradient(135deg, <%= branding.primaryColor %> 0%, <%= branding.secondaryColor %> 100%); }
+    .card { border: none; box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075); }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark mb-4">
+    <div class="container">
+      <a class="navbar-brand" href="<%= typeof basePath !== 'undefined' ? basePath : '' %>/parent">
+        <i class="bi bi-mortarboard-fill me-2"></i>TutorAI Parent Portal
+      </a>
+      <div class="d-flex align-items-center">
+        <a href="<%= typeof basePath !== 'undefined' ? basePath : '' %>/parent" class="btn btn-outline-light btn-sm me-2">
+          <i class="bi bi-arrow-left me-1"></i>Back
+        </a>
+        <a href="<%= typeof basePath !== 'undefined' ? basePath : '' %>/parent/logout" class="btn btn-outline-light btn-sm">
+          <i class="bi bi-box-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <h2 class="mb-4"><i class="bi bi-gear me-2"></i>Settings</h2>
+
+    <%
+      const query = typeof require !== 'undefined' ? require('url').parse(typeof _locals !== 'undefined' && _locals.req ? _locals.req.url : '', true).query : {};
+    %>
+
+    <% if (typeof query !== 'undefined' && query.saved) { %>
+    <div class="alert alert-success alert-dismissible fade show">
+      <i class="bi bi-check-circle me-2"></i>Settings saved successfully!
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <% } %>
+
+    <% if (typeof query !== 'undefined' && query.error) { %>
+    <div class="alert alert-danger alert-dismissible fade show">
+      <i class="bi bi-exclamation-circle me-2"></i>
+      <% if (query.error === 'student_not_found') { %>Student not found<% } %>
+      <% if (query.error === 'already_linked') { %>This student is already linked to your account<% } %>
+      <% if (query.error === 'link_failed') { %>Failed to link student<% } %>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <% } %>
+
+    <% if (typeof query !== 'undefined' && query.success === 'link_requested') { %>
+    <div class="alert alert-success alert-dismissible fade show">
+      <i class="bi bi-check-circle me-2"></i>Link request submitted! It will be verified by the school.
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <% } %>
+
+    <div class="row">
+      <!-- Profile Settings -->
+      <div class="col-lg-6 mb-4">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-person me-2"></i>Profile</h5>
+          </div>
+          <div class="card-body">
+            <form>
+              <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                  <label class="form-label">First Name</label>
+                  <input type="text" class="form-control" value="<%= parent.firstName %>" readonly>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Last Name</label>
+                  <input type="text" class="form-control" value="<%= parent.lastName %>" readonly>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-control" value="<%= parent.email %>" readonly>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Phone</label>
+                <input type="tel" class="form-control" value="<%= parent.phone || '' %>" readonly>
+              </div>
+              <p class="text-muted small">Contact support to update your profile information.</p>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notification Settings -->
+      <div class="col-lg-6 mb-4">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-bell me-2"></i>Notifications</h5>
+          </div>
+          <div class="card-body">
+            <form method="POST" action="<%= typeof basePath !== 'undefined' ? basePath : '' %>/parent/settings/notifications">
+              <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="notifyProgress" name="notifyProgress" <%= parent.notifyProgress ? 'checked' : '' %>>
+                <label class="form-check-label" for="notifyProgress">
+                  <strong>Progress Updates</strong>
+                  <br><small class="text-muted">Get notified when your child completes topics</small>
+                </label>
+              </div>
+              <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="notifyGrades" name="notifyGrades" <%= parent.notifyGrades ? 'checked' : '' %>>
+                <label class="form-check-label" for="notifyGrades">
+                  <strong>Grades & Scores</strong>
+                  <br><small class="text-muted">Get notified about quiz and assignment grades</small>
+                </label>
+              </div>
+              <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="notifyAttendance" name="notifyAttendance" <%= parent.notifyAttendance ? 'checked' : '' %>>
+                <label class="form-check-label" for="notifyAttendance">
+                  <strong>Activity Alerts</strong>
+                  <br><small class="text-muted">Get notified about inactivity or missed sessions</small>
+                </label>
+              </div>
+              <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="notifyMessages" name="notifyMessages" <%= parent.notifyMessages ? 'checked' : '' %>>
+                <label class="form-check-label" for="notifyMessages">
+                  <strong>Teacher Messages</strong>
+                  <br><small class="text-muted">Get notified when teachers send messages</small>
+                </label>
+              </div>
+              <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="notifyWeeklyDigest" name="notifyWeeklyDigest" <%= parent.notifyWeeklyDigest ? 'checked' : '' %>>
+                <label class="form-check-label" for="notifyWeeklyDigest">
+                  <strong>Weekly Digest</strong>
+                  <br><small class="text-muted">Receive a weekly summary of your child's progress</small>
+                </label>
+              </div>
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-lg me-2"></i>Save Preferences
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Linked Children -->
+      <div class="col-lg-6 mb-4">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-people me-2"></i>Linked Children</h5>
+          </div>
+          <div class="card-body">
+            <% if (children.length === 0) { %>
+            <p class="text-muted">No children linked to your account yet.</p>
+            <% } else { %>
+            <ul class="list-group list-group-flush mb-3">
+              <% children.forEach(child => { %>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                  <strong><%= child.firstName %> <%= child.lastName %></strong>
+                  <br>
+                  <small class="text-muted"><%= child.email %></small>
+                  <br>
+                  <span class="badge bg-<%= child.link.isVerified ? 'success' : 'warning' %>">
+                    <%= child.link.isVerified ? 'Verified' : 'Pending Verification' %>
+                  </span>
+                  <span class="badge bg-light text-dark"><%= child.link.relationship %></span>
+                </div>
+              </li>
+              <% }); %>
+            </ul>
+            <% } %>
+
+            <hr>
+
+            <h6>Link Another Child</h6>
+            <form method="POST" action="<%= typeof basePath !== 'undefined' ? basePath : '' %>/parent/link-child">
+              <div class="mb-3">
+                <label class="form-label">Child's Email</label>
+                <input type="email" class="form-control" name="studentEmail" required placeholder="child@school.edu">
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Relationship</label>
+                <select class="form-select" name="relationship">
+                  <option value="parent">Parent</option>
+                  <option value="guardian">Guardian</option>
+                  <option value="grandparent">Grandparent</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <button type="submit" class="btn btn-outline-primary">
+                <i class="bi bi-link me-2"></i>Link Child
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Security -->
+      <div class="col-lg-6 mb-4">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-shield-lock me-2"></i>Security</h5>
+          </div>
+          <div class="card-body">
+            <button class="btn btn-outline-primary mb-3 w-100" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
+              <i class="bi bi-key me-2"></i>Change Password
+            </button>
+            <a href="<%= typeof basePath !== 'undefined' ? basePath : '' %>/parent/consent" class="btn btn-outline-success w-100">
+              <i class="bi bi-shield-check me-2"></i>Manage Consent
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Change Password Modal -->
+  <div class="modal fade" id="changePasswordModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Change Password</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">Current Password</label>
+              <input type="password" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">New Password</label>
+              <input type="password" class="form-control" minlength="8" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Confirm New Password</label>
+              <input type="password" class="form-control" required>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Update Password</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

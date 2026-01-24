@@ -24,115 +24,159 @@
       <%- include('_sidebar', { token, active: 'sms-settings', branding, basePath }) %>
 
       <main class="col-md-10 ms-sm-auto main-content p-4">
-        <h2 class="mb-4"><i class="bi bi-chat-dots text-primary me-2"></i>SMS Settings</h2>
-        <p class="text-muted mb-4">Configure SMS notifications for students, parents, and teachers.</p>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2><i class="bi bi-chat-dots text-primary me-2"></i>SMS Settings</h2>
+          <span class="badge <%= smsConfig.isEnabled ? 'bg-success' : 'bg-secondary' %> fs-6">
+            <%= smsConfig.isEnabled ? 'Enabled' : 'Disabled' %>
+          </span>
+        </div>
+        <p class="text-muted mb-4">Configure SMS notifications for students, parents, and teachers using Twilio.</p>
 
-        <div class="row g-4">
-          <!-- Twilio Configuration -->
-          <div class="col-md-6">
-            <div class="card h-100">
-              <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-gear me-2"></i>Twilio Configuration</h5>
-              </div>
-              <div class="card-body">
-                <form>
+        <form action="<%= basePath %>/admin/sms-settings?token=<%= token %>" method="POST">
+          <div class="row g-4">
+            <!-- Twilio Configuration -->
+            <div class="col-md-6">
+              <div class="card h-100">
+                <div class="card-header">
+                  <h5 class="mb-0"><i class="bi bi-gear me-2"></i>Twilio Configuration</h5>
+                </div>
+                <div class="card-body">
                   <div class="mb-3">
-                    <label class="form-label">Account SID</label>
-                    <input type="text" class="form-control" placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+                    <label class="form-label">Account SID <span class="text-danger">*</span></label>
+                    <input type="text" name="accountSid" class="form-control" placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" value="<%= smsConfig.accountSid %>">
+                    <small class="text-muted">Find this in your Twilio Console</small>
                   </div>
                   <div class="mb-3">
-                    <label class="form-label">Auth Token</label>
-                    <input type="password" class="form-control" placeholder="Your auth token">
+                    <label class="form-label">Auth Token <span class="text-danger">*</span></label>
+                    <input type="password" name="authToken" class="form-control" placeholder="Your auth token" value="<%= smsConfig.authToken %>">
                   </div>
                   <div class="mb-3">
-                    <label class="form-label">Phone Number</label>
-                    <input type="tel" class="form-control" placeholder="+1234567890">
+                    <label class="form-label">Phone Number <span class="text-danger">*</span></label>
+                    <input type="tel" name="phoneNumber" class="form-control" placeholder="+1234567890" value="<%= smsConfig.phoneNumber %>">
+                    <small class="text-muted">Your Twilio phone number</small>
                   </div>
                   <div class="form-check form-switch mb-3">
-                    <input class="form-check-input" type="checkbox" id="smsEnabled">
+                    <input class="form-check-input" type="checkbox" name="isEnabled" id="smsEnabled" <%= smsConfig.isEnabled ? 'checked' : '' %>>
                     <label class="form-check-label" for="smsEnabled">Enable SMS Notifications</label>
                   </div>
-                  <button type="button" class="btn btn-primary">Save Configuration</button>
-                  <button type="button" class="btn btn-outline-secondary">Test Connection</button>
-                </form>
+                  <button type="button" class="btn btn-outline-secondary" onclick="testConnection()">
+                    <i class="bi bi-plug me-1"></i>Test Connection
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- Notification Types -->
-          <div class="col-md-6">
-            <div class="card h-100">
-              <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-bell me-2"></i>Notification Types</h5>
-              </div>
-              <div class="card-body">
-                <div class="list-group list-group-flush">
-                  <div class="list-group-item d-flex justify-content-between align-items-center px-0">
-                    <div>
-                      <strong>Session Reminders</strong>
-                      <br><small class="text-muted">Remind students of upcoming sessions</small>
+            <!-- Notification Types -->
+            <div class="col-md-6">
+              <div class="card h-100">
+                <div class="card-header">
+                  <h5 class="mb-0"><i class="bi bi-bell me-2"></i>Notification Types</h5>
+                </div>
+                <div class="card-body">
+                  <div class="list-group list-group-flush">
+                    <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                      <div>
+                        <strong>Session Reminders</strong>
+                        <br><small class="text-muted">Remind students of upcoming sessions</small>
+                      </div>
+                      <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="sessionReminders" <%= smsConfig.sessionReminders ? 'checked' : '' %>>
+                      </div>
                     </div>
-                    <div class="form-check form-switch">
-                      <input class="form-check-input" type="checkbox" checked>
+                    <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                      <div>
+                        <strong>Progress Updates</strong>
+                        <br><small class="text-muted">Weekly progress reports to parents</small>
+                      </div>
+                      <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="progressUpdates" <%= smsConfig.progressUpdates ? 'checked' : '' %>>
+                      </div>
                     </div>
-                  </div>
-                  <div class="list-group-item d-flex justify-content-between align-items-center px-0">
-                    <div>
-                      <strong>Progress Updates</strong>
-                      <br><small class="text-muted">Weekly progress reports to parents</small>
+                    <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                      <div>
+                        <strong>Achievement Alerts</strong>
+                        <br><small class="text-muted">Notify when student reaches milestone</small>
+                      </div>
+                      <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="achievementAlerts" <%= smsConfig.achievementAlerts ? 'checked' : '' %>>
+                      </div>
                     </div>
-                    <div class="form-check form-switch">
-                      <input class="form-check-input" type="checkbox" checked>
-                    </div>
-                  </div>
-                  <div class="list-group-item d-flex justify-content-between align-items-center px-0">
-                    <div>
-                      <strong>Achievement Alerts</strong>
-                      <br><small class="text-muted">Notify when student reaches milestone</small>
-                    </div>
-                    <div class="form-check form-switch">
-                      <input class="form-check-input" type="checkbox">
-                    </div>
-                  </div>
-                  <div class="list-group-item d-flex justify-content-between align-items-center px-0">
-                    <div>
-                      <strong>Teacher Alerts</strong>
-                      <br><small class="text-muted">Alert teacher when student struggles</small>
-                    </div>
-                    <div class="form-check form-switch">
-                      <input class="form-check-input" type="checkbox">
+                    <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                      <div>
+                        <strong>Teacher Alerts</strong>
+                        <br><small class="text-muted">Alert teacher when student struggles</small>
+                      </div>
+                      <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="teacherAlerts" <%= smsConfig.teacherAlerts ? 'checked' : '' %>>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- Message Templates -->
-          <div class="col-12">
-            <div class="card">
-              <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-file-text me-2"></i>Message Templates</h5>
-              </div>
-              <div class="card-body">
-                <div class="row g-3">
-                  <div class="col-md-6">
-                    <label class="form-label">Session Reminder</label>
-                    <textarea class="form-control" rows="3">Hi {student_name}! Your tutoring session for {subject} starts in 15 minutes. See you soon!</textarea>
+            <!-- Message Templates -->
+            <div class="col-12">
+              <div class="card">
+                <div class="card-header">
+                  <h5 class="mb-0"><i class="bi bi-file-text me-2"></i>Message Templates</h5>
+                </div>
+                <div class="card-body">
+                  <div class="alert alert-info mb-3">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>Available Variables:</strong> {student_name}, {subject}, {sessions}, {mastery}, {topic}, {teacher_name}
                   </div>
-                  <div class="col-md-6">
-                    <label class="form-label">Progress Update</label>
-                    <textarea class="form-control" rows="3">Weekly update for {student_name}: Completed {sessions} sessions, {mastery}% mastery improvement in {subject}.</textarea>
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <label class="form-label">Session Reminder</label>
+                      <textarea name="sessionReminderTemplate" class="form-control" rows="3"><%= smsConfig.sessionReminderTemplate %></textarea>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">Progress Update</label>
+                      <textarea name="progressUpdateTemplate" class="form-control" rows="3"><%= smsConfig.progressUpdateTemplate %></textarea>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">Achievement Alert</label>
+                      <textarea name="achievementTemplate" class="form-control" rows="3"><%= smsConfig.achievementTemplate %></textarea>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">Teacher Alert</label>
+                      <textarea name="teacherAlertTemplate" class="form-control" rows="3"><%= smsConfig.teacherAlertTemplate %></textarea>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
+
+            <!-- Save Button -->
+            <div class="col-12">
+              <button type="submit" class="btn btn-primary btn-lg">
+                <i class="bi bi-check-lg me-2"></i>Save SMS Settings
+              </button>
+            </div>
           </div>
-        </div>
+        </form>
       </main>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const basePath = '<%= basePath %>';
+    const token = '<%= token %>';
+
+    async function testConnection() {
+      try {
+        const response = await fetch(`${basePath}/admin/sms-settings/test?token=${token}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const result = await response.json();
+        alert(result.success ? 'Connection successful: ' + result.message : 'Connection failed: ' + result.message);
+      } catch (error) {
+        alert('Test failed: ' + error.message);
+      }
+    }
+  </script>
 </body>
 </html>

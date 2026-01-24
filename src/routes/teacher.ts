@@ -5,6 +5,29 @@ import { Router } from 'express';
 import { prisma } from '../config/database';
 import { config } from '../config';
 import { requireAuth, requireRole } from '../middleware/auth';
+import { logger } from '../utils/logger';
+import {
+  getTeacherAlerts,
+  acknowledgeAlert,
+  resolveAlert,
+  dismissAlert,
+  getAlertStats,
+  getTeacherAlertPrefs,
+  updateTeacherAlertPrefs
+} from '../services/socratic.service';
+import {
+  getGradeCategories,
+  createGradeCategory,
+  updateGradeCategory,
+  deleteGradeCategory,
+  initializeDefaultCategories,
+  getClassGradebook,
+  recalculateClassGrades,
+  updateGradebookEntry,
+  calculateStudentGrade,
+  getClassStatistics,
+  getGradebookSettings
+} from '../services/gradebook.service';
 
 const router = Router();
 
@@ -1135,6 +1158,133 @@ router.get('/quizzes/:id', async (req, res) => {
   }
 });
 
+// Edit Quiz Form
+router.get('/quizzes/:id/edit', async (req, res) => {
+  try {
+    const userId = req.session.userId!;
+    const branding = await getBranding();
+
+    const quiz = await prisma.quiz.findFirst({
+      where: { id: req.params.id, createdById: userId },
+      include: {
+        topic: { include: { subject: { include: { category: true } } } },
+        class: true,
+        questions: { orderBy: { questionNum: 'asc' } }
+      }
+    });
+
+    if (!quiz) {
+      return res.status(404).render('errors/404', {
+        basePath: config.basePath,
+        title: 'Quiz Not Found'
+      });
+    }
+
+    const categories = await prisma.subjectCategory.findMany({
+      where: { isActive: true },
+      include: {
+        subjects: {
+          where: { isActive: true },
+          include: { topics: { where: { isActive: true } } }
+        }
+      }
+    });
+
+    const teacherClasses = await prisma.classTeacher.findMany({
+      where: { teacherId: userId },
+      include: { class: true }
+    });
+
+    res.render('teacher/quiz-form', {
+      title: `Edit Quiz - ${quiz.title} - TutorAI`,
+      branding,
+      user: req.session.user,
+      quiz,
+      categories,
+      classes: teacherClasses.map(tc => tc.class),
+      isEdit: true
+    });
+
+  } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Edit quiz form error:');
+    res.status(500).render('errors/500', {
+      basePath: config.basePath,
+      title: 'Error'
+    });
+  }
+});
+
+// Update Quiz
+router.post('/quizzes/:id', async (req, res) => {
+  try {
+    const userId = req.session.userId!;
+    const { title, description, topicId, classId, timeLimit, passingScore, maxAttempts, randomize, showAnswers, questions } = req.body;
+
+    // Verify ownership
+    const existingQuiz = await prisma.quiz.findFirst({
+      where: { id: req.params.id, createdById: userId }
+    });
+
+    if (!existingQuiz) {
+      return res.status(404).render('errors/404', {
+        basePath: config.basePath,
+        title: 'Quiz Not Found'
+      });
+    }
+
+    // Update quiz
+    await prisma.quiz.update({
+      where: { id: req.params.id },
+      data: {
+        title,
+        description: description || null,
+        topicId,
+        classId: classId || null,
+        timeLimit: timeLimit ? parseInt(timeLimit) : null,
+        passingScore: passingScore ? parseInt(passingScore) : 70,
+        maxAttempts: maxAttempts ? parseInt(maxAttempts) : 3,
+        randomize: randomize === 'on',
+        showAnswers: showAnswers !== 'off'
+      }
+    });
+
+    // Delete existing questions and recreate
+    await prisma.quizQuestion.deleteMany({
+      where: { quizId: req.params.id }
+    });
+
+    // Create new questions if provided
+    if (questions && Array.isArray(questions)) {
+      for (let i = 0; i < questions.length; i++) {
+        const q = questions[i];
+        if (q.questionText) {
+          await prisma.quizQuestion.create({
+            data: {
+              quizId: req.params.id,
+              questionNum: i + 1,
+              questionText: q.questionText,
+              questionType: q.questionType || 'multiple_choice',
+              options: q.options ? JSON.stringify(q.options) : null,
+              correctAnswer: q.correctAnswer,
+              explanation: q.explanation || null,
+              points: q.points ? parseInt(q.points) : 1
+            }
+          });
+        }
+      }
+    }
+
+    res.redirect(`${config.basePath}/teacher/quizzes/${req.params.id}`);
+
+  } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Update quiz error:');
+    res.status(500).render('errors/500', {
+      basePath: config.basePath,
+      title: 'Error'
+    });
+  }
+});
+
 // Delete Quiz
 router.post('/quizzes/:id/delete', async (req, res) => {
   try {
@@ -1152,6 +1302,443 @@ router.post('/quizzes/:id/delete', async (req, res) => {
       basePath: config.basePath,
       title: 'Error'
     });
+  }
+});
+
+// ============================================
+// STUDENT ALERTS (Struggling Detection)
+// ============================================
+
+// View Student Alerts Dashboard
+router.get('/alerts', async (req, res) => {
+  try {
+    const userId = req.session.userId!;
+    const branding = await getBranding();
+    const { status, severity } = req.query;
+
+    // Get alerts for teacher's students
+    const alerts = await getTeacherAlerts(userId, {
+      status: status as string | undefined,
+      severity: severity as string | undefined,
+      limit: 50
+    });
+
+    // Get alert statistics
+    const stats = await getAlertStats(userId);
+
+    // Get teacher's alert preferences
+    const prefs = await getTeacherAlertPrefs(userId);
+
+    res.render('teacher/alerts', {
+      title: 'Student Alerts - TutorAI',
+      branding,
+      user: req.session.user,
+      alerts,
+      stats,
+      prefs,
+      filters: { status, severity }
+    });
+
+  } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Teacher alerts error:');
+    res.status(500).render('errors/500', {
+      basePath: config.basePath,
+      title: 'Error'
+    });
+  }
+});
+
+// Get alerts as JSON (for AJAX refresh)
+router.get('/alerts/json', async (req, res) => {
+  try {
+    const userId = req.session.userId!;
+    const { status, severity } = req.query;
+
+    const alerts = await getTeacherAlerts(userId, {
+      status: status as string | undefined,
+      severity: severity as string | undefined,
+      limit: 50
+    });
+
+    const stats = await getAlertStats(userId);
+
+    res.json({ success: true, alerts, stats });
+
+  } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Get alerts JSON error:');
+    res.status(500).json({ error: 'Failed to get alerts' });
+  }
+});
+
+// Acknowledge an alert
+router.post('/alerts/:id/acknowledge', async (req, res) => {
+  try {
+    const userId = req.session.userId!;
+
+    await acknowledgeAlert(req.params.id, userId);
+
+    // Check if AJAX request
+    if (req.xhr || req.headers.accept?.includes('application/json')) {
+      res.json({ success: true });
+    } else {
+      res.redirect(`${config.basePath}/teacher/alerts`);
+    }
+
+  } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Acknowledge alert error:');
+    if (req.xhr || req.headers.accept?.includes('application/json')) {
+      res.status(500).json({ error: 'Failed to acknowledge alert' });
+    } else {
+      res.redirect(`${config.basePath}/teacher/alerts`);
+    }
+  }
+});
+
+// Resolve an alert
+router.post('/alerts/:id/resolve', async (req, res) => {
+  try {
+    const { resolution } = req.body;
+
+    await resolveAlert(req.params.id, resolution || 'Resolved by teacher');
+
+    if (req.xhr || req.headers.accept?.includes('application/json')) {
+      res.json({ success: true });
+    } else {
+      res.redirect(`${config.basePath}/teacher/alerts`);
+    }
+
+  } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Resolve alert error:');
+    if (req.xhr || req.headers.accept?.includes('application/json')) {
+      res.status(500).json({ error: 'Failed to resolve alert' });
+    } else {
+      res.redirect(`${config.basePath}/teacher/alerts`);
+    }
+  }
+});
+
+// Dismiss an alert
+router.post('/alerts/:id/dismiss', async (req, res) => {
+  try {
+    await dismissAlert(req.params.id);
+
+    if (req.xhr || req.headers.accept?.includes('application/json')) {
+      res.json({ success: true });
+    } else {
+      res.redirect(`${config.basePath}/teacher/alerts`);
+    }
+
+  } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Dismiss alert error:');
+    if (req.xhr || req.headers.accept?.includes('application/json')) {
+      res.status(500).json({ error: 'Failed to dismiss alert' });
+    } else {
+      res.redirect(`${config.basePath}/teacher/alerts`);
+    }
+  }
+});
+
+// Update alert preferences
+router.post('/alerts/preferences', async (req, res) => {
+  try {
+    const userId = req.session.userId!;
+    const {
+      receiveStrugglingAlerts,
+      receiveLowScoreAlerts,
+      receiveInactivityAlerts,
+      receiveHelpRequests,
+      alertInApp,
+      alertEmail,
+      alertSms,
+      strugglingThreshold,
+      inactivityMinutes,
+      lowScoreThreshold
+    } = req.body;
+
+    await updateTeacherAlertPrefs(userId, {
+      receiveStrugglingAlerts: receiveStrugglingAlerts === 'on' || receiveStrugglingAlerts === 'true',
+      receiveLowScoreAlerts: receiveLowScoreAlerts === 'on' || receiveLowScoreAlerts === 'true',
+      receiveInactivityAlerts: receiveInactivityAlerts === 'on' || receiveInactivityAlerts === 'true',
+      receiveHelpRequests: receiveHelpRequests === 'on' || receiveHelpRequests === 'true',
+      alertInApp: alertInApp === 'on' || alertInApp === 'true',
+      alertEmail: alertEmail === 'on' || alertEmail === 'true',
+      alertSms: alertSms === 'on' || alertSms === 'true',
+      strugglingThreshold: strugglingThreshold ? parseInt(strugglingThreshold) : 3,
+      inactivityMinutes: inactivityMinutes ? parseInt(inactivityMinutes) : 10,
+      lowScoreThreshold: lowScoreThreshold ? parseInt(lowScoreThreshold) : 50
+    });
+
+    if (req.xhr || req.headers.accept?.includes('application/json')) {
+      res.json({ success: true });
+    } else {
+      res.redirect(`${config.basePath}/teacher/alerts`);
+    }
+
+  } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Update alert prefs error:');
+    if (req.xhr || req.headers.accept?.includes('application/json')) {
+      res.status(500).json({ error: 'Failed to update preferences' });
+    } else {
+      res.redirect(`${config.basePath}/teacher/alerts`);
+    }
+  }
+});
+
+// ============================================
+// GRADEBOOK
+// ============================================
+
+// Class Gradebook View
+router.get('/classes/:classId/gradebook', async (req, res) => {
+  try {
+    const userId = req.session.userId!;
+    const branding = await getBranding();
+    const { classId } = req.params;
+
+    // Verify teacher has access to this class
+    const teacherClass = await prisma.classTeacher.findFirst({
+      where: { teacherId: userId, classId },
+      include: {
+        class: {
+          include: {
+            subject: true
+          }
+        }
+      }
+    });
+
+    if (!teacherClass) {
+      return res.status(404).render('errors/404', {
+        basePath: config.basePath,
+        title: 'Class Not Found'
+      });
+    }
+
+    // Initialize default categories if none exist
+    await initializeDefaultCategories(classId);
+
+    // Get gradebook data
+    const gradebook = await getClassGradebook(classId);
+    const categories = await getGradeCategories(classId);
+    const statistics = await getClassStatistics(classId);
+    const settings = await getGradebookSettings();
+
+    res.render('teacher/gradebook', {
+      title: `Gradebook - ${teacherClass.class.name} - TutorAI`,
+      branding,
+      user: req.session.user,
+      classData: teacherClass.class,
+      gradebook,
+      categories,
+      statistics,
+      settings
+    });
+
+  } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Gradebook error:');
+    res.status(500).render('errors/500', {
+      basePath: config.basePath,
+      title: 'Error'
+    });
+  }
+});
+
+// Get gradebook JSON (for AJAX)
+router.get('/classes/:classId/gradebook/json', async (req, res) => {
+  try {
+    const userId = req.session.userId!;
+    const { classId } = req.params;
+
+    // Verify access
+    const teacherClass = await prisma.classTeacher.findFirst({
+      where: { teacherId: userId, classId }
+    });
+
+    if (!teacherClass) {
+      return res.status(404).json({ error: 'Class not found' });
+    }
+
+    const gradebook = await getClassGradebook(classId);
+    const statistics = await getClassStatistics(classId);
+
+    res.json({ success: true, gradebook, statistics });
+
+  } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Get gradebook JSON error:');
+    res.status(500).json({ error: 'Failed to get gradebook' });
+  }
+});
+
+// Recalculate all grades for a class
+router.post('/classes/:classId/gradebook/recalculate', async (req, res) => {
+  try {
+    const userId = req.session.userId!;
+    const { classId } = req.params;
+
+    // Verify access
+    const teacherClass = await prisma.classTeacher.findFirst({
+      where: { teacherId: userId, classId }
+    });
+
+    if (!teacherClass) {
+      return res.status(404).json({ error: 'Class not found' });
+    }
+
+    await recalculateClassGrades(classId);
+
+    if (req.xhr || req.headers.accept?.includes('application/json')) {
+      res.json({ success: true });
+    } else {
+      res.redirect(`${config.basePath}/teacher/classes/${classId}/gradebook`);
+    }
+
+  } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Recalculate grades error:');
+    if (req.xhr || req.headers.accept?.includes('application/json')) {
+      res.status(500).json({ error: 'Failed to recalculate grades' });
+    } else {
+      res.redirect(`${config.basePath}/teacher/classes/${req.params.classId}/gradebook`);
+    }
+  }
+});
+
+// Calculate individual student grade
+router.post('/classes/:classId/gradebook/student/:studentId/calculate', async (req, res) => {
+  try {
+    const userId = req.session.userId!;
+    const { classId, studentId } = req.params;
+
+    // Verify access
+    const teacherClass = await prisma.classTeacher.findFirst({
+      where: { teacherId: userId, classId }
+    });
+
+    if (!teacherClass) {
+      return res.status(404).json({ error: 'Class not found' });
+    }
+
+    await updateGradebookEntry(studentId, classId);
+    const grade = await calculateStudentGrade(studentId, classId);
+
+    res.json({ success: true, grade });
+
+  } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Calculate student grade error:');
+    res.status(500).json({ error: 'Failed to calculate grade' });
+  }
+});
+
+// ============================================
+// GRADE CATEGORIES MANAGEMENT
+// ============================================
+
+// Get categories for a class
+router.get('/classes/:classId/gradebook/categories', async (req, res) => {
+  try {
+    const userId = req.session.userId!;
+    const { classId } = req.params;
+
+    const teacherClass = await prisma.classTeacher.findFirst({
+      where: { teacherId: userId, classId }
+    });
+
+    if (!teacherClass) {
+      return res.status(404).json({ error: 'Class not found' });
+    }
+
+    const categories = await getGradeCategories(classId);
+    res.json({ success: true, categories });
+
+  } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Get categories error:');
+    res.status(500).json({ error: 'Failed to get categories' });
+  }
+});
+
+// Create a grade category
+router.post('/classes/:classId/gradebook/categories', async (req, res) => {
+  try {
+    const userId = req.session.userId!;
+    const { classId } = req.params;
+    const { name, weight, dropLowest, color, order } = req.body;
+
+    const teacherClass = await prisma.classTeacher.findFirst({
+      where: { teacherId: userId, classId }
+    });
+
+    if (!teacherClass) {
+      return res.status(404).json({ error: 'Class not found' });
+    }
+
+    const category = await createGradeCategory({
+      classId,
+      name,
+      weight: parseFloat(weight) || 1.0,
+      dropLowest: dropLowest ? parseInt(dropLowest) : 0,
+      color,
+      order: order ? parseInt(order) : 0
+    });
+
+    res.json({ success: true, category });
+
+  } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Create category error:');
+    res.status(500).json({ error: 'Failed to create category' });
+  }
+});
+
+// Update a grade category
+router.put('/classes/:classId/gradebook/categories/:categoryId', async (req, res) => {
+  try {
+    const userId = req.session.userId!;
+    const { classId, categoryId } = req.params;
+    const { name, weight, dropLowest, color, order } = req.body;
+
+    const teacherClass = await prisma.classTeacher.findFirst({
+      where: { teacherId: userId, classId }
+    });
+
+    if (!teacherClass) {
+      return res.status(404).json({ error: 'Class not found' });
+    }
+
+    const category = await updateGradeCategory(categoryId, {
+      name,
+      weight: weight !== undefined ? parseFloat(weight) : undefined,
+      dropLowest: dropLowest !== undefined ? parseInt(dropLowest) : undefined,
+      color,
+      order: order !== undefined ? parseInt(order) : undefined
+    });
+
+    res.json({ success: true, category });
+
+  } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Update category error:');
+    res.status(500).json({ error: 'Failed to update category' });
+  }
+});
+
+// Delete a grade category
+router.delete('/classes/:classId/gradebook/categories/:categoryId', async (req, res) => {
+  try {
+    const userId = req.session.userId!;
+    const { classId, categoryId } = req.params;
+
+    const teacherClass = await prisma.classTeacher.findFirst({
+      where: { teacherId: userId, classId }
+    });
+
+    if (!teacherClass) {
+      return res.status(404).json({ error: 'Class not found' });
+    }
+
+    await deleteGradeCategory(categoryId);
+
+    res.json({ success: true });
+
+  } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Delete category error:');
+    res.status(500).json({ error: 'Failed to delete category' });
   }
 });
 

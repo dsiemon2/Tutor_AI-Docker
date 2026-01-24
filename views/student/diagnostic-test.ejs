@@ -1,0 +1,351 @@
+<%- include('../layouts/student', { body: `
+<!-- Test Header -->
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <h5 class="mb-1">${test.title}</h5>
+        <small class="text-muted">Diagnostic Assessment</small>
+      </div>
+      <div class="d-flex align-items-center gap-3">
+        ${test.timeLimit ? '<div class="text-center px-3 py-2 bg-warning rounded" id="timerDisplay"><i class="bi bi-clock me-1"></i><span id="timer" class="fw-bold">' + test.timeLimit + ':00</span></div>' : ''}
+        <div class="text-center px-3">
+          <div class="fw-bold" id="progressText">${questionData?.questionNumber || 1} / ${test.questionCount}</div>
+          <small class="text-muted">Questions</small>
+        </div>
+      </div>
+    </div>
+    <!-- Progress bar -->
+    <div class="progress mt-3" style="height: 8px;">
+      <div class="progress-bar" id="progressBar" role="progressbar"
+           style="width: ${questionData ? (questionData.questionNumber / test.questionCount * 100) : 0}%"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Question Container -->
+<div class="row">
+  <div class="col-lg-8 mx-auto">
+    <div class="card" id="questionCard">
+      ${questionData && questionData.question ? `
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <span class="fw-bold">Question ${questionData.questionNumber}</span>
+        <span class="badge bg-${questionData.question.difficulty <= 3 ? 'success' : questionData.question.difficulty <= 6 ? 'warning text-dark' : 'danger'}">
+          ${questionData.question.difficulty <= 3 ? 'Easy' : questionData.question.difficulty <= 6 ? 'Medium' : 'Hard'}
+        </span>
+      </div>
+      <div class="card-body p-4">
+        <p class="fs-5 mb-4" id="questionText">${questionData.question.questionText}</p>
+
+        <!-- Answer Options -->
+        <div id="answerOptions">
+          ${questionData.question.options ? `
+            <div class="d-grid gap-2">
+              ${questionData.question.options.map((opt, j) => '<button type="button" class="btn btn-outline-secondary text-start p-3 answer-btn" onclick="selectAnswer(this, \\'' + opt.replace(/'/g, "\\\\'") + '\\')">' + '<span class="badge bg-secondary me-2">' + String.fromCharCode(65 + j) + '</span>' + opt + '</button>').join('')}
+            </div>
+          ` : `
+            <input type="text" class="form-control form-control-lg" id="textAnswer" placeholder="Type your answer...">
+          `}
+        </div>
+
+        <!-- Feedback area (hidden initially) -->
+        <div id="feedbackArea" class="mt-4" style="display: none;"></div>
+      </div>
+      <div class="card-footer bg-white">
+        <div class="d-flex justify-content-between">
+          <button class="btn btn-outline-secondary" id="skipBtn" onclick="skipQuestion()">
+            <i class="bi bi-skip-forward me-1"></i>Skip
+          </button>
+          <button class="btn btn-primary" id="submitBtn" onclick="submitCurrentAnswer()" disabled>
+            <i class="bi bi-arrow-right me-1"></i>Next Question
+          </button>
+        </div>
+      </div>
+      ` : `
+      <div class="card-body text-center py-5">
+        <i class="bi bi-check-circle-fill text-success fs-1 mb-3"></i>
+        <h5>All Questions Completed!</h5>
+        <p class="text-muted mb-4">You've answered all ${test.questionCount} questions.</p>
+        <button class="btn btn-success btn-lg" onclick="completeTest()">
+          <i class="bi bi-flag-fill me-2"></i>View Results
+        </button>
+      </div>
+      `}
+    </div>
+  </div>
+</div>
+
+<!-- Exit Confirmation Modal -->
+<div class="modal fade" id="exitModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Exit Diagnostic?</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to exit? Your progress will be saved and you can continue later.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Continue Test</button>
+        <a href="${typeof basePath !== 'undefined' ? basePath : ''}/student/diagnostics" class="btn btn-danger">Exit Test</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const basePath = '${typeof basePath !== 'undefined' ? basePath : ''}';
+  const attemptId = '${attempt.id}';
+  const totalQuestions = ${test.questionCount};
+  let currentQuestion = ${JSON.stringify(questionData?.question || null)};
+  let currentQuestionNumber = ${questionData?.questionNumber || 1};
+  let selectedAnswer = null;
+  let questionStartTime = Date.now();
+  let isSubmitting = false;
+
+  // Timer
+  ${test.timeLimit ? `
+  let timeLeft = ${test.timeLimit} * 60;
+  const timerEl = document.getElementById('timer');
+  const timerDisplay = document.getElementById('timerDisplay');
+
+  const timerInterval = setInterval(() => {
+    timeLeft--;
+    const mins = Math.floor(timeLeft / 60);
+    const secs = timeLeft % 60;
+    timerEl.textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
+
+    if (timeLeft <= 60) {
+      timerDisplay.classList.remove('bg-warning');
+      timerDisplay.classList.add('bg-danger', 'text-white');
+    }
+
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      alert('Time is up! Submitting your test...');
+      completeTest();
+    }
+  }, 1000);
+  ` : ''}
+
+  function selectAnswer(btn, answer) {
+    // Deselect all
+    document.querySelectorAll('.answer-btn').forEach(b => {
+      b.classList.remove('btn-primary');
+      b.classList.add('btn-outline-secondary');
+    });
+
+    // Select this one
+    btn.classList.remove('btn-outline-secondary');
+    btn.classList.add('btn-primary');
+    selectedAnswer = answer;
+
+    // Enable submit
+    document.getElementById('submitBtn').disabled = false;
+  }
+
+  async function submitCurrentAnswer() {
+    if (isSubmitting) return;
+
+    // Get answer
+    const textInput = document.getElementById('textAnswer');
+    const answer = selectedAnswer || (textInput ? textInput.value.trim() : '');
+
+    if (!answer) {
+      alert('Please select or enter an answer.');
+      return;
+    }
+
+    isSubmitting = true;
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Submitting...';
+
+    try {
+      const timeSpent = Math.round((Date.now() - questionStartTime) / 1000);
+
+      const response = await fetch(basePath + '/student/diagnostics/attempt/' + attemptId + '/answer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          questionId: currentQuestion.id,
+          answer: answer,
+          timeSpent: timeSpent
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Show feedback
+        showFeedback(data.isCorrect, data.explanation);
+
+        // Wait a moment then load next question
+        setTimeout(() => {
+          if (data.hasMore) {
+            loadNextQuestion();
+          } else {
+            showComplete();
+          }
+        }, 2000);
+      } else {
+        alert('Failed to submit answer: ' + (data.error || 'Unknown error'));
+        isSubmitting = false;
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="bi bi-arrow-right me-1"></i>Next Question';
+      }
+    } catch (error) {
+      console.error('Submit error:', error);
+      alert('Failed to submit answer. Please try again.');
+      isSubmitting = false;
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i class="bi bi-arrow-right me-1"></i>Next Question';
+    }
+  }
+
+  function showFeedback(isCorrect, explanation) {
+    const feedbackArea = document.getElementById('feedbackArea');
+    feedbackArea.innerHTML = '<div class="alert ' + (isCorrect ? 'alert-success' : 'alert-danger') + '">' +
+      '<div class="d-flex align-items-center gap-2">' +
+        '<i class="bi ' + (isCorrect ? 'bi-check-circle-fill' : 'bi-x-circle-fill') + ' fs-4"></i>' +
+        '<strong>' + (isCorrect ? 'Correct!' : 'Incorrect') + '</strong>' +
+      '</div>' +
+      (explanation ? '<p class="mb-0 mt-2">' + explanation + '</p>' : '') +
+    '</div>';
+    feedbackArea.style.display = 'block';
+
+    // Disable answer buttons
+    document.querySelectorAll('.answer-btn').forEach(btn => btn.disabled = true);
+    const textInput = document.getElementById('textAnswer');
+    if (textInput) textInput.disabled = true;
+  }
+
+  async function loadNextQuestion() {
+    try {
+      const response = await fetch(basePath + '/student/diagnostics/attempt/' + attemptId + '/next');
+      const data = await response.json();
+
+      if (data.complete) {
+        showComplete();
+        return;
+      }
+
+      if (data.question) {
+        currentQuestion = data.question;
+        currentQuestionNumber = data.questionNumber;
+        renderQuestion(data);
+      }
+    } catch (error) {
+      console.error('Load next question error:', error);
+      alert('Failed to load next question. Please refresh the page.');
+    }
+  }
+
+  function renderQuestion(data) {
+    const card = document.getElementById('questionCard');
+
+    let optionsHtml = '';
+    if (data.question.options) {
+      optionsHtml = '<div class="d-grid gap-2">' +
+        data.question.options.map((opt, j) =>
+          '<button type="button" class="btn btn-outline-secondary text-start p-3 answer-btn" onclick="selectAnswer(this, \\'' + opt.replace(/'/g, "\\\\'") + '\\')">' +
+            '<span class="badge bg-secondary me-2">' + String.fromCharCode(65 + j) + '</span>' + opt +
+          '</button>'
+        ).join('') +
+      '</div>';
+    } else {
+      optionsHtml = '<input type="text" class="form-control form-control-lg" id="textAnswer" placeholder="Type your answer...">';
+    }
+
+    const diffBadge = data.question.difficulty <= 3 ? 'success">Easy' :
+                      data.question.difficulty <= 6 ? 'warning text-dark">Medium' : 'danger">Hard';
+
+    card.innerHTML = '<div class="card-header bg-white d-flex justify-content-between align-items-center">' +
+      '<span class="fw-bold">Question ' + data.questionNumber + '</span>' +
+      '<span class="badge bg-' + diffBadge + '</span>' +
+    '</div>' +
+    '<div class="card-body p-4">' +
+      '<p class="fs-5 mb-4" id="questionText">' + data.question.questionText + '</p>' +
+      '<div id="answerOptions">' + optionsHtml + '</div>' +
+      '<div id="feedbackArea" class="mt-4" style="display: none;"></div>' +
+    '</div>' +
+    '<div class="card-footer bg-white">' +
+      '<div class="d-flex justify-content-between">' +
+        '<button class="btn btn-outline-secondary" id="skipBtn" onclick="skipQuestion()">' +
+          '<i class="bi bi-skip-forward me-1"></i>Skip' +
+        '</button>' +
+        '<button class="btn btn-primary" id="submitBtn" onclick="submitCurrentAnswer()" disabled>' +
+          '<i class="bi bi-arrow-right me-1"></i>Next Question' +
+        '</button>' +
+      '</div>' +
+    '</div>';
+
+    // Update progress
+    document.getElementById('progressText').textContent = data.questionNumber + ' / ' + totalQuestions;
+    document.getElementById('progressBar').style.width = (data.questionNumber / totalQuestions * 100) + '%';
+
+    // Reset state
+    selectedAnswer = null;
+    questionStartTime = Date.now();
+    isSubmitting = false;
+
+    // Add enter key handler for text input
+    const textInput = document.getElementById('textAnswer');
+    if (textInput) {
+      textInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          submitCurrentAnswer();
+        }
+      });
+      textInput.addEventListener('input', function() {
+        document.getElementById('submitBtn').disabled = !this.value.trim();
+      });
+    }
+  }
+
+  function showComplete() {
+    const card = document.getElementById('questionCard');
+    card.innerHTML = '<div class="card-body text-center py-5">' +
+      '<i class="bi bi-check-circle-fill text-success fs-1 mb-3"></i>' +
+      '<h5>All Questions Completed!</h5>' +
+      '<p class="text-muted mb-4">You\\'ve answered all ' + totalQuestions + ' questions.</p>' +
+      '<button class="btn btn-success btn-lg" onclick="completeTest()">' +
+        '<i class="bi bi-flag-fill me-2"></i>View Results' +
+      '</button>' +
+    '</div>';
+  }
+
+  async function skipQuestion() {
+    // Submit with empty answer (counts as incorrect)
+    selectedAnswer = '';
+    await submitCurrentAnswer();
+  }
+
+  async function completeTest() {
+    try {
+      const response = await fetch(basePath + '/student/diagnostics/attempt/' + attemptId + '/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        window.location.href = basePath + '/student/diagnostics/results/' + attemptId;
+      } else {
+        alert('Failed to complete test: ' + (data.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Complete test error:', error);
+      alert('Failed to complete test. Please try again.');
+    }
+  }
+
+  // Warn before leaving
+  window.addEventListener('beforeunload', function(e) {
+    e.preventDefault();
+    e.returnValue = '';
+  });
+</script>
+`, activePage: 'diagnostics', pageTitle: test.title, branding, user }) %>

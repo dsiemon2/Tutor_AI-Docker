@@ -1,0 +1,262 @@
+<%- include('../layouts/teacher', { body: `
+<!-- Alert Stats Cards -->
+<div class="row g-4 mb-4">
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Total Alerts</div>
+          <div class="stat-value">${stats.total}</div>
+        </div>
+        <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+          <i class="bi bi-bell"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">New Alerts</div>
+          <div class="stat-value">${stats.new}</div>
+        </div>
+        <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+          <i class="bi bi-exclamation-circle"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Acknowledged</div>
+          <div class="stat-value">${stats.acknowledged}</div>
+        </div>
+        <div class="stat-icon bg-info bg-opacity-10 text-info">
+          <i class="bi bi-eye"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">High Priority</div>
+          <div class="stat-value">${stats.high + stats.critical}</div>
+        </div>
+        <div class="stat-icon bg-danger bg-opacity-10 text-danger">
+          <i class="bi bi-exclamation-triangle"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Filters & Settings -->
+<div class="row mb-4">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-body">
+        <form method="GET" class="row g-3">
+          <div class="col-md-5">
+            <label class="form-label">Status</label>
+            <select name="status" class="form-select" onchange="this.form.submit()">
+              <option value="">All Statuses</option>
+              <option value="new" ${filters.status === 'new' ? 'selected' : ''}>New</option>
+              <option value="acknowledged" ${filters.status === 'acknowledged' ? 'selected' : ''}>Acknowledged</option>
+              <option value="resolved" ${filters.status === 'resolved' ? 'selected' : ''}>Resolved</option>
+              <option value="dismissed" ${filters.status === 'dismissed' ? 'selected' : ''}>Dismissed</option>
+            </select>
+          </div>
+          <div class="col-md-5">
+            <label class="form-label">Severity</label>
+            <select name="severity" class="form-select" onchange="this.form.submit()">
+              <option value="">All Severities</option>
+              <option value="critical" ${filters.severity === 'critical' ? 'selected' : ''}>Critical</option>
+              <option value="high" ${filters.severity === 'high' ? 'selected' : ''}>High</option>
+              <option value="medium" ${filters.severity === 'medium' ? 'selected' : ''}>Medium</option>
+              <option value="low" ${filters.severity === 'low' ? 'selected' : ''}>Low</option>
+            </select>
+          </div>
+          <div class="col-md-2 d-flex align-items-end">
+            <a href="${typeof basePath !== 'undefined' ? basePath : ''}/teacher/alerts" class="btn btn-outline-secondary w-100">Clear</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4 d-flex align-items-center justify-content-end">
+    <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#prefsModal">
+      <i class="bi bi-gear me-2"></i>Alert Settings
+    </button>
+  </div>
+</div>
+
+<!-- Alerts List -->
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Student Alerts</h5>
+    <span class="badge bg-primary">${alerts.length} alerts</span>
+  </div>
+  <div class="card-body p-0">
+    ${alerts.length === 0 ? '<div class="text-center py-5"><i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i><h5 class="mt-3">No Alerts</h5><p class="text-muted">All your students are doing great!</p></div>' : '<div class="list-group list-group-flush">' + alerts.map(alert => {
+      const severityClass = alert.severity === 'critical' ? 'bg-danger' : alert.severity === 'high' ? 'bg-warning text-dark' : alert.severity === 'medium' ? 'bg-info' : 'bg-secondary';
+      const statusClass = alert.status === 'new' ? 'bg-warning text-dark' : alert.status === 'acknowledged' ? 'bg-info' : alert.status === 'resolved' ? 'bg-success' : 'bg-secondary';
+      const studentName = alert.student ? (alert.student.firstName + ' ' + alert.student.lastName) : 'Unknown Student';
+      const topicName = alert.topic ? alert.topic.name : '';
+      const bp = typeof basePath !== 'undefined' ? basePath : '';
+
+      return '<div class="list-group-item p-3">' +
+        '<div class="d-flex justify-content-between align-items-start">' +
+          '<div class="d-flex align-items-start">' +
+            '<span class="badge me-3 ' + severityClass + '">' + alert.severity.toUpperCase() + '</span>' +
+            '<div>' +
+              '<h6 class="mb-1"><a href="' + bp + '/teacher/students/' + (alert.student?.id || alert.studentId) + '" class="text-decoration-none">' + studentName + '</a> <span class="text-muted fw-normal">- ' + alert.alertType.replace(/_/g, ' ') + '</span></h6>' +
+              '<p class="mb-1 text-muted">' + alert.description + '</p>' +
+              '<div class="small text-muted">' +
+                (topicName ? '<span class="me-3"><i class="bi bi-book"></i> ' + topicName + '</span>' : '') +
+                '<span class="me-3"><i class="bi bi-x-circle"></i> ' + alert.wrongAnswerCount + ' wrong</span>' +
+                '<span class="me-3"><i class="bi bi-lightbulb"></i> ' + alert.hintRequestCount + ' hints</span>' +
+                '<span><i class="bi bi-clock"></i> ' + Math.round(alert.timeSpentSeconds / 60) + ' min</span>' +
+              '</div>' +
+              '<div class="small text-muted mt-1"><i class="bi bi-calendar"></i> ' + new Date(alert.createdAt).toLocaleString() + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="btn-group">' +
+            (alert.status === 'new' ? '<button class="btn btn-sm btn-outline-primary" onclick="acknowledgeAlert(\\'' + alert.id + '\\')" title="Acknowledge"><i class="bi bi-eye"></i></button>' : '') +
+            (alert.status !== 'resolved' ? '<button class="btn btn-sm btn-outline-success" onclick="showResolveModal(\\'' + alert.id + '\\')" title="Resolve"><i class="bi bi-check-lg"></i></button>' : '') +
+            (alert.status !== 'dismissed' ? '<button class="btn btn-sm btn-outline-secondary" onclick="dismissAlert(\\'' + alert.id + '\\')" title="Dismiss"><i class="bi bi-x-lg"></i></button>' : '') +
+            '<a href="' + bp + '/teacher/students/' + alert.studentId + '" class="btn btn-sm btn-outline-info" title="View Student"><i class="bi bi-person"></i></a>' +
+          '</div>' +
+        '</div>' +
+        '<div class="mt-2"><span class="badge ' + statusClass + '">' + alert.status + '</span>' +
+        (alert.resolution ? '<span class="ms-2 text-muted small">Resolution: ' + alert.resolution + '</span>' : '') +
+        '</div>' +
+      '</div>';
+    }).join('') + '</div>'}
+  </div>
+</div>
+
+<!-- Preferences Modal -->
+<div class="modal fade" id="prefsModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="${typeof basePath !== 'undefined' ? basePath : ''}/teacher/alerts/preferences">
+        <div class="modal-header">
+          <h5 class="modal-title">Alert Preferences</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <h6 class="mb-3">Alert Types</h6>
+          <div class="form-check mb-2">
+            <input type="checkbox" class="form-check-input" id="receiveStrugglingAlerts" name="receiveStrugglingAlerts" ${prefs.receiveStrugglingAlerts ? 'checked' : ''}>
+            <label class="form-check-label" for="receiveStrugglingAlerts">Struggling students</label>
+          </div>
+          <div class="form-check mb-2">
+            <input type="checkbox" class="form-check-input" id="receiveLowScoreAlerts" name="receiveLowScoreAlerts" ${prefs.receiveLowScoreAlerts ? 'checked' : ''}>
+            <label class="form-check-label" for="receiveLowScoreAlerts">Low quiz scores</label>
+          </div>
+          <div class="form-check mb-2">
+            <input type="checkbox" class="form-check-input" id="receiveInactivityAlerts" name="receiveInactivityAlerts" ${prefs.receiveInactivityAlerts ? 'checked' : ''}>
+            <label class="form-check-label" for="receiveInactivityAlerts">Inactivity alerts</label>
+          </div>
+          <div class="form-check mb-3">
+            <input type="checkbox" class="form-check-input" id="receiveHelpRequests" name="receiveHelpRequests" ${prefs.receiveHelpRequests ? 'checked' : ''}>
+            <label class="form-check-label" for="receiveHelpRequests">Help requests</label>
+          </div>
+
+          <h6 class="mb-3">Notification Methods</h6>
+          <div class="form-check mb-2">
+            <input type="checkbox" class="form-check-input" id="alertInApp" name="alertInApp" ${prefs.alertInApp ? 'checked' : ''}>
+            <label class="form-check-label" for="alertInApp">In-app</label>
+          </div>
+          <div class="form-check mb-2">
+            <input type="checkbox" class="form-check-input" id="alertEmail" name="alertEmail" ${prefs.alertEmail ? 'checked' : ''}>
+            <label class="form-check-label" for="alertEmail">Email</label>
+          </div>
+          <div class="form-check mb-3">
+            <input type="checkbox" class="form-check-input" id="alertSms" name="alertSms" ${prefs.alertSms ? 'checked' : ''}>
+            <label class="form-check-label" for="alertSms">SMS</label>
+          </div>
+
+          <h6 class="mb-3">Thresholds</h6>
+          <div class="mb-3">
+            <label class="form-label">Wrong answers before alert</label>
+            <input type="number" class="form-control" name="strugglingThreshold" value="${prefs.strugglingThreshold}" min="1" max="10">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Inactivity minutes</label>
+            <input type="number" class="form-control" name="inactivityMinutes" value="${prefs.inactivityMinutes}" min="1" max="60">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Low score threshold (%)</label>
+            <input type="number" class="form-control" name="lowScoreThreshold" value="${prefs.lowScoreThreshold}" min="0" max="100">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Resolve Modal -->
+<div class="modal fade" id="resolveModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="resolveForm" method="POST">
+        <div class="modal-header">
+          <h5 class="modal-title">Resolve Alert</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Resolution Notes</label>
+            <textarea class="form-control" name="resolution" rows="3" placeholder="How was this resolved?"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success">Resolve</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+const alertBasePath = '${typeof basePath !== 'undefined' ? basePath : ''}';
+
+function acknowledgeAlert(alertId) {
+  fetch(alertBasePath + '/teacher/alerts/' + alertId + '/acknowledge', {
+    method: 'POST',
+    headers: { 'Accept': 'application/json' }
+  })
+  .then(res => res.json())
+  .then(data => { if (data.success) location.reload(); })
+  .catch(err => console.error('Error:', err));
+}
+
+function showResolveModal(alertId) {
+  document.getElementById('resolveForm').action = alertBasePath + '/teacher/alerts/' + alertId + '/resolve';
+  new bootstrap.Modal(document.getElementById('resolveModal')).show();
+}
+
+function dismissAlert(alertId) {
+  if (confirm('Dismiss this alert?')) {
+    fetch(alertBasePath + '/teacher/alerts/' + alertId + '/dismiss', {
+      method: 'POST',
+      headers: { 'Accept': 'application/json' }
+    })
+    .then(res => res.json())
+    .then(data => { if (data.success) location.reload(); })
+    .catch(err => console.error('Error:', err));
+  }
+}
+</script>
+`, activePage: 'alerts', pageTitle: 'Student Alerts' }) %>

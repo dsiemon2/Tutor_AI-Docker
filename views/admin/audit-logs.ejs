@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audit Logs - TutorAI Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .sidebar { min-height: 100vh; max-height: 100vh; overflow-y: auto; position: sticky; top: 0; }
+    .sidebar .nav-link { color: rgba(255,255,255,0.8); padding: 0.75rem 1rem; }
+    .sidebar .nav-link:hover, .sidebar .nav-link.active { color: #fff; background: rgba(255,255,255,0.1); }
+    .sidebar .nav-link i { margin-right: 0.5rem; }
+    .main-content { background: #f8f9fa; min-height: 100vh; }
+    .nav-divider { border-top: 1px solid rgba(255,255,255,0.2); margin: 0.5rem 0; }
+    .nav-section { color: rgba(255,255,255,0.5); font-size: 0.75rem; padding: 0.5rem 1rem; text-transform: uppercase; }
+    .card { border: none; box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075); }
+    .stat-card { transition: transform 0.2s; }
+    .stat-card:hover { transform: translateY(-2px); }
+    .log-row { cursor: pointer; }
+    .log-row:hover { background-color: #f0f9ff; }
+    .action-badge { font-size: 0.75rem; }
+    .json-preview { max-height: 200px; overflow-y: auto; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <%- include('_sidebar', { token, active: 'audit-logs', branding, basePath }) %>
+
+      <main class="col-md-10 ms-sm-auto main-content p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h2><i class="bi bi-journal-text text-primary me-2"></i>Audit Logs</h2>
+            <p class="text-muted mb-0">Track all system activities and changes</p>
+          </div>
+          <button class="btn btn-outline-primary" onclick="exportLogs()">
+            <i class="bi bi-download me-2"></i>Export CSV
+          </button>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="row g-3 mb-4">
+          <div class="col-md-3">
+            <div class="card stat-card">
+              <div class="card-body">
+                <div class="d-flex align-items-center">
+                  <div class="bg-primary bg-opacity-10 p-3 rounded me-3">
+                    <i class="bi bi-activity text-primary fs-4"></i>
+                  </div>
+                  <div>
+                    <h4 class="mb-0"><%= adminStats.totalActions %></h4>
+                    <small class="text-muted">Total Actions (7 days)</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card stat-card">
+              <div class="card-body">
+                <div class="d-flex align-items-center">
+                  <div class="bg-success bg-opacity-10 p-3 rounded me-3">
+                    <i class="bi bi-person-plus text-success fs-4"></i>
+                  </div>
+                  <div>
+                    <h4 class="mb-0"><%= adminStats.userCreations %></h4>
+                    <small class="text-muted">Users Created</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card stat-card">
+              <div class="card-body">
+                <div class="d-flex align-items-center">
+                  <div class="bg-warning bg-opacity-10 p-3 rounded me-3">
+                    <i class="bi bi-pencil-square text-warning fs-4"></i>
+                  </div>
+                  <div>
+                    <h4 class="mb-0"><%= adminStats.userUpdates %></h4>
+                    <small class="text-muted">Users Updated</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card stat-card">
+              <div class="card-body">
+                <div class="d-flex align-items-center">
+                  <div class="bg-info bg-opacity-10 p-3 rounded me-3">
+                    <i class="bi bi-gear text-info fs-4"></i>
+                  </div>
+                  <div>
+                    <h4 class="mb-0"><%= adminStats.configChanges %></h4>
+                    <small class="text-muted">Config Changes</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="card mb-4">
+          <div class="card-body">
+            <form method="GET" action="<%= basePath %>/admin/audit-logs" class="row g-3">
+              <input type="hidden" name="token" value="<%= token %>">
+              <div class="col-md-2">
+                <label class="form-label small">User</label>
+                <select name="userId" class="form-select form-select-sm">
+                  <option value="">All Users</option>
+                  <% users.forEach(user => { %>
+                  <option value="<%= user.id %>" <%= filters.userId === user.id ? 'selected' : '' %>><%= user.firstName %> <%= user.lastName %></option>
+                  <% }); %>
+                </select>
+              </div>
+              <div class="col-md-2">
+                <label class="form-label small">Action</label>
+                <select name="action" class="form-select form-select-sm">
+                  <option value="">All Actions</option>
+                  <% uniqueActions.forEach(action => { %>
+                  <option value="<%= action %>" <%= filters.action === action ? 'selected' : '' %>><%= action %></option>
+                  <% }); %>
+                </select>
+              </div>
+              <div class="col-md-2">
+                <label class="form-label small">Entity Type</label>
+                <select name="entityType" class="form-select form-select-sm">
+                  <option value="">All Types</option>
+                  <% uniqueEntityTypes.forEach(type => { %>
+                  <option value="<%= type %>" <%= filters.entityType === type ? 'selected' : '' %>><%= type %></option>
+                  <% }); %>
+                </select>
+              </div>
+              <div class="col-md-2">
+                <label class="form-label small">Start Date</label>
+                <input type="date" name="startDate" class="form-control form-control-sm" value="<%= filters.startDate %>">
+              </div>
+              <div class="col-md-2">
+                <label class="form-label small">End Date</label>
+                <input type="date" name="endDate" class="form-control form-control-sm" value="<%= filters.endDate %>">
+              </div>
+              <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary btn-sm me-2">
+                  <i class="bi bi-search me-1"></i>Filter
+                </button>
+                <a href="<%= basePath %>/admin/audit-logs?token=<%= token %>" class="btn btn-outline-secondary btn-sm">Reset</a>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Logs Table -->
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span>Showing <%= logs.length %> of <%= total %> entries</span>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Timestamp</th>
+                    <th>User</th>
+                    <th>Action</th>
+                    <th>Entity</th>
+                    <th>IP Address</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% logs.forEach(log => { %>
+                  <tr class="log-row" data-bs-toggle="modal" data-bs-target="#logDetailModal" data-log='<%- JSON.stringify(log) %>'>
+                    <td class="small">
+                      <span class="text-muted"><%= new Date(log.createdAt).toLocaleDateString() %></span>
+                      <br>
+                      <span class="text-muted"><%= new Date(log.createdAt).toLocaleTimeString() %></span>
+                    </td>
+                    <td>
+                      <% if (log.userEmail) { %>
+                      <small><%= log.userEmail %></small>
+                      <% } else { %>
+                      <span class="text-muted">System</span>
+                      <% } %>
+                    </td>
+                    <td>
+                      <span class="badge action-badge bg-<%=
+                        log.action.includes('DELETE') || log.action.includes('FAILED') ? 'danger' :
+                        log.action.includes('CREATE') || log.action.includes('REGISTER') ? 'success' :
+                        log.action.includes('UPDATE') || log.action.includes('CHANGE') ? 'warning' :
+                        log.action.includes('LOGIN') || log.action.includes('LOGOUT') ? 'info' :
+                        log.action.includes('SECURITY') || log.action.includes('SUSPICIOUS') ? 'danger' : 'secondary'
+                      %>">
+                        <%= log.action %>
+                      </span>
+                    </td>
+                    <td>
+                      <span class="badge bg-light text-dark"><%= log.entityType %></span>
+                      <% if (log.entityId) { %>
+                      <br><small class="text-muted"><%= log.entityId.substring(0, 8) %>...</small>
+                      <% } %>
+                    </td>
+                    <td class="small text-muted"><%= log.ipAddress || '-' %></td>
+                    <td class="text-end">
+                      <button class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-eye"></i>
+                      </button>
+                    </td>
+                  </tr>
+                  <% }); %>
+                  <% if (logs.length === 0) { %>
+                  <tr>
+                    <td colspan="6" class="text-center py-4 text-muted">No audit logs found</td>
+                  </tr>
+                  <% } %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <!-- Pagination -->
+          <% if (pagination.totalPages > 1) { %>
+          <div class="card-footer d-flex justify-content-between align-items-center">
+            <span class="text-muted small">Page <%= pagination.currentPage %> of <%= pagination.totalPages %></span>
+            <nav>
+              <ul class="pagination pagination-sm mb-0">
+                <li class="page-item <%= !pagination.hasPrev ? 'disabled' : '' %>">
+                  <a class="page-link" href="<%= basePath %>/admin/audit-logs?token=<%= token %>&page=<%= pagination.currentPage - 1 %>&userId=<%= filters.userId %>&action=<%= filters.action %>&entityType=<%= filters.entityType %>&startDate=<%= filters.startDate %>&endDate=<%= filters.endDate %>">Previous</a>
+                </li>
+                <% for (let i = Math.max(1, pagination.currentPage - 2); i <= Math.min(pagination.totalPages, pagination.currentPage + 2); i++) { %>
+                <li class="page-item <%= i === pagination.currentPage ? 'active' : '' %>">
+                  <a class="page-link" href="<%= basePath %>/admin/audit-logs?token=<%= token %>&page=<%= i %>&userId=<%= filters.userId %>&action=<%= filters.action %>&entityType=<%= filters.entityType %>&startDate=<%= filters.startDate %>&endDate=<%= filters.endDate %>"><%= i %></a>
+                </li>
+                <% } %>
+                <li class="page-item <%= !pagination.hasNext ? 'disabled' : '' %>">
+                  <a class="page-link" href="<%= basePath %>/admin/audit-logs?token=<%= token %>&page=<%= pagination.currentPage + 1 %>&userId=<%= filters.userId %>&action=<%= filters.action %>&entityType=<%= filters.entityType %>&startDate=<%= filters.startDate %>&endDate=<%= filters.endDate %>">Next</a>
+                </li>
+              </ul>
+            </nav>
+          </div>
+          <% } %>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Log Detail Modal -->
+  <div class="modal fade" id="logDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-journal-text me-2"></i>Audit Log Details</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <strong>Timestamp:</strong>
+              <p id="modal-timestamp" class="text-muted"></p>
+            </div>
+            <div class="col-md-6">
+              <strong>User:</strong>
+              <p id="modal-user" class="text-muted"></p>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <strong>Action:</strong>
+              <p id="modal-action"></p>
+            </div>
+            <div class="col-md-6">
+              <strong>Entity:</strong>
+              <p id="modal-entity" class="text-muted"></p>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <strong>IP Address:</strong>
+              <p id="modal-ip" class="text-muted"></p>
+            </div>
+            <div class="col-md-6">
+              <strong>User Agent:</strong>
+              <p id="modal-agent" class="text-muted small"></p>
+            </div>
+          </div>
+          <div id="oldValuesSection" class="mb-3 d-none">
+            <strong>Old Values:</strong>
+            <pre id="modal-old-values" class="json-preview bg-light p-2 rounded"></pre>
+          </div>
+          <div id="newValuesSection" class="mb-3 d-none">
+            <strong>New Values:</strong>
+            <pre id="modal-new-values" class="json-preview bg-light p-2 rounded"></pre>
+          </div>
+          <div id="metadataSection" class="mb-3 d-none">
+            <strong>Metadata:</strong>
+            <pre id="modal-metadata" class="json-preview bg-light p-2 rounded"></pre>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const basePath = '<%= basePath %>';
+    const token = '<%= token %>';
+
+    // Handle log row clicks
+    document.querySelectorAll('.log-row').forEach(row => {
+      row.addEventListener('click', function() {
+        const log = JSON.parse(this.dataset.log);
+
+        document.getElementById('modal-timestamp').textContent = new Date(log.createdAt).toLocaleString();
+        document.getElementById('modal-user').textContent = log.userEmail || 'System';
+        document.getElementById('modal-action').innerHTML = '<span class="badge bg-primary">' + log.action + '</span>';
+        document.getElementById('modal-entity').textContent = log.entityType + (log.entityId ? ' (' + log.entityId + ')' : '');
+        document.getElementById('modal-ip').textContent = log.ipAddress || '-';
+        document.getElementById('modal-agent').textContent = log.userAgent || '-';
+
+        // Old values
+        const oldValuesSection = document.getElementById('oldValuesSection');
+        if (log.oldValues) {
+          document.getElementById('modal-old-values').textContent = JSON.stringify(log.oldValues, null, 2);
+          oldValuesSection.classList.remove('d-none');
+        } else {
+          oldValuesSection.classList.add('d-none');
+        }
+
+        // New values
+        const newValuesSection = document.getElementById('newValuesSection');
+        if (log.newValues) {
+          document.getElementById('modal-new-values').textContent = JSON.stringify(log.newValues, null, 2);
+          newValuesSection.classList.remove('d-none');
+        } else {
+          newValuesSection.classList.add('d-none');
+        }
+
+        // Metadata
+        const metadataSection = document.getElementById('metadataSection');
+        if (log.metadata) {
+          document.getElementById('modal-metadata').textContent = JSON.stringify(log.metadata, null, 2);
+          metadataSection.classList.remove('d-none');
+        } else {
+          metadataSection.classList.add('d-none');
+        }
+      });
+    });
+
+    // Export logs to CSV
+    function exportLogs() {
+      const urlParams = new URLSearchParams(window.location.search);
+      urlParams.set('format', 'csv');
+
+      // For now, just alert - in production this would trigger a download
+      alert('Export functionality would download audit logs as CSV');
+    }
+  </script>
+</body>
+</html>

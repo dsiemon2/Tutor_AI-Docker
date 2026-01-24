@@ -5,7 +5,7 @@
 **URL Prefix:** /TutorAI/
 **Status:** Active (Development)
 **Live URL:** https://www.tutorableai.com
-**Last Updated:** 2026-01-19
+**Last Updated:** 2026-01-23
 
 ---
 
@@ -32,10 +32,14 @@ TutorAI is a multi-tenant K-12 AI tutoring platform that provides personalized l
 - **Voice & Text Modes**: OpenAI Realtime API integration
 - **Visual Rendering**: KaTeX (math), Mermaid (diagrams), Chart.js (graphs)
 - **Progress Tracking**: Session-based learning with mastery levels
+- **Practice Mode**: SM-2 spaced repetition algorithm for drill sessions
+- **Learning Paths**: Structured paths with prerequisites and progress tracking
+- **Mastery Dashboard**: Six-level mastery system (novice to master)
 - **Knowledge Base**: Educational content documents
 - **Adaptive Learning**: Logic rules for personalized responses
 - **Accessibility**: High contrast, dyslexia font, text size options
 - **24 Languages**: Full multilingual support
+- **Unit Testing**: 745+ Jest tests with comprehensive coverage
 
 ---
 
@@ -85,9 +89,14 @@ Tutor_AI/
 │   ├── schema.prisma      # Database schema
 │   └── seed.ts            # Demo data seeding
 ├── src/
+│   ├── __tests__/         # Jest unit tests (745+ tests)
 │   ├── config/            # Database, Redis, constants
 │   ├── middleware/        # Auth, RBAC, error handling
 │   ├── routes/            # Express routes
+│   ├── services/          # Business logic services
+│   │   ├── payments/      # Payment gateway integrations
+│   │   ├── practice.service.ts    # SM-2 spaced repetition
+│   │   └── learningPath.service.ts # Learning paths & mastery
 │   └── server.ts          # Main entry point
 ├── views/
 │   ├── admin/             # Admin panel pages
@@ -269,6 +278,9 @@ OPENAI_API_KEY=your-openai-key
 | Dashboard | /student | Student home with quick stats |
 | Subjects | /student/subjects | Browse subjects by category |
 | Tutor | /student/tutor | AI tutoring chat interface |
+| Practice | /student/practice | Spaced repetition drill sessions |
+| Learning Paths | /student/learning-paths | Structured learning paths |
+| Mastery | /student/mastery | Mastery dashboard with skill levels |
 | Assignments | /student/assignments | View and submit assignments |
 | Quizzes | /student/quizzes | Take quizzes, view results |
 | Sessions | /student/sessions | Tutoring session history |
@@ -378,6 +390,49 @@ src/services/payments/
 ├── authorize.service.ts    # Authorize.net processing
 ├── payment.service.ts      # Unified payment orchestrator
 └── index.ts                # Service exports
+```
+
+## Learning Services
+
+### Practice Mode (SM-2 Spaced Repetition)
+Location: `src/services/practice.service.ts`
+
+Features:
+- **SM-2 Algorithm**: Industry-standard spaced repetition for optimal retention
+- **Quality Ratings**: 0-5 scale for answer accuracy
+- **Ease Factor**: Dynamic difficulty adjustment (1.3-2.5 range)
+- **Interval Calculation**: Automatic scheduling based on performance
+- **Fuzzy Matching**: Levenshtein distance for answer validation
+
+### Learning Paths & Mastery
+Location: `src/services/learningPath.service.ts`
+
+Features:
+- **Mastery Levels**: 6 levels (novice, beginner, intermediate, proficient, expert, master)
+- **Score Thresholds**: 0%, 20%, 40%, 60%, 80%, 95%
+- **Path Progress**: Track completion with prerequisites
+- **Recommendations**: AI-powered path suggestions based on performance
+- **Node Dependencies**: Prerequisite-based topic unlocking
+
+## Unit Testing
+
+Framework: Jest with ts-jest
+
+| Test Suite | Tests | Description |
+|------------|-------|-------------|
+| Practice Service | 75 | SM-2 algorithm, answer checking, scoring |
+| Learning Path Service | 71 | Mastery calculation, path progress, recommendations |
+| Accessibility | 50+ | WCAG compliance, color contrast, keyboard navigation |
+| Authentication | 100+ | Login, RBAC, session management |
+| Payment Services | 100+ | All 5 gateway integrations |
+
+**Total: 745+ unit tests**
+
+Run tests:
+```bash
+npm test              # Run all tests
+npm run test:watch    # Watch mode
+npm run test:coverage # Coverage report
 ```
 
 ## Logging

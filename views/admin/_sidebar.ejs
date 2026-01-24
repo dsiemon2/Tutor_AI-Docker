@@ -113,10 +113,16 @@
     <li class="nav-item"><a class="nav-link <%= _active === 'sms-settings' ? 'active' : '' %>" href="<%= _basePath %>/admin/sms-settings?token=<%= _token %>"><i class="bi bi-chat-dots"></i> SMS Settings</a></li>
     <li class="nav-item"><a class="nav-link <%= _active === 'webhooks' ? 'active' : '' %>" href="<%= _basePath %>/admin/webhooks?token=<%= _token %>"><i class="bi bi-link-45deg"></i> WebHooks</a></li>
 
+    <!-- Engagement -->
+    <div class="nav-divider"></div>
+    <div class="nav-section">Engagement</div>
+    <li class="nav-item"><a class="nav-link <%= _active === 'gamification' ? 'active' : '' %>" href="<%= _basePath %>/admin/gamification?token=<%= _token %>"><i class="bi bi-trophy"></i> Gamification</a></li>
+
     <!-- Management -->
     <div class="nav-divider"></div>
     <div class="nav-section">Management</div>
     <li class="nav-item"><a class="nav-link <%= _active === 'users' ? 'active' : '' %>" href="<%= _basePath %>/admin/users?token=<%= _token %>"><i class="bi bi-people"></i> Users</a></li>
+    <li class="nav-item"><a class="nav-link <%= _active === 'bulk-import' ? 'active' : '' %>" href="<%= _basePath %>/admin/bulk-import?token=<%= _token %>"><i class="bi bi-upload"></i> Bulk Import</a></li>
 
     <!-- Billing -->
     <div class="nav-divider"></div>
@@ -137,6 +143,7 @@
     <div class="nav-section">System</div>
     <li class="nav-item"><a class="nav-link <%= _active === 'settings' ? 'active' : '' %>" href="<%= _basePath %>/admin/settings?token=<%= _token %>"><i class="bi bi-gear"></i> Settings</a></li>
     <li class="nav-item"><a class="nav-link <%= _active === 'features' ? 'active' : '' %>" href="<%= _basePath %>/admin/features?token=<%= _token %>"><i class="bi bi-toggles"></i> Features</a></li>
+    <li class="nav-item"><a class="nav-link <%= _active === 'audit-logs' ? 'active' : '' %>" href="<%= _basePath %>/admin/audit-logs?token=<%= _token %>"><i class="bi bi-journal-text"></i> Audit Logs</a></li>
 
     <!-- Logout -->
     <div class="nav-divider"></div>

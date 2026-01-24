@@ -4,6 +4,7 @@
 import express from 'express';
 import session from 'express-session';
 import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
 import path from 'path';
 import { createServer } from 'http';
 import { WebSocketServer } from 'ws';
@@ -11,6 +12,13 @@ import { WebSocketServer } from 'ws';
 import { config } from './config';
 import { prisma } from './config/database';
 import { logger } from './utils/logger';
+import {
+  apiLimiter,
+  authLimiter,
+  chatLimiter,
+  csrfTokenProvider,
+  additionalSecurityHeaders
+} from './middleware/security';
 
 // Import routes
 import publicRoutes from './routes/public';
@@ -20,6 +28,8 @@ import teacherRoutes from './routes/teacher';
 import apiRoutes from './routes/api';
 import adminRoutes from './routes/admin';
 import schoolAdminRoutes from './routes/schooladmin';
+import coppaRoutes from './routes/coppa';
+import parentRoutes from './routes/parent';
 
 // Import WebSocket handler
 import { setupWebSocket } from './realtime/tutorHandler';
@@ -31,12 +41,37 @@ const server = createServer(app);
 // MIDDLEWARE
 // ============================================
 
+// Security headers with Helmet
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "cdn.jsdelivr.net", "cdnjs.cloudflare.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "cdn.jsdelivr.net", "fonts.googleapis.com"],
+      fontSrc: ["'self'", "fonts.gstatic.com", "cdn.jsdelivr.net"],
+      imgSrc: ["'self'", "data:", "blob:", "https:"],
+      connectSrc: ["'self'", "wss:", "ws:"],
+      mediaSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      frameSrc: ["'none'"],
+      workerSrc: ["'self'", "blob:"]
+    }
+  },
+  crossOriginEmbedderPolicy: false // Allow embedding resources
+}));
+
+// Additional security headers
+app.use(additionalSecurityHeaders);
+
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Cookie parsing
 app.use(cookieParser());
+
+// CSRF token provider for forms
+app.use(csrfTokenProvider);
 
 // Session configuration (memory store for simplicity)
 app.use(session({
@@ -86,9 +121,13 @@ app.get(`${config.basePath}/health`, (req, res) => {
 app.use('/', publicRoutes);
 app.use(config.basePath, publicRoutes);
 
-// Auth routes (login, register, OAuth)
-app.use('/auth', authRoutes);
-app.use(`${config.basePath}/auth`, authRoutes);
+// Auth routes (login, register, OAuth) - with rate limiting
+app.use('/auth', authLimiter, authRoutes);
+app.use(`${config.basePath}/auth`, authLimiter, authRoutes);
+
+// COPPA compliance routes
+app.use('/coppa', coppaRoutes);
+app.use(`${config.basePath}/coppa`, coppaRoutes);
 
 // Student routes
 app.use('/student', studentRoutes);
@@ -98,9 +137,9 @@ app.use(`${config.basePath}/student`, studentRoutes);
 app.use('/teacher', teacherRoutes);
 app.use(`${config.basePath}/teacher`, teacherRoutes);
 
-// API routes
-app.use('/api', apiRoutes);
-app.use(`${config.basePath}/api`, apiRoutes);
+// API routes - with rate limiting
+app.use('/api', apiLimiter, apiRoutes);
+app.use(`${config.basePath}/api`, apiLimiter, apiRoutes);
 
 // Admin routes (for direct access without separate admin server)
 app.use('/admin', adminRoutes);
@@ -109,6 +148,10 @@ app.use(`${config.basePath}/admin`, adminRoutes);
 // School Admin routes
 app.use('/schooladmin', schoolAdminRoutes);
 app.use(`${config.basePath}/schooladmin`, schoolAdminRoutes);
+
+// Parent Portal routes
+app.use('/parent', parentRoutes);
+app.use(`${config.basePath}/parent`, parentRoutes);
 
 // 404 handler
 app.use((req, res) => {

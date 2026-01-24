@@ -158,6 +158,16 @@ model User {
   highContrast       Boolean   @default(false)
   dyslexiaFont       Boolean   @default(false)
 
+  // WCAG 2.1 AA Accessibility Settings
+  reducedMotion      Boolean   @default(false)
+  focusHighlight     Boolean   @default(true)
+  screenReaderMode   Boolean   @default(false)
+  keyboardNav        Boolean   @default(true)
+  colorBlindMode     String    @default("none") // none, protanopia, deuteranopia, tritanopia
+  lineSpacing        String    @default("normal") // normal, wide, extra-wide
+  cursorSize         String    @default("normal") // normal, large
+  autoplayMedia      Boolean   @default(true)
+
   isActive           Boolean   @default(true)
   emailVerified      Boolean   @default(false)
   lastLoginAt        DateTime?
@@ -180,6 +190,11 @@ model User {
   // Subscription and Trial relations
   subscriptions      Subscription[]
   trialCodes         TrialCode[]
+
+  // Two-Factor Authentication (2FA)
+  twoFactorEnabled   Boolean   @default(false)
+  twoFactorSecret    String?   // Encrypted TOTP secret
+  twoFactorBackupCodes String? // JSON array of backup codes (hashed)
 
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
@@ -907,4 +922,1013 @@ model PaymentSettings {
   authorizeTestMode       Boolean  @default(true)
   authorizeSignatureKey   String   @default("")
   updatedAt               DateTime @updatedAt
+}
+
+// ============================================
+// SMS CONFIGURATION (Twilio)
+// ============================================
+
+model SMSConfig {
+  id                    String   @id @default("default")
+  isEnabled             Boolean  @default(false)
+
+  // Twilio Configuration
+  accountSid            String   @default("")
+  authToken             String   @default("")
+  phoneNumber           String   @default("")
+
+  // Notification toggles
+  sessionReminders      Boolean  @default(true)
+  progressUpdates       Boolean  @default(true)
+  achievementAlerts     Boolean  @default(false)
+  teacherAlerts         Boolean  @default(false)
+
+  // Message Templates
+  sessionReminderTemplate   String   @default("Hi {student_name}! Your tutoring session for {subject} starts in 15 minutes. See you soon!")
+  progressUpdateTemplate    String   @default("Weekly update for {student_name}: Completed {sessions} sessions, {mastery}% mastery improvement in {subject}.")
+  achievementTemplate       String   @default("Congratulations {student_name}! You've achieved a new milestone in {subject}!")
+  teacherAlertTemplate      String   @default("Alert: Student {student_name} may need additional support in {subject}.")
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+// ============================================
+// WEBHOOKS
+// ============================================
+
+model Webhook {
+  id                    String   @id @default(cuid())
+  name                  String
+  url                   String
+  secret                String?  // For request signing
+  events                String   // JSON array of event types
+  isActive              Boolean  @default(true)
+  lastTriggeredAt       DateTime?
+  failureCount          Int      @default(0)
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+// ============================================
+// NOTIFICATIONS
+// ============================================
+
+model Notification {
+  id                    String   @id @default(cuid())
+  userId                String
+  type                  String   // info, success, warning, error
+  title                 String
+  message               String
+  link                  String?  // Optional URL to navigate to
+  isRead                Boolean  @default(false)
+  readAt                DateTime?
+
+  createdAt             DateTime @default(now())
+}
+
+// ============================================
+// MESSAGES (Student-Teacher Communication)
+// ============================================
+
+model Message {
+  id                    String   @id @default(cuid())
+  senderId              String
+  receiverId            String
+  subject               String?
+  content               String
+  isRead                Boolean  @default(false)
+  readAt                DateTime?
+
+  // Optional attachments (JSON array of Upload IDs)
+  attachments           String?
+
+  // For threading
+  parentId              String?  // Reply to message ID
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+// ============================================
+// PASSWORD RESET TOKENS
+// ============================================
+
+model PasswordResetToken {
+  id                    String   @id @default(cuid())
+  userId                String
+  token                 String   @unique
+  expiresAt             DateTime
+  usedAt                DateTime?
+
+  createdAt             DateTime @default(now())
+
+  @@index([token])
+  @@index([userId])
+}
+
+// ============================================
+// EMAIL VERIFICATION TOKENS
+// ============================================
+
+model EmailVerificationToken {
+  id                    String   @id @default(cuid())
+  userId                String
+  token                 String   @unique
+  expiresAt             DateTime
+  verifiedAt            DateTime?
+
+  createdAt             DateTime @default(now())
+
+  @@index([token])
+  @@index([userId])
+}
+
+// ============================================
+// AUDIT LOG (for compliance)
+// ============================================
+
+model AuditLog {
+  id                    String   @id @default(cuid())
+  userId                String?  // Who performed the action (null for system)
+  userEmail             String?  // Email at time of action (in case user deleted)
+  action                String   // CREATE, UPDATE, DELETE, LOGIN, LOGOUT, etc.
+  entityType            String   // User, School, Assignment, etc.
+  entityId              String?  // ID of affected entity
+  oldValues             String?  // JSON of previous values
+  newValues             String?  // JSON of new values
+  ipAddress             String?
+  userAgent             String?
+  metadata              String?  // Additional context JSON
+
+  createdAt             DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([entityType])
+  @@index([createdAt])
+}
+
+// ============================================
+// PARENTAL CONSENT (COPPA Compliance)
+// ============================================
+
+model ParentalConsent {
+  id                    String   @id @default(cuid())
+  studentId             String
+
+  // Child information
+  childDateOfBirth      DateTime
+  childAge              Int      // Calculated age at time of registration
+
+  // Parent/Guardian information
+  parentFirstName       String
+  parentLastName        String
+  parentEmail           String
+  parentPhone           String?
+  relationship          String   // parent, guardian, etc.
+
+  // Consent details
+  consentToken          String   @unique // For verification
+  consentStatus         String   @default("pending") // pending, verified, rejected, revoked
+  consentMethod         String   @default("email") // email, signed_form, in_person
+
+  // Verification
+  verifiedAt            DateTime?
+  verificationIp        String?
+  signatureData         String?  // For digital signatures
+
+  // Privacy preferences
+  allowDataCollection   Boolean  @default(true)
+  allowThirdPartySharing Boolean @default(false)
+  allowMarketing        Boolean  @default(false)
+
+  // Revocation
+  revokedAt             DateTime?
+  revokedReason         String?
+
+  // Timestamps
+  requestedAt           DateTime @default(now())
+  expiresAt             DateTime // Consent request expiry
+  lastUpdatedAt         DateTime @updatedAt
+
+  @@index([studentId])
+  @@index([parentEmail])
+  @@index([consentToken])
+  @@index([consentStatus])
+}
+
+// ============================================
+// COPPA AGE VERIFICATION
+// ============================================
+
+model AgeVerification {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  dateOfBirth           DateTime
+  ageAtRegistration     Int
+  isUnder13             Boolean
+  verificationMethod    String   @default("self_reported") // self_reported, parent_verified, school_verified
+  verifiedAt            DateTime @default(now())
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([userId])
+  @@index([isUnder13])
+}
+
+// ============================================
+// PARENT PORTAL
+// ============================================
+
+model ParentAccount {
+  id                    String   @id @default(cuid())
+  email                 String   @unique
+  passwordHash          String?
+  firstName             String
+  lastName              String
+  phone                 String?
+
+  // Verification
+  emailVerified         Boolean  @default(false)
+  lastLoginAt           DateTime?
+
+  // Notification preferences
+  notifyProgress        Boolean  @default(true)
+  notifyGrades          Boolean  @default(true)
+  notifyAttendance      Boolean  @default(true)
+  notifyMessages        Boolean  @default(true)
+  notifyWeeklyDigest    Boolean  @default(true)
+
+  // Linked children
+  children              ParentStudent[]
+
+  isActive              Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([email])
+}
+
+model ParentStudent {
+  id                    String   @id @default(cuid())
+  parentId              String
+  parent                ParentAccount @relation(fields: [parentId], references: [id])
+  studentId             String
+  relationship          String   @default("parent") // parent, guardian, grandparent, other
+
+  // Consent status (linked to ParentalConsent if under 13)
+  consentId             String?  // Link to ParentalConsent record
+
+  // Access controls
+  canViewGrades         Boolean  @default(true)
+  canViewProgress       Boolean  @default(true)
+  canViewSessions       Boolean  @default(true)
+  canMessageTeachers    Boolean  @default(true)
+
+  // Status
+  isVerified            Boolean  @default(false) // Verified by school
+  isPrimary             Boolean  @default(false) // Primary contact
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@unique([parentId, studentId])
+  @@index([studentId])
+  @@index([parentId])
+}
+
+// ============================================
+// GAMIFICATION - BADGES
+// ============================================
+
+model Badge {
+  id                    String   @id @default(cuid())
+  code                  String   @unique // e.g., "first_session", "streak_7", "master_math"
+  name                  String   // Display name
+  description           String   // How to earn this badge
+  category              String   @default("achievement") // achievement, streak, mastery, social, special
+  icon                  String   @default("trophy") // Bootstrap icon name
+  color                 String   @default("#fbbf24") // Badge color (gold default)
+  points                Int      @default(0) // Points awarded for earning this badge
+
+  // Requirements (stored as JSON for flexibility)
+  requirements          String?  // JSON: { "type": "sessions", "count": 10, "subject": "math" }
+
+  // Rarity/tier
+  tier                  String   @default("bronze") // bronze, silver, gold, platinum, diamond
+
+  isActive              Boolean  @default(true)
+  isHidden              Boolean  @default(false) // Hidden until earned (surprise badges)
+
+  userBadges            UserBadge[]
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([category])
+  @@index([tier])
+}
+
+model UserBadge {
+  id                    String   @id @default(cuid())
+  userId                String
+  badgeId               String
+  badge                 Badge    @relation(fields: [badgeId], references: [id])
+
+  // Progress tracking (for badges that require multiple steps)
+  progress              Int      @default(0) // Current progress
+  targetProgress        Int      @default(1) // Required progress to earn
+
+  earnedAt              DateTime? // Null if not yet earned
+  isDisplayed           Boolean  @default(true) // Show on profile
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@unique([userId, badgeId])
+  @@index([userId])
+  @@index([earnedAt])
+}
+
+// ============================================
+// GAMIFICATION - STREAKS
+// ============================================
+
+model Streak {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+
+  // Current streak
+  currentStreak         Int      @default(0)
+  longestStreak         Int      @default(0)
+
+  // Tracking
+  lastActivityDate      DateTime? // Date of last qualifying activity
+  streakStartDate       DateTime? // When current streak began
+
+  // Streak freeze (allows missing a day)
+  freezesRemaining      Int      @default(0)
+  freezesUsed           Int      @default(0)
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([currentStreak])
+  @@index([longestStreak])
+}
+
+// ============================================
+// GAMIFICATION - POINTS
+// ============================================
+
+model PointTransaction {
+  id                    String   @id @default(cuid())
+  userId                String
+
+  amount                Int      // Positive for earned, negative for spent
+  type                  String   // earned, spent, bonus, penalty, transfer
+  reason                String   // Description of why points changed
+  category              String   // session, quiz, assignment, badge, streak, purchase, other
+
+  // Reference to related entity
+  referenceType         String?  // Session, Quiz, Assignment, Badge, etc.
+  referenceId           String?  // ID of related entity
+
+  // Balance tracking
+  balanceBefore         Int
+  balanceAfter          Int
+
+  createdAt             DateTime @default(now())
+
+  @@index([userId])
+  @@index([type])
+  @@index([category])
+  @@index([createdAt])
+}
+
+model PointBalance {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+
+  totalEarned           Int      @default(0)
+  totalSpent            Int      @default(0)
+  currentBalance        Int      @default(0)
+
+  // Lifetime stats
+  lifetimePoints        Int      @default(0)
+
+  // Level calculation (based on lifetime points)
+  level                 Int      @default(1)
+  levelProgress         Int      @default(0) // Points toward next level
+  levelRequired         Int      @default(100) // Points needed for next level
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([currentBalance])
+  @@index([level])
+}
+
+model PointConfig {
+  id                    String   @id @default("default")
+
+  // Session points
+  sessionComplete       Int      @default(10)
+  sessionMinutes        Int      @default(1) // Points per minute
+
+  // Quiz points
+  quizComplete          Int      @default(5)
+  quizPerfectScore      Int      @default(20)
+  quizPassBonus         Int      @default(10)
+
+  // Assignment points
+  assignmentSubmit      Int      @default(10)
+  assignmentOnTime      Int      @default(5) // Bonus for on-time
+  assignmentPerfect     Int      @default(15) // A+ grade bonus
+
+  // Mastery points
+  topicMastered         Int      @default(25)
+  subjectComplete       Int      @default(100)
+
+  // Streak points
+  streakDaily           Int      @default(5) // Daily streak bonus
+  streakWeekly          Int      @default(25) // 7-day streak bonus
+  streakMonthly         Int      @default(100) // 30-day streak bonus
+
+  // Social points
+  helpedPeer            Int      @default(10)
+  receivedKudos         Int      @default(2)
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+// ============================================
+// GAMIFICATION - LEADERBOARD CACHE
+// ============================================
+
+model LeaderboardEntry {
+  id                    String   @id @default(cuid())
+  userId                String
+
+  // Scope
+  scope                 String   // global, school, class
+  scopeId               String?  // School ID or Class ID (null for global)
+
+  // Time period
+  period                String   // all_time, monthly, weekly, daily
+  periodStart           DateTime // Start of the period
+
+  // Ranking
+  rank                  Int
+  points                Int
+
+  // Cached at
+  calculatedAt          DateTime @default(now())
+
+  @@unique([userId, scope, scopeId, period, periodStart])
+  @@index([scope, scopeId, period])
+  @@index([rank])
+}
+
+// ============================================
+// ANNOUNCEMENTS
+// ============================================
+
+model Announcement {
+  id                    String   @id @default(cuid())
+
+  title                 String
+  content               String   // Rich text/markdown
+  type                  String   @default("info") // info, warning, success, urgent
+
+  // Target audience
+  scope                 String   @default("all") // all, school, class, role
+  scopeId               String?  // School ID or Class ID
+  targetRoles           String?  // JSON array of roles, null = all
+
+  // Author
+  authorId              String
+
+  // Scheduling
+  publishAt             DateTime @default(now())
+  expiresAt             DateTime?
+
+  // Pinned/featured
+  isPinned              Boolean  @default(false)
+
+  isActive              Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Read tracking
+  readBy                AnnouncementRead[]
+
+  @@index([scope, scopeId])
+  @@index([publishAt])
+  @@index([isPinned])
+}
+
+model AnnouncementRead {
+  id                    String   @id @default(cuid())
+  announcementId        String
+  announcement          Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  userId                String
+  readAt                DateTime @default(now())
+
+  @@unique([announcementId, userId])
+  @@index([userId])
+}
+
+// ============================================
+// ACTIVITY FEED
+// ============================================
+
+model ActivityFeed {
+  id                    String   @id @default(cuid())
+  userId                String
+
+  // Activity details
+  type                  String   // badge_earned, streak_milestone, quiz_completed, level_up, etc.
+  title                 String
+  description           String?
+
+  // Reference
+  referenceType         String?  // Badge, Quiz, Assignment, etc.
+  referenceId           String?
+
+  // Visibility
+  isPublic              Boolean  @default(true) // Show on class/school feed
+
+  // Metadata (JSON for flexible data)
+  metadata              String?  // { "badgeId": "...", "points": 50 }
+
+  createdAt             DateTime @default(now())
+
+  @@index([userId])
+  @@index([type])
+  @@index([isPublic, createdAt])
+}
+
+// ============================================
+// TUTORING MODE CONFIGURATION
+// ============================================
+
+model TutoringConfig {
+  id                    String   @id @default("default")
+
+  // Tutoring Mode: direct, socratic, guided, adaptive
+  defaultMode           String   @default("socratic")
+
+  // Socratic Mode Settings
+  socraticHintLimit     Int      @default(3)  // Max hints before revealing answer
+  socraticWaitTime      Int      @default(30) // Seconds to wait for student response
+  requireAttemptFirst   Boolean  @default(true) // Student must attempt before hints
+
+  // Guided Mode Settings
+  showStepByStep        Boolean  @default(true)
+  allowSkipSteps        Boolean  @default(false)
+
+  // Adaptive Mode Settings
+  adjustDifficulty      Boolean  @default(true)
+  difficultyThreshold   Int      @default(3) // Wrong answers before lowering difficulty
+
+  // Encouragement Settings
+  encouragementFrequency Int     @default(3) // Every N interactions
+  celebrateCorrect      Boolean  @default(true)
+  celebrateMilestones   Boolean  @default(true)
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+// Session-specific hint tracking
+model SessionHint {
+  id                    String   @id @default(cuid())
+  sessionId             String
+  questionContext       String   // The question/problem being helped with
+  hintLevel             Int      @default(1) // 1=gentle nudge, 2=bigger hint, 3=walkthrough
+  hintContent           String   // The hint given
+  studentResponse       String?  // Student's response after hint
+  wasHelpful            Boolean? // Did student indicate it helped?
+
+  createdAt             DateTime @default(now())
+
+  @@index([sessionId])
+}
+
+// Student struggling detection
+model StrugglingAlert {
+  id                    String   @id @default(cuid())
+  studentId             String
+  sessionId             String?
+  topicId               String?
+  subjectId             String?
+
+  // Alert details
+  alertType             String   // repeated_wrong, long_pause, frustration_detected, help_requested
+  severity              String   @default("medium") // low, medium, high, critical
+  description           String
+
+  // Metrics that triggered alert
+  wrongAnswerCount      Int      @default(0)
+  timeSpentSeconds      Int      @default(0)
+  hintRequestCount      Int      @default(0)
+
+  // Status
+  status                String   @default("new") // new, acknowledged, resolved, dismissed
+  acknowledgedBy        String?  // Teacher ID who acknowledged
+  acknowledgedAt        DateTime?
+  resolvedAt            DateTime?
+  resolution            String?  // Notes on how it was resolved
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([studentId])
+  @@index([status])
+  @@index([severity])
+  @@index([createdAt])
+}
+
+// Teacher notification preferences for alerts
+model TeacherAlertPrefs {
+  id                    String   @id @default(cuid())
+  teacherId             String   @unique
+
+  // Alert types to receive
+  receiveStrugglingAlerts Boolean @default(true)
+  receiveLowScoreAlerts   Boolean @default(true)
+  receiveInactivityAlerts Boolean @default(true)
+  receiveHelpRequests     Boolean @default(true)
+
+  // Delivery methods
+  alertInApp            Boolean  @default(true)
+  alertEmail            Boolean  @default(false)
+  alertSms              Boolean  @default(false)
+
+  // Thresholds
+  strugglingThreshold   Int      @default(3) // Wrong answers before alert
+  inactivityMinutes     Int      @default(10) // Minutes of no activity
+  lowScoreThreshold     Int      @default(50) // Grade percentage
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+// ============================================
+// GRADEBOOK - CATEGORIES
+// ============================================
+
+model GradeCategory {
+  id                    String   @id @default(cuid())
+  classId               String
+  name                  String   // "Homework", "Tests", "Projects", "Participation"
+  weight                Float    @default(1.0) // Percentage weight (e.g., 0.25 for 25%)
+  dropLowest            Int      @default(0) // Drop N lowest grades
+  color                 String?  // For UI display
+  order                 Int      @default(0)
+
+  isActive              Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@unique([classId, name])
+  @@index([classId])
+}
+
+// ============================================
+// GRADEBOOK - STUDENT GRADES SUMMARY
+// ============================================
+
+model GradebookEntry {
+  id                    String   @id @default(cuid())
+  studentId             String
+  classId               String
+
+  // Calculated grades by category (JSON: { "category_id": { "total": 95, "count": 10 } })
+  categoryGrades        String?
+
+  // Overall calculated grade
+  overallGrade          Float?   // 0-100 scale
+  letterGrade           String?  // A, B+, etc.
+  gpa                   Float?   // 4.0 scale
+
+  // Assignment stats
+  assignmentsCompleted  Int      @default(0)
+  assignmentsMissing    Int      @default(0)
+  assignmentsLate       Int      @default(0)
+
+  // Quiz stats
+  quizzesCompleted      Int      @default(0)
+  quizAverage           Float?
+
+  // Timestamps
+  lastCalculatedAt      DateTime @default(now())
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@unique([studentId, classId])
+  @@index([classId])
+  @@index([overallGrade])
+}
+
+// ============================================
+// LEARNING STANDARDS
+// ============================================
+
+model Standard {
+  id                    String   @id @default(cuid())
+  code                  String   @unique // e.g., "CCSS.MATH.CONTENT.3.OA.A.1"
+  title                 String
+  description           String?
+  gradeLevel            Int?     // Target grade level
+  subjectArea           String?  // Math, ELA, Science, etc.
+  domain                String?  // Numbers, Operations, etc.
+  cluster               String?  // Grouping within domain
+
+  // Standard set
+  standardSet           String   @default("common_core") // common_core, ngss, state_specific
+  state                 String?  // State code if state-specific
+
+  // Parent-child relationship for hierarchical standards
+  parentId              String?
+  parent                Standard? @relation("StandardHierarchy", fields: [parentId], references: [id])
+  children              Standard[] @relation("StandardHierarchy")
+
+  isActive              Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  alignments            StandardAlignment[]
+
+  @@index([standardSet, gradeLevel])
+  @@index([subjectArea])
+}
+
+// ============================================
+// STANDARD ALIGNMENT
+// ============================================
+
+model StandardAlignment {
+  id                    String   @id @default(cuid())
+  standardId            String
+  standard              Standard @relation(fields: [standardId], references: [id])
+
+  // What is being aligned
+  entityType            String   // Assignment, Quiz, Lesson, Topic
+  entityId              String
+
+  // Alignment details
+  alignmentLevel        String   @default("full") // full, partial, introduction
+  notes                 String?
+
+  // Who created the alignment
+  createdById           String?
+
+  createdAt             DateTime @default(now())
+
+  @@unique([standardId, entityType, entityId])
+  @@index([entityType, entityId])
+}
+
+// ============================================
+// GRADEBOOK SETTINGS
+// ============================================
+
+model GradebookSettings {
+  id                    String   @id @default("default")
+
+  // Grading scale
+  gradingScale          String   @default("standard") // standard, plus_minus, pass_fail, custom
+  customScale           String?  // JSON for custom scale
+
+  // Default thresholds for letter grades
+  gradeA                Float    @default(90)
+  gradeAMinus           Float    @default(87)
+  gradeBPlus            Float    @default(83)
+  gradeB                Float    @default(80)
+  gradeBMinus           Float    @default(77)
+  gradeCPlus            Float    @default(73)
+  gradeC                Float    @default(70)
+  gradeCMinus           Float    @default(67)
+  gradeDPlus            Float    @default(63)
+  gradeD                Float    @default(60)
+  gradeDMinus           Float    @default(57)
+  // Below D- = F
+
+  // Weighting settings
+  useWeightedGrades     Boolean  @default(true)
+  includeZerosInAverage Boolean  @default(true)
+
+  // Late work policy
+  lateWorkPenalty       Float    @default(0) // Percentage deduction per day
+  maxLatePenalty        Float    @default(50) // Maximum percentage deduction
+  gracePeriodHours      Int      @default(0) // Hours after due date before penalty
+
+  // Display settings
+  showPointsToStudents  Boolean  @default(true)
+  showPercentToStudents Boolean  @default(true)
+  showLetterToStudents  Boolean  @default(true)
+  showClassAverage      Boolean  @default(false)
+  showClassRank         Boolean  @default(false)
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+// ============================================
+// DIAGNOSTIC ASSESSMENT SYSTEM
+// ============================================
+
+model DiagnosticTest {
+  id                    String   @id @default(cuid())
+  code                  String   @unique
+  title                 String
+  description           String?
+
+  // Subject/Topic alignment
+  subjectId             String?
+  topicId               String?
+
+  // Grade level range
+  minGradeLevel         Int      @default(0)  // K = 0
+  maxGradeLevel         Int      @default(12)
+
+  // Test configuration
+  questionCount         Int      @default(20) // Number of questions per attempt
+  timeLimit             Int?     // Minutes, null = unlimited
+  adaptiveDifficulty    Boolean  @default(true) // Adjust difficulty based on responses
+
+  // Scoring
+  passingScore          Int      @default(70)
+
+  // Question pool
+  questions             DiagnosticQuestion[]
+  attempts              DiagnosticAttempt[]
+
+  isActive              Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([subjectId])
+  @@index([minGradeLevel, maxGradeLevel])
+}
+
+model DiagnosticQuestion {
+  id                    String   @id @default(cuid())
+  testId                String
+  test                  DiagnosticTest @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  // Question content
+  questionText          String
+  questionType          String   @default("multiple_choice") // multiple_choice, true_false, fill_blank
+  options               String?  // JSON array for multiple choice
+  correctAnswer         String
+  explanation           String?
+
+  // Difficulty and alignment
+  difficulty            Int      @default(5) // 1-10 scale
+  gradeLevel            Int?     // Target grade level for this question
+  skillCode             String?  // Skill/standard this tests (e.g., "3.OA.A.1")
+  skillName             String?  // Human-readable skill name
+
+  // Metadata
+  points                Int      @default(1)
+  timeEstimate          Int?     // Expected seconds to answer
+
+  responses             DiagnosticResponse[]
+
+  isActive              Boolean  @default(true)
+  createdAt             DateTime @default(now())
+
+  @@index([testId, difficulty])
+  @@index([skillCode])
+}
+
+model DiagnosticAttempt {
+  id                    String   @id @default(cuid())
+  testId                String
+  test                  DiagnosticTest @relation(fields: [testId], references: [id])
+  studentId             String
+
+  // Timing
+  startedAt             DateTime @default(now())
+  completedAt           DateTime?
+
+  // Status
+  status                String   @default("in_progress") // in_progress, completed, abandoned
+
+  // Results (calculated on completion)
+  totalQuestions        Int      @default(0)
+  correctAnswers        Int      @default(0)
+  score                 Float?   // Percentage
+  proficiencyLevel      String?  // below, approaching, proficient, advanced
+  estimatedGradeLevel   Float?   // Calculated grade level (e.g., 3.5 = mid 3rd grade)
+
+  // Responses
+  responses             DiagnosticResponse[]
+
+  // Result summary
+  result                DiagnosticResult?
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([studentId])
+  @@index([testId, status])
+  @@index([completedAt])
+}
+
+model DiagnosticResponse {
+  id                    String   @id @default(cuid())
+  attemptId             String
+  attempt               DiagnosticAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  questionId            String
+  question              DiagnosticQuestion @relation(fields: [questionId], references: [id])
+
+  // Response data
+  answer                String?
+  isCorrect             Boolean?
+  timeSpentSeconds      Int?
+
+  // For adaptive testing - track the question's difficulty when answered
+  difficultyAtAnswer    Int?
+
+  answeredAt            DateTime @default(now())
+
+  @@unique([attemptId, questionId])
+}
+
+model DiagnosticResult {
+  id                    String   @id @default(cuid())
+  attemptId             String   @unique
+  attempt               DiagnosticAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  studentId             String
+
+  // Overall results
+  overallScore          Float    // 0-100
+  proficiencyLevel      String   // below_basic, basic, proficient, advanced
+  estimatedGradeLevel   Float    // e.g., 4.5 = mid 4th grade
+
+  // Skill breakdown (JSON: { "skill_code": { "correct": 3, "total": 5, "percentage": 60 } })
+  skillBreakdown        String?
+
+  // Identified gaps (JSON array of skill codes where student scored < 70%)
+  skillGaps             String?
+
+  // Recommendations (JSON array of recommended topics/lessons)
+  recommendations       String?
+
+  // Strengths (JSON array of skill codes where student scored >= 90%)
+  strengths             String?
+
+  calculatedAt          DateTime @default(now())
+
+  @@index([studentId])
+  @@index([proficiencyLevel])
+}
+
+model SkillGap {
+  id                    String   @id @default(cuid())
+  studentId             String
+  subjectId             String?
+  topicId               String?
+
+  // Skill identification
+  skillCode             String   // Standard code or skill identifier
+  skillName             String   // Human-readable name
+  gradeLevel            Int?     // Expected grade level for this skill
+
+  // Gap assessment
+  currentScore          Float    // Student's current proficiency (0-100)
+  targetScore           Float    @default(70) // Target proficiency
+  gapSize               Float    // targetScore - currentScore
+
+  // Priority
+  priority              String   @default("medium") // low, medium, high, critical
+  isResolved            Boolean  @default(false)
+
+  // Source
+  sourceType            String   // diagnostic, quiz, assignment, tutor_session
+  sourceId              String?  // ID of the source assessment
+
+  // Recommendations
+  recommendedLessons    String?  // JSON array of lesson IDs
+  recommendedTopics     String?  // JSON array of topic IDs
+
+  // Resolution tracking
+  resolvedAt            DateTime?
+  resolutionScore       Float?   // Score when gap was resolved
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([studentId])
+  @@index([skillCode])
+  @@index([priority])
+  @@index([isResolved])
 }

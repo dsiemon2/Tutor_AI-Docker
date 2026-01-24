@@ -1,0 +1,134 @@
+<%- include('../layouts/student', {
+  title: title,
+  branding: branding,
+  user: user,
+  activePage: 'learning-paths',
+  content: `
+<div class="container-fluid py-4">
+  <!-- Page Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-1">Learning Paths</h1>
+      <p class="text-muted mb-0">Follow structured paths to master new subjects</p>
+    </div>
+    <a href="${typeof basePath !== 'undefined' ? basePath : ''}/student/mastery" class="btn btn-outline-primary">
+      <i class="bi bi-award me-1"></i> View Mastery Dashboard
+    </a>
+  </div>
+
+  ${recommendations && recommendations.length > 0 ? `
+  <!-- Recommended Paths -->
+  <div class="mb-5">
+    <h4 class="mb-3"><i class="bi bi-stars me-2 text-warning"></i>Recommended for You</h4>
+    <div class="row g-4">
+      ${recommendations.slice(0, 3).map(rec => `
+        <div class="col-md-4">
+          <div class="card h-100 border-0 shadow-sm border-start border-4 border-primary">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <h5 class="card-title mb-0">${rec.path.title}</h5>
+                <span class="badge bg-primary">${rec.matchScore}% match</span>
+              </div>
+              <p class="text-muted small mb-3">${rec.path.description}</p>
+              <div class="mb-3">
+                <span class="badge bg-secondary me-1">${rec.path.difficulty}</span>
+                <span class="badge bg-light text-dark me-1">
+                  <i class="bi bi-clock me-1"></i>${rec.path.estimatedHours}h
+                </span>
+                <span class="badge bg-light text-dark">
+                  <i class="bi bi-list-check me-1"></i>${rec.path.nodes.length} topics
+                </span>
+              </div>
+              <p class="small text-success mb-2">
+                <i class="bi bi-lightbulb me-1"></i>${rec.reason}
+              </p>
+              <p class="small text-muted mb-3">
+                <i class="bi bi-calendar me-1"></i>Est. completion: ${rec.estimatedCompletion}
+              </p>
+              <a href="${typeof basePath !== 'undefined' ? basePath : ''}/student/learning-paths/${rec.path.id}" class="btn btn-primary w-100">
+                Start Learning
+              </a>
+            </div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  </div>
+  ` : ''}
+
+  <!-- All Learning Paths -->
+  <h4 class="mb-3"><i class="bi bi-signpost-2 me-2"></i>All Learning Paths</h4>
+
+  ${paths && paths.length > 0 ? `
+  <div class="row g-4">
+    ${paths.map(path => {
+      const progress = pathProgress[path.id];
+      const completedCount = progress?.completedNodes?.length || 0;
+      const progressPct = path.nodes.length > 0 ? Math.round((completedCount / path.nodes.length) * 100) : 0;
+      const statusColor = progressPct === 100 ? 'success' : progressPct > 0 ? 'primary' : 'secondary';
+
+      return `
+        <div class="col-md-6 col-lg-4">
+          <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <h5 class="card-title mb-0">${path.title}</h5>
+                ${progressPct === 100 ? `
+                  <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Complete</span>
+                ` : progressPct > 0 ? `
+                  <span class="badge bg-primary">${progressPct}% done</span>
+                ` : ''}
+              </div>
+              <p class="text-muted small mb-3">${path.description}</p>
+
+              <!-- Progress Bar -->
+              <div class="mb-3">
+                <div class="progress" style="height: 6px;">
+                  <div class="progress-bar bg-${statusColor}" role="progressbar" style="width: ${progressPct}%"></div>
+                </div>
+                <small class="text-muted">${completedCount} of ${path.nodes.length} topics completed</small>
+              </div>
+
+              <!-- Path Info -->
+              <div class="d-flex gap-2 mb-3 flex-wrap">
+                <span class="badge bg-light text-dark">
+                  <i class="bi bi-speedometer2 me-1"></i>${path.difficulty}
+                </span>
+                <span class="badge bg-light text-dark">
+                  <i class="bi bi-clock me-1"></i>${path.estimatedHours}h
+                </span>
+                ${path.gradeLevel !== undefined && path.gradeLevel !== null ? `
+                  <span class="badge bg-light text-dark">
+                    <i class="bi bi-mortarboard me-1"></i>Grade ${path.gradeLevel}
+                  </span>
+                ` : ''}
+              </div>
+
+              <!-- Learning Outcomes -->
+              ${path.outcomes && path.outcomes.length > 0 ? `
+                <div class="mb-3">
+                  <small class="fw-semibold d-block mb-1">You will learn:</small>
+                  <ul class="small text-muted mb-0 ps-3">
+                    ${path.outcomes.slice(0, 2).map(o => `<li>${o}</li>`).join('')}
+                  </ul>
+                </div>
+              ` : ''}
+
+              <a href="${typeof basePath !== 'undefined' ? basePath : ''}/student/learning-paths/${path.id}" class="btn btn-${progressPct > 0 ? 'primary' : 'outline-primary'} w-100">
+                ${progressPct === 100 ? 'Review Path' : progressPct > 0 ? 'Continue Learning' : 'Start Path'}
+              </a>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('')}
+  </div>
+  ` : `
+  <div class="alert alert-info">
+    <i class="bi bi-info-circle me-2"></i>
+    No learning paths are currently available. Check back soon!
+  </div>
+  `}
+</div>
+`
+}) %>

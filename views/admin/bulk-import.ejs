@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body { background: #f8f9fa; }
+    .sidebar { background: linear-gradient(180deg, <%= branding.primaryColor %> 0%, <%= branding.secondaryColor %> 100%); min-height: 100vh; }
+    .sidebar .nav-link { color: rgba(255,255,255,0.8); }
+    .sidebar .nav-link:hover, .sidebar .nav-link.active { color: white; background: rgba(255,255,255,0.1); }
+    .card { border: none; box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075); }
+    .dropzone { border: 2px dashed #dee2e6; border-radius: 8px; padding: 2rem; text-align: center; cursor: pointer; transition: all 0.2s; }
+    .dropzone:hover, .dropzone.dragover { border-color: <%= branding.primaryColor %>; background: rgba(14, 165, 233, 0.05); }
+    .preview-table { max-height: 400px; overflow-y: auto; }
+    .error-row { background: #fee2e2; }
+    .success-row { background: #dcfce7; }
+  </style>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <!-- Sidebar -->
+      <div class="col-md-2 p-0 sidebar">
+        <%- include('_sidebar', { _active: 'bulk-import', _token: token, _basePath: basePath }) %>
+      </div>
+
+      <!-- Main Content -->
+      <div class="col-md-10 p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h2><i class="bi bi-upload me-2"></i>Bulk Import Users</h2>
+            <p class="text-muted mb-0">Import multiple users from a CSV file</p>
+          </div>
+          <div>
+            <a href="<%= basePath %>/admin/api/bulk/template?token=<%= token %>" class="btn btn-outline-primary">
+              <i class="bi bi-download me-2"></i>Download Template
+            </a>
+          </div>
+        </div>
+
+        <!-- Import Form -->
+        <div class="row">
+          <div class="col-lg-8">
+            <div class="card mb-4">
+              <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-file-earmark-spreadsheet me-2"></i>Upload CSV File</h5>
+              </div>
+              <div class="card-body">
+                <form id="importForm">
+                  <div class="mb-4">
+                    <label class="form-label">Target School</label>
+                    <select class="form-select" id="schoolId" required>
+                      <option value="">Select a school...</option>
+                      <% schools.forEach(school => { %>
+                      <option value="<%= school.id %>"><%= school.name %></option>
+                      <% }); %>
+                    </select>
+                  </div>
+
+                  <div class="dropzone mb-4" id="dropzone">
+                    <i class="bi bi-cloud-upload fs-1 text-muted"></i>
+                    <p class="mb-2 mt-2">Drag and drop a CSV file here, or click to browse</p>
+                    <small class="text-muted">Supported format: CSV with headers (Email, First Name, Last Name, Role, Grade Level)</small>
+                    <input type="file" id="csvFile" accept=".csv" class="d-none">
+                  </div>
+
+                  <div id="fileInfo" class="d-none mb-4">
+                    <div class="alert alert-info d-flex align-items-center">
+                      <i class="bi bi-file-earmark-check me-2 fs-4"></i>
+                      <div>
+                        <strong id="fileName"></strong>
+                        <br><small id="fileSize"></small>
+                      </div>
+                      <button type="button" class="btn btn-outline-danger btn-sm ms-auto" id="clearFile">
+                        <i class="bi bi-x"></i>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div id="parseErrors" class="d-none mb-4">
+                    <div class="alert alert-warning">
+                      <h6><i class="bi bi-exclamation-triangle me-2"></i>Parsing Warnings</h6>
+                      <ul id="errorList" class="mb-0"></ul>
+                    </div>
+                  </div>
+
+                  <div id="previewSection" class="d-none mb-4">
+                    <h6><i class="bi bi-eye me-2"></i>Preview (<span id="rowCount">0</span> users)</h6>
+                    <div class="preview-table">
+                      <table class="table table-sm table-striped">
+                        <thead>
+                          <tr>
+                            <th>Email</th>
+                            <th>First Name</th>
+                            <th>Last Name</th>
+                            <th>Role</th>
+                            <th>Grade</th>
+                          </tr>
+                        </thead>
+                        <tbody id="previewBody"></tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <button type="submit" class="btn btn-primary" id="importBtn" disabled>
+                    <i class="bi bi-upload me-2"></i>Import Users
+                  </button>
+                </form>
+              </div>
+            </div>
+
+            <!-- Results -->
+            <div id="resultsSection" class="d-none">
+              <div class="card">
+                <div class="card-header">
+                  <h5 class="mb-0"><i class="bi bi-check2-circle me-2"></i>Import Results</h5>
+                </div>
+                <div class="card-body">
+                  <div class="row mb-4">
+                    <div class="col-md-4">
+                      <div class="text-center p-3 bg-success bg-opacity-10 rounded">
+                        <h3 class="text-success mb-0" id="successCount">0</h3>
+                        <small class="text-muted">Successfully Created</small>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="text-center p-3 bg-danger bg-opacity-10 rounded">
+                        <h3 class="text-danger mb-0" id="failedCount">0</h3>
+                        <small class="text-muted">Failed</small>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="text-center p-3 bg-info bg-opacity-10 rounded">
+                        <h3 class="text-info mb-0" id="totalCount">0</h3>
+                        <small class="text-muted">Total Processed</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div id="importErrors" class="d-none">
+                    <h6 class="text-danger"><i class="bi bi-x-circle me-2"></i>Errors</h6>
+                    <ul id="importErrorList" class="text-danger"></ul>
+                  </div>
+
+                  <div id="createdUsers" class="d-none">
+                    <h6><i class="bi bi-person-plus me-2"></i>Created Users</h6>
+                    <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                      <table class="table table-sm">
+                        <thead>
+                          <tr>
+                            <th>Email</th>
+                            <th>Name</th>
+                            <th>Role</th>
+                            <th>Temp Password</th>
+                          </tr>
+                        </thead>
+                        <tbody id="createdUsersList"></tbody>
+                      </table>
+                    </div>
+                    <button type="button" class="btn btn-outline-primary btn-sm mt-2" id="downloadPasswordsBtn">
+                      <i class="bi bi-download me-2"></i>Download Password List
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Instructions -->
+          <div class="col-lg-4">
+            <div class="card">
+              <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Instructions</h5>
+              </div>
+              <div class="card-body">
+                <h6>CSV Format</h6>
+                <p class="small">Your CSV file must include these columns:</p>
+                <ul class="small">
+                  <li><strong>Email</strong> (required) - Valid email address</li>
+                  <li><strong>First Name</strong> (required)</li>
+                  <li><strong>Last Name</strong> (required)</li>
+                  <li><strong>Role</strong> - STUDENT, TEACHER, or SCHOOL_ADMIN (default: STUDENT)</li>
+                  <li><strong>Grade Level</strong> - For students only (K=0, 1-12)</li>
+                </ul>
+
+                <hr>
+
+                <h6>Example CSV</h6>
+                <pre class="bg-light p-2 small">Email,First Name,Last Name,Role,Grade Level
+john.doe@school.edu,John,Doe,STUDENT,5
+jane.smith@school.edu,Jane,Smith,TEACHER,</pre>
+
+                <hr>
+
+                <h6>Notes</h6>
+                <ul class="small text-muted">
+                  <li>Temporary passwords will be generated for each user</li>
+                  <li>Duplicate emails will be skipped</li>
+                  <li>Users must change their password on first login</li>
+                  <li>Maximum 500 users per import</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const basePath = '<%= basePath %>';
+    const token = '<%= token %>';
+    let parsedUsers = [];
+
+    // Dropzone functionality
+    const dropzone = document.getElementById('dropzone');
+    const csvFileInput = document.getElementById('csvFile');
+
+    dropzone.addEventListener('click', () => csvFileInput.click());
+
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.classList.add('dragover');
+    });
+
+    dropzone.addEventListener('dragleave', () => {
+      dropzone.classList.remove('dragover');
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      const files = e.dataTransfer.files;
+      if (files.length > 0 && files[0].name.endsWith('.csv')) {
+        handleFile(files[0]);
+      }
+    });
+
+    csvFileInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        handleFile(e.target.files[0]);
+      }
+    });
+
+    document.getElementById('clearFile').addEventListener('click', clearFile);
+
+    function handleFile(file) {
+      document.getElementById('fileName').textContent = file.name;
+      document.getElementById('fileSize').textContent = `${(file.size / 1024).toFixed(2)} KB`;
+      document.getElementById('fileInfo').classList.remove('d-none');
+
+      const reader = new FileReader();
+      reader.onload = (e) => parseCSV(e.target.result);
+      reader.readAsText(file);
+    }
+
+    function clearFile() {
+      csvFileInput.value = '';
+      document.getElementById('fileInfo').classList.add('d-none');
+      document.getElementById('previewSection').classList.add('d-none');
+      document.getElementById('parseErrors').classList.add('d-none');
+      document.getElementById('importBtn').disabled = true;
+      parsedUsers = [];
+    }
+
+    function parseCSV(content) {
+      const lines = content.split('\n').filter(line => line.trim());
+      const errors = [];
+      const users = [];
+
+      if (lines.length < 2) {
+        showParseErrors(['CSV must have a header row and at least one data row']);
+        return;
+      }
+
+      const header = lines[0].split(',').map(h => h.trim().toLowerCase());
+      const emailIdx = header.indexOf('email');
+      const firstNameIdx = header.indexOf('first name') !== -1 ? header.indexOf('first name') : header.indexOf('firstname');
+      const lastNameIdx = header.indexOf('last name') !== -1 ? header.indexOf('last name') : header.indexOf('lastname');
+      const roleIdx = header.indexOf('role');
+      const gradeIdx = header.indexOf('grade level') !== -1 ? header.indexOf('grade level') : header.indexOf('gradelevel');
+
+      if (emailIdx === -1 || firstNameIdx === -1 || lastNameIdx === -1) {
+        showParseErrors(['CSV must have Email, First Name, and Last Name columns']);
+        return;
+      }
+
+      for (let i = 1; i < lines.length; i++) {
+        const values = parseCSVLine(lines[i]);
+        const email = values[emailIdx]?.trim();
+        const firstName = values[firstNameIdx]?.trim();
+        const lastName = values[lastNameIdx]?.trim();
+        const role = (values[roleIdx]?.trim().toUpperCase() || 'STUDENT');
+        const gradeLevel = gradeIdx !== -1 ? parseInt(values[gradeIdx]?.trim()) : null;
+
+        if (!email || !firstName || !lastName) {
+          errors.push(`Row ${i + 1}: Missing required fields`);
+          continue;
+        }
+
+        if (!email.includes('@')) {
+          errors.push(`Row ${i + 1}: Invalid email format`);
+          continue;
+        }
+
+        if (!['STUDENT', 'TEACHER', 'SCHOOL_ADMIN'].includes(role)) {
+          errors.push(`Row ${i + 1}: Invalid role "${role}"`);
+          continue;
+        }
+
+        users.push({ email, firstName, lastName, role, gradeLevel: isNaN(gradeLevel) ? null : gradeLevel });
+      }
+
+      if (users.length > 500) {
+        showParseErrors(['Maximum 500 users per import. Please split your file.']);
+        return;
+      }
+
+      parsedUsers = users;
+      showPreview(users);
+      if (errors.length > 0) {
+        showParseErrors(errors);
+      } else {
+        document.getElementById('parseErrors').classList.add('d-none');
+      }
+    }
+
+    function parseCSVLine(line) {
+      const result = [];
+      let current = '';
+      let inQuotes = false;
+
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          result.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      result.push(current.trim());
+      return result;
+    }
+
+    function showParseErrors(errors) {
+      const errorList = document.getElementById('errorList');
+      errorList.innerHTML = errors.map(e => `<li>${e}</li>`).join('');
+      document.getElementById('parseErrors').classList.remove('d-none');
+    }
+
+    function showPreview(users) {
+      const previewBody = document.getElementById('previewBody');
+      previewBody.innerHTML = users.slice(0, 50).map(u => `
+        <tr>
+          <td>${u.email}</td>
+          <td>${u.firstName}</td>
+          <td>${u.lastName}</td>
+          <td><span class="badge bg-${u.role === 'STUDENT' ? 'primary' : u.role === 'TEACHER' ? 'success' : 'warning'}">${u.role}</span></td>
+          <td>${u.gradeLevel !== null ? u.gradeLevel : '-'}</td>
+        </tr>
+      `).join('');
+
+      document.getElementById('rowCount').textContent = users.length;
+      document.getElementById('previewSection').classList.remove('d-none');
+      document.getElementById('importBtn').disabled = users.length === 0;
+    }
+
+    // Form submission
+    document.getElementById('importForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const schoolId = document.getElementById('schoolId').value;
+      if (!schoolId) {
+        alert('Please select a school');
+        return;
+      }
+
+      if (parsedUsers.length === 0) {
+        alert('No users to import');
+        return;
+      }
+
+      document.getElementById('importBtn').disabled = true;
+      document.getElementById('importBtn').innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Importing...';
+
+      try {
+        const response = await fetch(`${basePath}/admin/api/bulk/users?token=${token}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ users: parsedUsers, schoolId })
+        });
+
+        const result = await response.json();
+        showResults(result);
+
+      } catch (error) {
+        alert('Import failed: ' + error.message);
+      } finally {
+        document.getElementById('importBtn').disabled = false;
+        document.getElementById('importBtn').innerHTML = '<i class="bi bi-upload me-2"></i>Import Users';
+      }
+    });
+
+    function showResults(result) {
+      document.getElementById('successCount').textContent = result.success;
+      document.getElementById('failedCount').textContent = result.failed;
+      document.getElementById('totalCount').textContent = result.success + result.failed;
+
+      // Show errors if any
+      if (result.errors && result.errors.length > 0) {
+        document.getElementById('importErrorList').innerHTML = result.errors.map(e =>
+          `<li>Row ${e.index + 1}: ${e.error}${e.email ? ` (${e.email})` : ''}</li>`
+        ).join('');
+        document.getElementById('importErrors').classList.remove('d-none');
+      } else {
+        document.getElementById('importErrors').classList.add('d-none');
+      }
+
+      // Show created users if any
+      if (result.created && result.created.length > 0) {
+        document.getElementById('createdUsersList').innerHTML = result.created.map(u => `
+          <tr>
+            <td>${u.email}</td>
+            <td>${u.firstName} ${u.lastName}</td>
+            <td>${u.role}</td>
+            <td><code>${u.temporaryPassword || '******'}</code></td>
+          </tr>
+        `).join('');
+        document.getElementById('createdUsers').classList.remove('d-none');
+      } else {
+        document.getElementById('createdUsers').classList.add('d-none');
+      }
+
+      document.getElementById('resultsSection').classList.remove('d-none');
+      document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Download passwords
+    document.getElementById('downloadPasswordsBtn').addEventListener('click', () => {
+      const rows = document.querySelectorAll('#createdUsersList tr');
+      let csv = 'Email,Name,Role,Temporary Password\n';
+      rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        csv += `"${cells[0].textContent}","${cells[1].textContent}","${cells[2].textContent}","${cells[3].textContent}"\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `user-passwords-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { background: #f8f9fa; }
+    .navbar { background: linear-gradient(135deg, <%= branding.primaryColor %> 0%, <%= branding.secondaryColor %> 100%); }
+    .card { border: none; box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075); }
+    .stat-card { transition: transform 0.2s; }
+    .stat-card:hover { transform: translateY(-2px); }
+    .avatar { width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, <%= branding.primaryColor %>, <%= branding.accentColor %>); display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem; }
+    .mastery-badge { font-size: 0.75rem; padding: 0.25rem 0.5rem; }
+    .mastery-0 { background: #ef4444; }
+    .mastery-1 { background: #f97316; }
+    .mastery-2 { background: #eab308; }
+    .mastery-3 { background: #84cc16; }
+    .mastery-4 { background: #22c55e; }
+    .mastery-5 { background: #10b981; }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark mb-4">
+    <div class="container">
+      <a class="navbar-brand" href="<%= typeof basePath !== 'undefined' ? basePath : '' %>/parent">
+        <i class="bi bi-mortarboard-fill me-2"></i>TutorAI Parent Portal
+      </a>
+      <div class="d-flex align-items-center">
+        <a href="<%= typeof basePath !== 'undefined' ? basePath : '' %>/parent" class="btn btn-outline-light btn-sm me-2">
+          <i class="bi bi-arrow-left me-1"></i>Back
+        </a>
+        <a href="<%= typeof basePath !== 'undefined' ? basePath : '' %>/parent/logout" class="btn btn-outline-light btn-sm">
+          <i class="bi bi-box-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <!-- Child Profile -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="avatar me-4">
+                <%= child.firstName.charAt(0) %><%= child.lastName.charAt(0) %>
+              </div>
+              <div>
+                <h3 class="mb-1"><%= child.firstName %> <%= child.lastName %></h3>
+                <div class="d-flex gap-2">
+                  <span class="badge bg-primary"><%= child.gradeLevel ? 'Grade ' + child.gradeLevel : 'Not Set' %></span>
+                  <% if (child.school) { %>
+                  <span class="badge bg-light text-dark"><i class="bi bi-building me-1"></i><%= child.school.name %></span>
+                  <% } %>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+      <div class="col-md-3">
+        <div class="card stat-card">
+          <div class="card-body text-center">
+            <i class="bi bi-chat-dots text-primary fs-2"></i>
+            <h3 class="mt-2 mb-0"><%= sessionStats.totalSessions %></h3>
+            <small class="text-muted">Total Sessions</small>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card stat-card">
+          <div class="card-body text-center">
+            <i class="bi bi-clock text-success fs-2"></i>
+            <h3 class="mt-2 mb-0"><%= sessionStats.totalMinutes %></h3>
+            <small class="text-muted">Minutes Learning</small>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card stat-card">
+          <div class="card-body text-center">
+            <i class="bi bi-book text-info fs-2"></i>
+            <h3 class="mt-2 mb-0"><%= Object.keys(progressBySubject).length %></h3>
+            <small class="text-muted">Subjects</small>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card stat-card">
+          <div class="card-body text-center">
+            <i class="bi bi-trophy text-warning fs-2"></i>
+            <h3 class="mt-2 mb-0"><%= progress.filter(p => p.masteryLevel >= 4).length %></h3>
+            <small class="text-muted">Topics Mastered</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <!-- Progress by Subject -->
+      <div class="col-lg-8 mb-4">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-bar-chart me-2"></i>Progress by Subject</h5>
+          </div>
+          <div class="card-body">
+            <% if (Object.keys(progressBySubject).length === 0) { %>
+            <p class="text-muted text-center py-4">No progress data yet</p>
+            <% } else { %>
+            <div class="accordion" id="subjectAccordion">
+              <% Object.keys(progressBySubject).forEach((subject, index) => { %>
+              <div class="accordion-item">
+                <h2 class="accordion-header">
+                  <button class="accordion-button <%= index > 0 ? 'collapsed' : '' %>" type="button" data-bs-toggle="collapse" data-bs-target="#subject<%= index %>">
+                    <span class="me-auto"><%= subject %></span>
+                    <span class="badge bg-primary me-2"><%= progressBySubject[subject].length %> topics</span>
+                  </button>
+                </h2>
+                <div id="subject<%= index %>" class="accordion-collapse collapse <%= index === 0 ? 'show' : '' %>" data-bs-parent="#subjectAccordion">
+                  <div class="accordion-body p-0">
+                    <ul class="list-group list-group-flush">
+                      <% progressBySubject[subject].forEach(p => { %>
+                      <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                          <strong><%= p.topic.name %></strong>
+                          <br>
+                          <small class="text-muted">
+                            <i class="bi bi-clock me-1"></i><%= Math.round(p.totalTime / 60) %> min |
+                            <i class="bi bi-check-circle me-1"></i><%= p.questionsCorrect %>/<%= p.questionsAttempted %> correct
+                          </small>
+                        </div>
+                        <span class="badge mastery-<%= p.masteryLevel %> text-white mastery-badge">
+                          Level <%= p.masteryLevel %>
+                        </span>
+                      </li>
+                      <% }); %>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              <% }); %>
+            </div>
+            <% } %>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Sessions -->
+      <div class="col-lg-4 mb-4">
+        <div class="card h-100">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Recent Sessions</h5>
+          </div>
+          <div class="card-body p-0" style="max-height: 400px; overflow-y: auto;">
+            <% if (sessions.length === 0) { %>
+            <p class="text-muted text-center py-4">No sessions yet</p>
+            <% } else { %>
+            <ul class="list-group list-group-flush">
+              <% sessions.forEach(session => { %>
+              <li class="list-group-item">
+                <a href="<%= typeof basePath !== 'undefined' ? basePath : '' %>/parent/child/<%= child.id %>/session/<%= session.id %>" class="text-decoration-none text-dark">
+                  <div class="d-flex justify-content-between">
+                    <div>
+                      <strong><%= session.topic?.name || session.subject?.name %></strong>
+                      <br>
+                      <small class="text-muted">
+                        <i class="bi bi-clock me-1"></i><%= Math.round((session.duration || 0) / 60) %> min
+                      </small>
+                    </div>
+                    <small class="text-muted">
+                      <%= new Date(session.startedAt).toLocaleDateString() %>
+                    </small>
+                  </div>
+                </a>
+              </li>
+              <% }); %>
+            </ul>
+            <% } %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

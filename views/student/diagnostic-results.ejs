@@ -1,0 +1,266 @@
+<%- include('../layouts/student', { body: `
+<!-- Results Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-1">
+        <li class="breadcrumb-item"><a href="${typeof basePath !== 'undefined' ? basePath : ''}/student/diagnostics">Diagnostics</a></li>
+        <li class="breadcrumb-item active">${test.title}</li>
+      </ol>
+    </nav>
+    <h4 class="mb-0"><i class="bi bi-graph-up me-2"></i>Diagnostic Results</h4>
+  </div>
+  <div>
+    <a href="${typeof basePath !== 'undefined' ? basePath : ''}/student/diagnostics" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left me-1"></i>Back to Diagnostics
+    </a>
+  </div>
+</div>
+
+<!-- Overall Score Card -->
+<div class="row g-4 mb-4">
+  <div class="col-lg-4">
+    <div class="card h-100 text-center">
+      <div class="card-body py-5">
+        <div class="mb-3">
+          <div class="display-1 fw-bold ${result?.overallScore >= 70 ? 'text-success' : result?.overallScore >= 50 ? 'text-warning' : 'text-danger'}">
+            ${result?.overallScore?.toFixed(0) || 0}%
+          </div>
+          <div class="text-muted">Overall Score</div>
+        </div>
+        <div class="mb-4">
+          <span class="badge fs-5 ${
+            result?.proficiencyLevel === 'advanced' ? 'bg-success' :
+            result?.proficiencyLevel === 'proficient' ? 'bg-primary' :
+            result?.proficiencyLevel === 'basic' ? 'bg-warning text-dark' : 'bg-danger'
+          }">
+            ${(result?.proficiencyLevel || 'unknown').replace('_', ' ').toUpperCase()}
+          </span>
+        </div>
+        <div class="row text-center">
+          <div class="col-4">
+            <div class="fw-bold fs-4">${attempt.correctAnswers || 0}</div>
+            <small class="text-muted">Correct</small>
+          </div>
+          <div class="col-4">
+            <div class="fw-bold fs-4">${(attempt.totalQuestions || 0) - (attempt.correctAnswers || 0)}</div>
+            <small class="text-muted">Incorrect</small>
+          </div>
+          <div class="col-4">
+            <div class="fw-bold fs-4">${attempt.totalQuestions || 0}</div>
+            <small class="text-muted">Total</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card h-100 text-center">
+      <div class="card-body py-5">
+        <div class="mb-3">
+          <i class="bi bi-mortarboard-fill text-primary display-4"></i>
+        </div>
+        <h5>Estimated Grade Level</h5>
+        <div class="display-3 fw-bold text-primary mb-2">
+          ${result?.estimatedGradeLevel?.toFixed(1) || '-'}
+        </div>
+        <div class="text-muted">
+          ${result?.estimatedGradeLevel !== null && result?.estimatedGradeLevel !== undefined ?
+            (result.estimatedGradeLevel === 0 ? 'Kindergarten' :
+             result.estimatedGradeLevel < 0 ? 'Pre-K' :
+             'Grade ' + Math.floor(result.estimatedGradeLevel)) : 'Not Available'}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card h-100">
+      <div class="card-body py-4">
+        <h5 class="mb-3"><i class="bi bi-clock me-2"></i>Test Details</h5>
+        <ul class="list-unstyled mb-0">
+          <li class="d-flex justify-content-between py-2 border-bottom">
+            <span class="text-muted">Test</span>
+            <span class="fw-semibold">${test.title}</span>
+          </li>
+          <li class="d-flex justify-content-between py-2 border-bottom">
+            <span class="text-muted">Completed</span>
+            <span class="fw-semibold">${attempt.completedAt ? new Date(attempt.completedAt).toLocaleDateString() : '-'}</span>
+          </li>
+          <li class="d-flex justify-content-between py-2 border-bottom">
+            <span class="text-muted">Questions</span>
+            <span class="fw-semibold">${attempt.totalQuestions || test.questionCount}</span>
+          </li>
+          <li class="d-flex justify-content-between py-2">
+            <span class="text-muted">Passing Score</span>
+            <span class="fw-semibold">${test.passingScore || 70}%</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Skill Breakdown -->
+${result?.skillBreakdown && Object.keys(result.skillBreakdown).length > 0 ? `
+<div class="card mb-4">
+  <div class="card-header bg-white">
+    <h6 class="mb-0"><i class="bi bi-bar-chart me-2"></i>Skill Breakdown</h6>
+  </div>
+  <div class="card-body">
+    <div class="row g-3">
+      ${Object.values(result.skillBreakdown).map(skill => `
+        <div class="col-md-6">
+          <div class="d-flex justify-content-between mb-1">
+            <span class="fw-semibold">${skill.skillName}</span>
+            <span class="${skill.percentage >= 70 ? 'text-success' : skill.percentage >= 50 ? 'text-warning' : 'text-danger'}">
+              ${skill.correct}/${skill.total} (${skill.percentage.toFixed(0)}%)
+            </span>
+          </div>
+          <div class="progress" style="height: 10px;">
+            <div class="progress-bar ${skill.percentage >= 70 ? 'bg-success' : skill.percentage >= 50 ? 'bg-warning' : 'bg-danger'}"
+                 style="width: ${skill.percentage}%"></div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  </div>
+</div>
+` : ''}
+
+<!-- Strengths and Gaps -->
+<div class="row g-4 mb-4">
+  ${result?.strengths && result.strengths.length > 0 ? `
+  <div class="col-md-6">
+    <div class="card h-100 border-success">
+      <div class="card-header bg-success text-white">
+        <h6 class="mb-0"><i class="bi bi-star-fill me-2"></i>Your Strengths</h6>
+      </div>
+      <div class="card-body">
+        <ul class="list-unstyled mb-0">
+          ${result.strengths.map(strength => {
+            const skillData = result.skillBreakdown[strength];
+            return '<li class="d-flex align-items-center gap-2 mb-2">' +
+              '<i class="bi bi-check-circle-fill text-success"></i>' +
+              '<span>' + (skillData?.skillName || strength) + '</span>' +
+              (skillData ? '<span class="badge bg-success ms-auto">' + skillData.percentage.toFixed(0) + '%</span>' : '') +
+            '</li>';
+          }).join('')}
+        </ul>
+      </div>
+    </div>
+  </div>
+  ` : ''}
+
+  ${result?.skillGaps && result.skillGaps.length > 0 ? `
+  <div class="col-md-6">
+    <div class="card h-100 border-warning">
+      <div class="card-header bg-warning">
+        <h6 class="mb-0"><i class="bi bi-exclamation-triangle-fill me-2"></i>Areas to Improve</h6>
+      </div>
+      <div class="card-body">
+        <ul class="list-unstyled mb-0">
+          ${result.skillGaps.map(gap => {
+            const skillData = result.skillBreakdown[gap];
+            return '<li class="d-flex align-items-center gap-2 mb-2">' +
+              '<i class="bi bi-arrow-up-circle text-warning"></i>' +
+              '<span>' + (skillData?.skillName || gap) + '</span>' +
+              (skillData ? '<span class="badge bg-warning text-dark ms-auto">' + skillData.percentage.toFixed(0) + '%</span>' : '') +
+            '</li>';
+          }).join('')}
+        </ul>
+      </div>
+    </div>
+  </div>
+  ` : ''}
+</div>
+
+<!-- Recommendations -->
+${result?.recommendations && result.recommendations.length > 0 ? `
+<div class="card mb-4">
+  <div class="card-header bg-white">
+    <h6 class="mb-0"><i class="bi bi-lightbulb me-2"></i>Recommended Next Steps</h6>
+  </div>
+  <div class="card-body">
+    <div class="row g-3">
+      ${result.recommendations.map(rec => `
+        <div class="col-md-6 col-lg-4">
+          <div class="card h-100 bg-light border-0">
+            <div class="card-body">
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <i class="bi bi-${rec.type === 'practice' ? 'pencil' : rec.type === 'lesson' ? 'book' : 'folder'} text-primary"></i>
+                <strong>${rec.name}</strong>
+              </div>
+              <p class="text-muted small mb-2">${rec.reason}</p>
+              <a href="${typeof basePath !== 'undefined' ? basePath : ''}/student/tutor?topic=${rec.id}" class="btn btn-sm btn-primary">
+                <i class="bi bi-play-fill me-1"></i>Start Practice
+              </a>
+            </div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  </div>
+</div>
+` : ''}
+
+<!-- Question Review -->
+${responses && responses.length > 0 ? `
+<div class="card">
+  <div class="card-header bg-white d-flex justify-content-between align-items-center">
+    <h6 class="mb-0"><i class="bi bi-list-check me-2"></i>Question Review</h6>
+    <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#questionReview">
+      <i class="bi bi-chevron-down"></i>
+    </button>
+  </div>
+  <div class="collapse" id="questionReview">
+    <div class="card-body p-0">
+      <div class="accordion accordion-flush" id="questionsAccordion">
+        ${responses.map((resp, i) => `
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#q${i}">
+                <span class="me-2 ${resp.isCorrect ? 'text-success' : 'text-danger'}">
+                  <i class="bi bi-${resp.isCorrect ? 'check-circle-fill' : 'x-circle-fill'}"></i>
+                </span>
+                <strong>Question ${i + 1}:</strong>
+                <span class="ms-2 text-muted text-truncate" style="max-width: 400px;">${resp.question.questionText.substring(0, 60)}${resp.question.questionText.length > 60 ? '...' : ''}</span>
+              </button>
+            </h2>
+            <div id="q${i}" class="accordion-collapse collapse" data-bs-parent="#questionsAccordion">
+              <div class="accordion-body">
+                <p class="mb-3"><strong>Question:</strong> ${resp.question.questionText}</p>
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="alert ${resp.isCorrect ? 'alert-success' : 'alert-danger'} mb-2">
+                      <strong>Your Answer:</strong> ${resp.answer || '(no answer)'}
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="alert alert-info mb-2">
+                      <strong>Correct Answer:</strong> ${resp.question.correctAnswer}
+                    </div>
+                  </div>
+                </div>
+                ${resp.question.explanation ? '<p class="mb-0 text-muted"><strong>Explanation:</strong> ' + resp.question.explanation + '</p>' : ''}
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  </div>
+</div>
+` : ''}
+
+<!-- Actions -->
+<div class="d-flex justify-content-center gap-3 mt-4">
+  <a href="${typeof basePath !== 'undefined' ? basePath : ''}/student/diagnostics" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>Back to Diagnostics
+  </a>
+  <a href="${typeof basePath !== 'undefined' ? basePath : ''}/student/tutor" class="btn btn-primary">
+    <i class="bi bi-chat-dots me-1"></i>Start Tutoring
+  </a>
+</div>
+`, activePage: 'diagnostics', pageTitle: 'Diagnostic Results', branding, user }) %>

@@ -1,0 +1,437 @@
+<%- include('../layouts/student', {
+  title: title,
+  branding: branding,
+  user: user,
+  activePage: 'practice',
+  content: `
+<div class="container-fluid py-4">
+  <!-- Progress Header -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body py-3">
+      <div class="row align-items-center">
+        <div class="col">
+          <div class="d-flex align-items-center">
+            <div class="me-4">
+              <small class="text-muted">Progress</small>
+              <h5 class="mb-0" id="progressText">${progress.current} / ${progress.total}</h5>
+            </div>
+            <div class="flex-grow-1">
+              <div class="progress" style="height: 8px;">
+                <div class="progress-bar" id="progressBar" role="progressbar" style="width: ${(progress.current / progress.total) * 100}%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-auto">
+          <div class="d-flex gap-4">
+            <div class="text-center">
+              <small class="text-muted d-block">Correct</small>
+              <span class="badge bg-success fs-6" id="correctCount">${progress.correct}</span>
+            </div>
+            <div class="text-center">
+              <small class="text-muted d-block">Incorrect</small>
+              <span class="badge bg-danger fs-6" id="incorrectCount">${progress.incorrect}</span>
+            </div>
+            <div class="text-center">
+              <small class="text-muted d-block">Streak</small>
+              <span class="badge bg-warning text-dark fs-6" id="streakCount">${progress.streak} <i class="bi bi-fire"></i></span>
+            </div>
+          </div>
+        </div>
+        <div class="col-auto">
+          <button class="btn btn-outline-secondary" onclick="endSession()">
+            <i class="bi bi-x-lg me-1"></i> End Session
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Question Card -->
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card border-0 shadow" id="questionCard">
+        <div class="card-header bg-transparent border-0 py-3 d-flex justify-content-between align-items-center">
+          <div>
+            <span class="badge bg-primary me-2" id="topicBadge">${currentItem.topicName || 'General'}</span>
+            <span class="badge bg-secondary" id="difficultyBadge">${currentItem.difficulty}</span>
+          </div>
+          <div id="timer" class="text-muted">
+            <i class="bi bi-clock me-1"></i> <span id="timerText">0:00</span>
+          </div>
+        </div>
+        <div class="card-body p-4">
+          <!-- Question -->
+          <div id="questionContainer">
+            <h4 class="mb-4" id="questionText">${currentItem.question}</h4>
+
+            <!-- Answer Options -->
+            <div id="answerContainer">
+              ${currentItem.type === 'multiple_choice' ? `
+                <div class="d-grid gap-2">
+                  ${currentItem.options.map((opt, idx) => `
+                    <button class="btn btn-outline-primary text-start py-3 px-4 answer-btn" data-answer="${opt}">
+                      <span class="fw-bold me-2">${String.fromCharCode(65 + idx)}.</span> ${opt}
+                    </button>
+                  `).join('')}
+                </div>
+              ` : currentItem.type === 'true_false' ? `
+                <div class="d-grid gap-2">
+                  <button class="btn btn-outline-primary text-start py-3 px-4 answer-btn" data-answer="true">
+                    <i class="bi bi-check-circle me-2"></i> True
+                  </button>
+                  <button class="btn btn-outline-primary text-start py-3 px-4 answer-btn" data-answer="false">
+                    <i class="bi bi-x-circle me-2"></i> False
+                  </button>
+                </div>
+              ` : `
+                <div class="mb-3">
+                  <input type="text" class="form-control form-control-lg" id="shortAnswer" placeholder="Type your answer...">
+                </div>
+                <button class="btn btn-primary" id="submitShortAnswer">Submit Answer</button>
+              `}
+            </div>
+          </div>
+
+          <!-- Feedback (hidden initially) -->
+          <div id="feedbackContainer" class="d-none">
+            <div class="alert" id="feedbackAlert">
+              <h5 id="feedbackTitle"></h5>
+              <p id="feedbackMessage" class="mb-0"></p>
+            </div>
+            <div id="explanationContainer" class="mt-3 d-none">
+              <div class="card bg-light">
+                <div class="card-body">
+                  <h6><i class="bi bi-lightbulb me-2"></i>Explanation</h6>
+                  <p class="mb-0" id="explanationText"></p>
+                </div>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-4">
+              <div class="text-muted">
+                <span class="badge bg-primary me-2" id="pointsEarned">+0 pts</span>
+                <span id="nextReviewText"></span>
+              </div>
+              <button class="btn btn-primary btn-lg" id="nextBtn">
+                Next Question <i class="bi bi-arrow-right ms-2"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Skip Button -->
+      <div class="text-center mt-3" id="skipContainer">
+        <button class="btn btn-link text-muted" onclick="skipQuestion()">
+          Skip this question
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Session Complete Modal -->
+<div class="modal fade" id="completeModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-body text-center py-5">
+        <i class="bi bi-check-circle-fill text-success display-1 mb-3"></i>
+        <h3>Session Complete!</h3>
+        <p class="text-muted">Great job on completing your practice session.</p>
+        <a href="${typeof basePath !== 'undefined' ? basePath : ''}/student/practice/results/${session.id}" class="btn btn-primary btn-lg">
+          View Results
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const basePath = '${typeof basePath !== 'undefined' ? basePath : ''}';
+  const sessionId = '${session.id}';
+  let currentItem = ${JSON.stringify(currentItem)};
+  let startTime = Date.now();
+  let timerInterval;
+
+  // Start timer
+  function startTimer() {
+    timerInterval = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      const mins = Math.floor(elapsed / 60);
+      const secs = elapsed % 60;
+      document.getElementById('timerText').textContent = mins + ':' + secs.toString().padStart(2, '0');
+    }, 1000);
+  }
+  startTimer();
+
+  // Answer button click handler
+  document.querySelectorAll('.answer-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      submitAnswer(this.dataset.answer);
+    });
+  });
+
+  // Short answer submit
+  const submitShortBtn = document.getElementById('submitShortAnswer');
+  if (submitShortBtn) {
+    submitShortBtn.addEventListener('click', function() {
+      const answer = document.getElementById('shortAnswer').value.trim();
+      if (answer) {
+        submitAnswer(answer);
+      }
+    });
+
+    // Enter key for short answer
+    document.getElementById('shortAnswer').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        const answer = this.value.trim();
+        if (answer) {
+          submitAnswer(answer);
+        }
+      }
+    });
+  }
+
+  // Submit answer
+  async function submitAnswer(answer) {
+    clearInterval(timerInterval);
+    const timeSpent = Math.floor((Date.now() - startTime) / 1000);
+
+    // Disable answer buttons
+    document.querySelectorAll('.answer-btn').forEach(btn => {
+      btn.disabled = true;
+    });
+
+    try {
+      const response = await fetch(basePath + '/student/practice/session/' + sessionId + '/answer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ answer, timeSpent })
+      });
+
+      const result = await response.json();
+
+      // Show feedback
+      showFeedback(result, answer);
+
+      // Update stats
+      if (result.isCorrect) {
+        document.getElementById('correctCount').textContent = parseInt(document.getElementById('correctCount').textContent) + 1;
+      } else {
+        document.getElementById('incorrectCount').textContent = parseInt(document.getElementById('incorrectCount').textContent) + 1;
+      }
+      document.getElementById('streakCount').innerHTML = result.streak + ' <i class="bi bi-fire"></i>';
+
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Failed to submit answer');
+    }
+  }
+
+  // Show feedback
+  function showFeedback(result, userAnswer) {
+    const questionContainer = document.getElementById('questionContainer');
+    const feedbackContainer = document.getElementById('feedbackContainer');
+    const feedbackAlert = document.getElementById('feedbackAlert');
+    const feedbackTitle = document.getElementById('feedbackTitle');
+    const feedbackMessage = document.getElementById('feedbackMessage');
+    const explanationContainer = document.getElementById('explanationContainer');
+    const explanationText = document.getElementById('explanationText');
+    const pointsEarned = document.getElementById('pointsEarned');
+    const nextReviewText = document.getElementById('nextReviewText');
+    const skipContainer = document.getElementById('skipContainer');
+
+    // Hide skip
+    skipContainer.classList.add('d-none');
+
+    // Highlight correct/incorrect answers
+    document.querySelectorAll('.answer-btn').forEach(btn => {
+      if (btn.dataset.answer === result.correctAnswer) {
+        btn.classList.remove('btn-outline-primary');
+        btn.classList.add('btn-success');
+      } else if (btn.dataset.answer === userAnswer && !result.isCorrect) {
+        btn.classList.remove('btn-outline-primary');
+        btn.classList.add('btn-danger');
+      }
+    });
+
+    // Show feedback
+    feedbackAlert.className = 'alert ' + (result.isCorrect ? 'alert-success' : 'alert-danger');
+    feedbackTitle.innerHTML = result.isCorrect
+      ? '<i class="bi bi-check-circle-fill me-2"></i>Correct!'
+      : '<i class="bi bi-x-circle-fill me-2"></i>Incorrect';
+
+    feedbackMessage.textContent = result.isCorrect
+      ? 'Great job! Keep up the good work.'
+      : 'The correct answer is: ' + result.correctAnswer;
+
+    // Show explanation if available
+    if (result.explanation) {
+      explanationText.textContent = result.explanation;
+      explanationContainer.classList.remove('d-none');
+    }
+
+    // Show points
+    pointsEarned.textContent = '+' + result.pointsEarned + ' pts';
+
+    // Show next review info
+    if (result.nextReviewDate) {
+      const reviewDate = new Date(result.nextReviewDate);
+      const now = new Date();
+      const days = Math.ceil((reviewDate - now) / (1000 * 60 * 60 * 24));
+      nextReviewText.textContent = days <= 0 ? 'Review soon' : 'Next review in ' + days + ' day(s)';
+    }
+
+    // Setup next button
+    const nextBtn = document.getElementById('nextBtn');
+    if (result.hasMore) {
+      nextBtn.onclick = loadNextQuestion;
+    } else {
+      nextBtn.innerHTML = 'View Results <i class="bi bi-arrow-right ms-2"></i>';
+      nextBtn.onclick = () => {
+        window.location.href = basePath + '/student/practice/results/' + sessionId;
+      };
+    }
+
+    feedbackContainer.classList.remove('d-none');
+  }
+
+  // Load next question
+  async function loadNextQuestion() {
+    try {
+      const response = await fetch(basePath + '/student/practice/session/' + sessionId + '/current');
+      const data = await response.json();
+
+      if (data.complete) {
+        // Show completion modal
+        new bootstrap.Modal(document.getElementById('completeModal')).show();
+        return;
+      }
+
+      currentItem = data.item;
+
+      // Update progress
+      document.getElementById('progressText').textContent = data.progress.current + ' / ' + data.progress.total;
+      document.getElementById('progressBar').style.width = ((data.progress.current / data.progress.total) * 100) + '%';
+
+      // Update question display
+      document.getElementById('topicBadge').textContent = currentItem.topicName || 'General';
+      document.getElementById('difficultyBadge').textContent = currentItem.difficulty;
+      document.getElementById('questionText').textContent = currentItem.question;
+
+      // Update answer options
+      const answerContainer = document.getElementById('answerContainer');
+      if (currentItem.type === 'multiple_choice') {
+        answerContainer.innerHTML = '<div class="d-grid gap-2">' +
+          currentItem.options.map((opt, idx) =>
+            '<button class="btn btn-outline-primary text-start py-3 px-4 answer-btn" data-answer="' + opt + '">' +
+            '<span class="fw-bold me-2">' + String.fromCharCode(65 + idx) + '.</span> ' + opt +
+            '</button>'
+          ).join('') +
+          '</div>';
+      } else if (currentItem.type === 'true_false') {
+        answerContainer.innerHTML =
+          '<div class="d-grid gap-2">' +
+          '<button class="btn btn-outline-primary text-start py-3 px-4 answer-btn" data-answer="true">' +
+          '<i class="bi bi-check-circle me-2"></i> True</button>' +
+          '<button class="btn btn-outline-primary text-start py-3 px-4 answer-btn" data-answer="false">' +
+          '<i class="bi bi-x-circle me-2"></i> False</button>' +
+          '</div>';
+      } else {
+        answerContainer.innerHTML =
+          '<div class="mb-3"><input type="text" class="form-control form-control-lg" id="shortAnswer" placeholder="Type your answer..."></div>' +
+          '<button class="btn btn-primary" id="submitShortAnswer">Submit Answer</button>';
+
+        document.getElementById('submitShortAnswer').addEventListener('click', function() {
+          const answer = document.getElementById('shortAnswer').value.trim();
+          if (answer) submitAnswer(answer);
+        });
+        document.getElementById('shortAnswer').addEventListener('keypress', function(e) {
+          if (e.key === 'Enter') {
+            const answer = this.value.trim();
+            if (answer) submitAnswer(answer);
+          }
+        });
+      }
+
+      // Re-attach click handlers
+      document.querySelectorAll('.answer-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          submitAnswer(this.dataset.answer);
+        });
+      });
+
+      // Hide feedback, show question
+      document.getElementById('feedbackContainer').classList.add('d-none');
+      document.getElementById('explanationContainer').classList.add('d-none');
+      document.getElementById('skipContainer').classList.remove('d-none');
+
+      // Reset timer
+      startTime = Date.now();
+      startTimer();
+
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Failed to load next question');
+    }
+  }
+
+  // Skip question
+  async function skipQuestion() {
+    try {
+      const response = await fetch(basePath + '/student/practice/session/' + sessionId + '/skip', {
+        method: 'POST'
+      });
+      const result = await response.json();
+
+      if (result.hasMore) {
+        loadNextQuestion();
+      } else {
+        window.location.href = basePath + '/student/practice/results/' + sessionId;
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Failed to skip question');
+    }
+  }
+
+  // End session early
+  async function endSession() {
+    if (!confirm('Are you sure you want to end this practice session?')) {
+      return;
+    }
+
+    try {
+      await fetch(basePath + '/student/practice/session/' + sessionId + '/end', {
+        method: 'POST'
+      });
+      window.location.href = basePath + '/student/practice/results/' + sessionId;
+    } catch (error) {
+      console.error('Error:', error);
+      window.location.href = basePath + '/student/practice/results/' + sessionId;
+    }
+  }
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', function(e) {
+    // Only for multiple choice when not in feedback mode
+    if (document.getElementById('feedbackContainer').classList.contains('d-none')) {
+      if (e.key >= '1' && e.key <= '4') {
+        const idx = parseInt(e.key) - 1;
+        const btns = document.querySelectorAll('.answer-btn');
+        if (btns[idx]) {
+          btns[idx].click();
+        }
+      }
+    } else {
+      // In feedback mode, space/enter goes to next
+      if (e.key === ' ' || e.key === 'Enter') {
+        document.getElementById('nextBtn').click();
+      }
+    }
+  });
+</script>
+`
+}) %>

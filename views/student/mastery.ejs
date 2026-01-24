@@ -1,0 +1,174 @@
+<%- include('../layouts/student', {
+  title: title,
+  branding: branding,
+  user: user,
+  activePage: 'mastery',
+  content: `
+<div class="container-fluid py-4">
+  <!-- Page Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-1">Mastery Dashboard</h1>
+      <p class="text-muted mb-0">Track your skill levels across all subjects</p>
+    </div>
+    <a href="${typeof basePath !== 'undefined' ? basePath : ''}/student/learning-paths" class="btn btn-outline-primary">
+      <i class="bi bi-signpost-2 me-1"></i> View Learning Paths
+    </a>
+  </div>
+
+  <!-- Overall Stats -->
+  <div class="row g-4 mb-5">
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body text-center">
+          <div class="rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center"
+               style="width: 80px; height: 80px; background-color: ${getMasteryColor(dashboardData.overallMastery)}20;">
+            <i class="bi ${getMasteryBadge(dashboardData.overallMastery)} fs-1" style="color: ${getMasteryColor(dashboardData.overallMastery)};"></i>
+          </div>
+          <h4 class="mb-1">${formatMasteryLevel(dashboardData.overallMastery)}</h4>
+          <p class="text-muted mb-0">Overall Mastery</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body text-center">
+          <div class="rounded-circle bg-success bg-opacity-10 mx-auto mb-3 d-flex align-items-center justify-content-center"
+               style="width: 80px; height: 80px;">
+            <i class="bi bi-trophy fs-1 text-success"></i>
+          </div>
+          <h4 class="mb-1">${dashboardData.topicsMastered}</h4>
+          <p class="text-muted mb-0">Topics Mastered</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body text-center">
+          <div class="rounded-circle bg-primary bg-opacity-10 mx-auto mb-3 d-flex align-items-center justify-content-center"
+               style="width: 80px; height: 80px;">
+            <i class="bi bi-graph-up fs-1 text-primary"></i>
+          </div>
+          <h4 class="mb-1">${dashboardData.topicsInProgress}</h4>
+          <p class="text-muted mb-0">In Progress</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body text-center">
+          <div class="rounded-circle bg-warning bg-opacity-10 mx-auto mb-3 d-flex align-items-center justify-content-center"
+               style="width: 80px; height: 80px;">
+            <i class="bi bi-star fs-1 text-warning"></i>
+          </div>
+          <h4 class="mb-1">${dashboardData.totalPoints}</h4>
+          <p class="text-muted mb-0">Total Points</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mastery Level Legend -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <h6 class="mb-3">Mastery Levels</h6>
+      <div class="d-flex flex-wrap gap-3">
+        ${['novice', 'beginner', 'intermediate', 'proficient', 'expert', 'master'].map(level => `
+          <div class="d-flex align-items-center">
+            <div class="rounded-circle me-2" style="width: 16px; height: 16px; background-color: ${getMasteryColor(level)};"></div>
+            <span class="small">${formatMasteryLevel(level)} (${MASTERY_THRESHOLDS[level]}%+)</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  </div>
+
+  <!-- Recommendations -->
+  ${dashboardData.recommendations && dashboardData.recommendations.length > 0 ? `
+  <div class="alert alert-info border-0 shadow-sm mb-4">
+    <h6 class="alert-heading"><i class="bi bi-lightbulb me-2"></i>Recommendations</h6>
+    <ul class="mb-0">
+      ${dashboardData.recommendations.map(r => `<li>${r}</li>`).join('')}
+    </ul>
+  </div>
+  ` : ''}
+
+  <!-- Mastery by Subject -->
+  <div class="row">
+    <div class="col-12">
+      <h4 class="mb-4"><i class="bi bi-bar-chart-fill me-2"></i>Mastery by Subject</h4>
+
+      ${Object.keys(masteryBySubject).length > 0 ? `
+        ${Object.entries(masteryBySubject).map(([subject, topics]) => `
+          <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-0 py-3">
+              <h5 class="mb-0">${subject}</h5>
+            </div>
+            <div class="card-body">
+              <div class="row g-3">
+                ${topics.map(m => `
+                  <div class="col-md-6 col-lg-4">
+                    <div class="border rounded p-3">
+                      <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="mb-0">${m.topicName}</h6>
+                        <span class="badge" style="background-color: ${getMasteryColor(m.level)};">
+                          ${formatMasteryLevel(m.level)}
+                        </span>
+                      </div>
+                      <div class="progress mb-2" style="height: 8px;">
+                        <div class="progress-bar" role="progressbar" style="width: ${m.score}%; background-color: ${getMasteryColor(m.level)};"></div>
+                      </div>
+                      <div class="d-flex justify-content-between text-muted small">
+                        <span>${m.questionsCorrect}/${m.questionsAttempted} correct</span>
+                        <span>${m.score}%</span>
+                      </div>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      ` : `
+        <div class="card border-0 shadow-sm">
+          <div class="card-body text-center py-5">
+            <i class="bi bi-emoji-smile display-1 text-muted mb-3 d-block"></i>
+            <h5>No Mastery Data Yet</h5>
+            <p class="text-muted mb-3">Complete some tutoring sessions or practice to start tracking your mastery!</p>
+            <a href="${typeof basePath !== 'undefined' ? basePath : ''}/student/subjects" class="btn btn-primary">
+              <i class="bi bi-book me-1"></i> Browse Subjects
+            </a>
+          </div>
+        </div>
+      `}
+    </div>
+  </div>
+
+  <!-- Recent Activity -->
+  ${dashboardData.recentActivity && dashboardData.recentActivity.length > 0 ? `
+  <div class="card border-0 shadow-sm mt-4">
+    <div class="card-header bg-transparent border-0 py-3">
+      <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Recent Activity</h5>
+    </div>
+    <div class="card-body p-0">
+      <div class="list-group list-group-flush">
+        ${dashboardData.recentActivity.slice(0, 5).map(activity => `
+          <div class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <i class="bi bi-chat-dots text-primary me-2"></i>
+              <span>${activity.topic}</span>
+              <small class="text-muted ms-2">${activity.type}</small>
+            </div>
+            <div>
+              <span class="badge bg-success me-2">+${activity.points} pts</span>
+              <small class="text-muted">${new Date(activity.date).toLocaleDateString()}</small>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  </div>
+  ` : ''}
+</div>
+`
+}) %>

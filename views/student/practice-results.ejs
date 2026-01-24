@@ -1,0 +1,206 @@
+<%- include('../layouts/student', {
+  title: title,
+  branding: branding,
+  user: user,
+  activePage: 'practice',
+  content: `
+<div class="container-fluid py-4">
+  <!-- Results Header -->
+  <div class="text-center mb-5">
+    ${stats.accuracy >= 80 ? `
+      <div class="display-1 mb-3">
+        <i class="bi bi-trophy-fill text-warning"></i>
+      </div>
+      <h1 class="display-5 fw-bold text-success">Excellent Work!</h1>
+    ` : stats.accuracy >= 60 ? `
+      <div class="display-1 mb-3">
+        <i class="bi bi-check-circle-fill text-success"></i>
+      </div>
+      <h1 class="display-5 fw-bold">Good Progress!</h1>
+    ` : `
+      <div class="display-1 mb-3">
+        <i class="bi bi-arrow-repeat text-primary"></i>
+      </div>
+      <h1 class="display-5 fw-bold">Keep Practicing!</h1>
+    `}
+    <p class="lead text-muted">Here's how you did in this practice session</p>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="row g-4 justify-content-center mb-5">
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body text-center py-4">
+          <div class="display-4 fw-bold text-primary mb-2">${stats.accuracy}%</div>
+          <div class="text-muted">Accuracy</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body text-center py-4">
+          <div class="display-4 fw-bold text-success mb-2">${stats.correct}</div>
+          <div class="text-muted">Correct</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body text-center py-4">
+          <div class="display-4 fw-bold text-danger mb-2">${stats.incorrect}</div>
+          <div class="text-muted">Incorrect</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body text-center py-4">
+          <div class="display-4 fw-bold text-warning mb-2">${stats.points}</div>
+          <div class="text-muted">Points Earned</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Additional Stats -->
+  <div class="row justify-content-center mb-5">
+    <div class="col-lg-8">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <div class="row text-center">
+            <div class="col-4 border-end">
+              <h5 class="mb-1">
+                <i class="bi bi-fire text-warning me-1"></i>
+                ${stats.longestStreak}
+              </h5>
+              <small class="text-muted">Best Streak</small>
+            </div>
+            <div class="col-4 border-end">
+              <h5 class="mb-1">
+                <i class="bi bi-clock text-info me-1"></i>
+                ${Math.floor(stats.duration / 60)}:${(stats.duration % 60).toString().padStart(2, '0')}
+              </h5>
+              <small class="text-muted">Time Taken</small>
+            </div>
+            <div class="col-4">
+              <h5 class="mb-1">
+                <i class="bi bi-skip-forward text-secondary me-1"></i>
+                ${stats.skipped}
+              </h5>
+              <small class="text-muted">Skipped</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recommendation -->
+  <div class="row justify-content-center mb-5">
+    <div class="col-lg-8">
+      <div class="alert alert-info border-0 shadow-sm">
+        <div class="d-flex">
+          <div class="me-3">
+            <i class="bi bi-lightbulb-fill fs-3"></i>
+          </div>
+          <div>
+            <h6 class="alert-heading">Recommendation</h6>
+            <p class="mb-0">${recommendation}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Question Review -->
+  ${responses && responses.length > 0 ? `
+  <div class="row justify-content-center">
+    <div class="col-lg-10">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-transparent border-0 py-3">
+          <h5 class="mb-0"><i class="bi bi-list-check me-2"></i>Question Review</h5>
+        </div>
+        <div class="card-body p-0">
+          <div class="accordion accordion-flush" id="reviewAccordion">
+            ${responses.map((r, idx) => `
+              <div class="accordion-item">
+                <h2 class="accordion-header">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#review${idx}">
+                    <span class="badge ${r.isCorrect ? 'bg-success' : 'bg-danger'} me-3">
+                      ${r.isCorrect ? '<i class="bi bi-check"></i>' : '<i class="bi bi-x"></i>'}
+                    </span>
+                    <span class="text-truncate">${r.item?.question || 'Question ' + (idx + 1)}</span>
+                  </button>
+                </h2>
+                <div id="review${idx}" class="accordion-collapse collapse" data-bs-parent="#reviewAccordion">
+                  <div class="accordion-body">
+                    <p class="mb-3"><strong>Question:</strong> ${r.item?.question || ''}</p>
+                    <p class="mb-2">
+                      <strong>Your Answer:</strong>
+                      <span class="${r.isCorrect ? 'text-success' : 'text-danger'}">${r.answer || '(skipped)'}</span>
+                    </p>
+                    ${!r.isCorrect ? `
+                      <p class="mb-2">
+                        <strong>Correct Answer:</strong>
+                        <span class="text-success">${r.item?.correctAnswer || ''}</span>
+                      </p>
+                    ` : ''}
+                    ${r.item?.explanation ? `
+                      <div class="alert alert-light mt-3 mb-0">
+                        <strong><i class="bi bi-lightbulb me-1"></i>Explanation:</strong>
+                        ${r.item.explanation}
+                      </div>
+                    ` : ''}
+                    <div class="mt-2 text-muted small">
+                      Time: ${r.timeSpent || 0}s | Points: +${r.pointsEarned || 0}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  ` : ''}
+
+  <!-- Action Buttons -->
+  <div class="text-center mt-5">
+    <a href="${typeof basePath !== 'undefined' ? basePath : ''}/student/practice" class="btn btn-primary btn-lg me-3">
+      <i class="bi bi-arrow-repeat me-2"></i>Practice Again
+    </a>
+    <a href="${typeof basePath !== 'undefined' ? basePath : ''}/student" class="btn btn-outline-secondary btn-lg">
+      <i class="bi bi-house me-2"></i>Back to Dashboard
+    </a>
+  </div>
+
+  <!-- Share Results (Optional) -->
+  <div class="text-center mt-4">
+    <button class="btn btn-sm btn-outline-primary" onclick="shareResults()">
+      <i class="bi bi-share me-1"></i> Share Results
+    </button>
+  </div>
+</div>
+
+<script>
+  function shareResults() {
+    const text = 'I just completed a practice session on TutorAI with ${stats.accuracy}% accuracy! ' +
+      '${stats.correct} correct, ${stats.incorrect} incorrect. ' +
+      (${stats.longestStreak} > 3 ? 'Best streak: ${stats.longestStreak}!' : '');
+
+    if (navigator.share) {
+      navigator.share({
+        title: 'My Practice Results',
+        text: text
+      });
+    } else {
+      // Copy to clipboard
+      navigator.clipboard.writeText(text).then(() => {
+        alert('Results copied to clipboard!');
+      });
+    }
+  }
+</script>
+`
+}) %>

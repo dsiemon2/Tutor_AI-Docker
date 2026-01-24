@@ -50,7 +50,8 @@ app.get('/healthz', (req, res) => {
 
 // Redirect root to admin with token
 app.get('/', (req, res) => {
-  res.redirect(`${config.basePath}/admin?token=${config.adminToken}`);
+  const adminPath = config.basePath ? `${config.basePath}/admin` : '/admin';
+  res.redirect(`${adminPath}?token=${config.adminToken}`);
 });
 
 // 404 handler

@@ -11,7 +11,7 @@ export const config = {
   env: process.env.NODE_ENV || 'development',
   port: parseInt(process.env.PORT || '3000', 10),
   adminPort: parseInt(process.env.ADMIN_PORT || '3001', 10),
-  basePath: process.env.BASE_PATH || '/TutorAI',
+  basePath: process.env.BASE_PATH !== undefined ? process.env.BASE_PATH : '/TutorAI',
 
   // Database
   databaseUrl: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/tutorai',
