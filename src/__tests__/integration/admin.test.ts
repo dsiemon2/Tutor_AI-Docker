@@ -338,10 +338,11 @@ describe('Admin SMS Settings', () => {
     });
 
     it('should validate Twilio account SID format', () => {
-      const validSid = 'AC1234567890123456789012345678901234';
+      // Twilio SID format: AC + 32 hex characters = 34 total
+      const validSidFormat = 'AC' + 'x'.repeat(32); // ACxxxxxxxx... (34 chars)
       const invalidSid = 'XX1234567890';
 
-      expect(validSid.startsWith('AC') && validSid.length === 34).toBe(true);
+      expect(validSidFormat.startsWith('AC') && validSidFormat.length === 34).toBe(true);
       expect(invalidSid.startsWith('AC') && invalidSid.length === 34).toBe(false);
     });
   });

@@ -1722,21 +1722,81 @@ router.post('/quizzes/:id/submit', async (req, res) => {
     // Grade each answer
     let totalScore = 0;
     let totalPossible = 0;
+    let hasEssayQuestions = false;
 
     for (const question of quiz.questions) {
       const studentAnswer = answers?.[question.id] || '';
-      const isCorrect = studentAnswer.trim().toLowerCase() === question.correctAnswer.trim().toLowerCase();
-      const pointsEarned = isCorrect ? question.points : 0;
+      let isCorrect: boolean | null = false;
+      let pointsEarned = 0;
 
-      totalScore += pointsEarned;
-      totalPossible += question.points;
+      if (question.questionType === 'essay') {
+        // Essay questions need manual grading - mark as null (pending)
+        isCorrect = null;
+        pointsEarned = 0;
+        hasEssayQuestions = true;
+        // Essay points are not counted in auto-grading total
+      } else if (question.questionType === 'matching') {
+        // Auto-grade matching by comparing JSON objects
+        try {
+          const studentMatches = typeof studentAnswer === 'string' ? JSON.parse(studentAnswer) : studentAnswer;
+          const optionsData = question.options ? JSON.parse(question.options) : { pairs: [] };
+          const correctPairs = optionsData.pairs || [];
+
+          let correctCount = 0;
+          for (const pair of correctPairs) {
+            if (studentMatches[pair.left] === pair.right) {
+              correctCount++;
+            }
+          }
+
+          // Calculate partial credit based on correct matches
+          const matchRatio = correctPairs.length > 0 ? correctCount / correctPairs.length : 0;
+          isCorrect = matchRatio === 1;
+          pointsEarned = Math.round(question.points * matchRatio);
+        } catch (e) {
+          isCorrect = false;
+          pointsEarned = 0;
+        }
+        totalScore += pointsEarned;
+        totalPossible += question.points;
+      } else if (question.questionType === 'ordering') {
+        // Auto-grade ordering by comparing arrays
+        try {
+          const studentOrder = typeof studentAnswer === 'string' ? JSON.parse(studentAnswer) : studentAnswer;
+          const optionsData = question.options ? JSON.parse(question.options) : { items: [] };
+          const correctOrder = optionsData.items || [];
+
+          let correctPositions = 0;
+          for (let i = 0; i < correctOrder.length; i++) {
+            if (studentOrder[i] === correctOrder[i]) {
+              correctPositions++;
+            }
+          }
+
+          // Calculate partial credit based on correct positions
+          const orderRatio = correctOrder.length > 0 ? correctPositions / correctOrder.length : 0;
+          isCorrect = orderRatio === 1;
+          pointsEarned = Math.round(question.points * orderRatio);
+        } catch (e) {
+          isCorrect = false;
+          pointsEarned = 0;
+        }
+        totalScore += pointsEarned;
+        totalPossible += question.points;
+      } else {
+        // multiple_choice, true_false, fill_blank - standard grading
+        isCorrect = studentAnswer.trim().toLowerCase() === question.correctAnswer.trim().toLowerCase();
+        pointsEarned = isCorrect ? question.points : 0;
+        totalScore += pointsEarned;
+        totalPossible += question.points;
+      }
 
       // Save answer
       await prisma.quizAnswer.create({
         data: {
           attemptId: attempt.id,
           questionId: question.id,
-          answer: studentAnswer,
+          answer: typeof studentAnswer === 'object' ? JSON.stringify(studentAnswer) : studentAnswer,
           isCorrect,
           pointsEarned
         }
@@ -1744,18 +1804,20 @@ router.post('/quizzes/:id/submit', async (req, res) => {
     }
 
     // Calculate percentage and pass/fail
+    // For quizzes with essay questions, the percentage is preliminary (essay points excluded from total)
     const percentage = totalPossible > 0 ? (totalScore / totalPossible) * 100 : 0;
     const passed = percentage >= quiz.passingScore;
 
     // Update attempt
+    // Status is 'submitted' if all auto-graded, or needs manual review if has essay questions
     await prisma.quizAttempt.update({
       where: { id: attempt.id },
       data: {
         submittedAt: new Date(),
         score: totalScore,
         percentage,
-        passed,
-        status: 'submitted'
+        passed: hasEssayQuestions ? null : passed, // null means pending final grade if has essays
+        status: hasEssayQuestions ? 'submitted' : 'graded'
       }
     });
 

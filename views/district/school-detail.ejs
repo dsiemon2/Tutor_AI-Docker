@@ -1,0 +1,198 @@
+<%- include('../layouts/district', { body: `
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-4">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="${typeof basePath !== 'undefined' ? basePath : ''}/district">Dashboard</a></li>
+    <li class="breadcrumb-item"><a href="${typeof basePath !== 'undefined' ? basePath : ''}/district/schools">Schools</a></li>
+    <li class="breadcrumb-item active">${school?.name || 'School'}</li>
+  </ol>
+</nav>
+
+<!-- School Header -->
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="d-flex align-items-center gap-3">
+      <div class="rounded bg-primary bg-opacity-10 p-3">
+        <i class="bi bi-building text-primary fs-2"></i>
+      </div>
+      <div class="flex-grow-1">
+        <h4 class="mb-1">${school?.name || 'School'}</h4>
+        <p class="text-muted mb-0">
+          <span class="badge bg-secondary me-2">${school?.schoolType || 'School'}</span>
+          ${school?.city && school?.state ? school.city + ', ' + school.state : ''}
+          ${school?.gradeRange ? ' | Grades: ' + school.gradeRange : ''}
+        </p>
+      </div>
+      <span class="badge bg-${school?.isActive ? 'success' : 'danger'} fs-6">${school?.isActive ? 'Active' : 'Inactive'}</span>
+    </div>
+  </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row g-4 mb-4">
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Students</div>
+          <div class="stat-value">${stats?.studentCount || 0}</div>
+        </div>
+        <div class="stat-icon bg-success bg-opacity-10 text-success">
+          <i class="bi bi-mortarboard"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Teachers</div>
+          <div class="stat-value">${stats?.teacherCount || 0}</div>
+        </div>
+        <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+          <i class="bi bi-person-workspace"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Classes</div>
+          <div class="stat-value">${stats?.classCount || 0}</div>
+        </div>
+        <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+          <i class="bi bi-journal-bookmark"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Sessions</div>
+          <div class="stat-value">${stats?.sessionCount || 0}</div>
+        </div>
+        <div class="stat-icon bg-info bg-opacity-10 text-info">
+          <i class="bi bi-chat-dots"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Teachers -->
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-person-workspace me-2"></i>Teachers</h5>
+        <span class="badge bg-primary">${teachers?.length || 0}</span>
+      </div>
+      <div class="card-body p-0">
+        <div class="list-group list-group-flush" style="max-height: 300px; overflow-y: auto;">
+          ${teachers && teachers.length > 0 ? teachers.map(t => '<div class="list-group-item d-flex justify-content-between align-items-center"><div><strong>' + t.firstName + ' ' + t.lastName + '</strong><br><small class="text-muted">' + t.email + '</small></div><span class="badge bg-primary">Teacher</span></div>').join('') : '<div class="p-4 text-center text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No teachers found</div>'}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Classes -->
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-journal-bookmark me-2"></i>Classes</h5>
+        <span class="badge bg-warning">${classes?.length || 0}</span>
+      </div>
+      <div class="card-body p-0">
+        <div class="list-group list-group-flush" style="max-height: 300px; overflow-y: auto;">
+          ${classes && classes.length > 0 ? classes.map(c => '<div class="list-group-item d-flex justify-content-between align-items-center"><div><strong>' + c.name + '</strong><br><small class="text-muted">' + (c.subject?.name || 'General') + (c.gradeLevel ? ' | Grade ' + c.gradeLevel : '') + '</small></div><div class="text-muted small">' + (c._count?.students || 0) + ' students</div></div>').join('') : '<div class="p-4 text-center text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No classes found</div>'}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Students -->
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-mortarboard me-2"></i>Recent Students</h5>
+        <span class="badge bg-success">${stats?.studentCount || 0} total</span>
+      </div>
+      <div class="card-body p-0">
+        <div class="list-group list-group-flush" style="max-height: 300px; overflow-y: auto;">
+          ${students && students.length > 0 ? students.map(s => '<div class="list-group-item d-flex justify-content-between align-items-center"><div><strong>' + s.firstName + ' ' + s.lastName + '</strong><br><small class="text-muted">' + s.email + '</small></div>' + (s.gradeLevel !== null ? '<span class="badge bg-secondary">Grade ' + s.gradeLevel + '</span>' : '') + '</div>').join('') : '<div class="p-4 text-center text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No students found</div>'}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Sessions -->
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Recent Sessions</h5>
+      </div>
+      <div class="card-body p-0">
+        <div class="list-group list-group-flush" style="max-height: 300px; overflow-y: auto;">
+          ${sessions && sessions.length > 0 ? sessions.map(session => '<div class="list-group-item d-flex justify-content-between align-items-center"><div><strong>' + (session.student?.firstName || 'Unknown') + ' ' + (session.student?.lastName || '') + '</strong><br><small class="text-muted">' + (session.subject?.name || 'General') + '</small></div><small class="text-muted">' + new Date(session.startedAt).toLocaleDateString() + '</small></div>').join('') : '<div class="p-4 text-center text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No recent sessions</div>'}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- School Details Card -->
+<div class="card mt-4">
+  <div class="card-header">
+    <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>School Information</h5>
+  </div>
+  <div class="card-body">
+    <div class="row">
+      <div class="col-md-6">
+        <table class="table table-borderless">
+          <tr>
+            <th class="text-muted" style="width: 150px;">Address</th>
+            <td>${school?.address || '-'}</td>
+          </tr>
+          <tr>
+            <th class="text-muted">City</th>
+            <td>${school?.city || '-'}</td>
+          </tr>
+          <tr>
+            <th class="text-muted">State</th>
+            <td>${school?.state || '-'}</td>
+          </tr>
+          <tr>
+            <th class="text-muted">Zip Code</th>
+            <td>${school?.zipCode || '-'}</td>
+          </tr>
+        </table>
+      </div>
+      <div class="col-md-6">
+        <table class="table table-borderless">
+          <tr>
+            <th class="text-muted" style="width: 150px;">Phone</th>
+            <td>${school?.phone || '-'}</td>
+          </tr>
+          <tr>
+            <th class="text-muted">Email</th>
+            <td>${school?.email || '-'}</td>
+          </tr>
+          <tr>
+            <th class="text-muted">Website</th>
+            <td>${school?.website ? '<a href="' + school.website + '" target="_blank">' + school.website + '</a>' : '-'}</td>
+          </tr>
+          <tr>
+            <th class="text-muted">Subscription</th>
+            <td><span class="badge bg-info">${school?.subscriptionTier || 'FREE'}</span></td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+`, activePage: 'schools', pageTitle: school?.name || 'School Details' }) %>

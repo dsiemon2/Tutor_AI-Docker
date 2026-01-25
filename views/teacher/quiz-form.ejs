@@ -106,16 +106,24 @@
                   <option value="multiple_choice" ${q.questionType === 'multiple_choice' ? 'selected' : ''}>Multiple Choice</option>
                   <option value="true_false" ${q.questionType === 'true_false' ? 'selected' : ''}>True/False</option>
                   <option value="fill_blank" ${q.questionType === 'fill_blank' ? 'selected' : ''}>Fill in the Blank</option>
+                  <option value="essay" ${q.questionType === 'essay' ? 'selected' : ''}>Essay</option>
+                  <option value="matching" ${q.questionType === 'matching' ? 'selected' : ''}>Matching</option>
+                  <option value="ordering" ${q.questionType === 'ordering' ? 'selected' : ''}>Ordering</option>
                 </select>
               </div>
-              <div class="col-md-8 options-container" ${q.questionType === 'fill_blank' ? 'style="display:none;"' : ''}>
-                <label class="form-label">Options (one per line)</label>
-                <textarea name="questions[${i}][options]" class="form-control options-textarea" rows="4" placeholder="Option A&#10;Option B&#10;Option C&#10;Option D">${q.questionType === 'true_false' ? 'True\\nFalse' : (q.options ? JSON.parse(q.options).join('\\n') : '')}</textarea>
+              <div class="col-md-8 options-container" ${q.questionType === 'fill_blank' || q.questionType === 'essay' ? 'style="display:none;"' : ''}>
+                <label class="form-label options-label">${q.questionType === 'matching' ? 'Matching Pairs (format: left | right, one pair per line)' : (q.questionType === 'ordering' ? 'Items in Correct Order (one per line)' : 'Options (one per line)')}</label>
+                <textarea name="questions[${i}][options]" class="form-control options-textarea" rows="4" placeholder="${q.questionType === 'matching' ? 'Apple | Fruit&#10;Carrot | Vegetable&#10;Dog | Animal' : (q.questionType === 'ordering' ? 'First item&#10;Second item&#10;Third item' : 'Option A&#10;Option B&#10;Option C&#10;Option D')}">${q.questionType === 'true_false' ? 'True\\nFalse' : (q.questionType === 'matching' ? (q.options ? (function() { try { const parsed = JSON.parse(q.options); return parsed.pairs ? parsed.pairs.map(p => p.left + ' | ' + p.right).join('\\n') : ''; } catch(e) { return ''; } })() : '') : (q.questionType === 'ordering' ? (q.options ? (function() { try { const parsed = JSON.parse(q.options); return parsed.items ? parsed.items.join('\\n') : ''; } catch(e) { return ''; } })() : '') : (q.options ? JSON.parse(q.options).join('\\n') : '')))}</textarea>
               </div>
-              <div class="col-md-4">
+              <div class="col-md-4 correct-answer-container" ${q.questionType === 'essay' || q.questionType === 'matching' || q.questionType === 'ordering' ? 'style="display:none;"' : ''}>
                 <label class="form-label">Correct Answer <span class="text-danger">*</span></label>
-                <input type="text" name="questions[${i}][correctAnswer]" class="form-control" value="${q.correctAnswer}" required>
+                <input type="text" name="questions[${i}][correctAnswer]" class="form-control correct-answer-input" value="${q.correctAnswer || ''}" ${q.questionType === 'essay' || q.questionType === 'matching' || q.questionType === 'ordering' ? '' : 'required'}>
                 <small class="text-muted correct-answer-hint">${q.questionType === 'fill_blank' ? 'Enter the expected answer' : 'Enter the correct option exactly'}</small>
+              </div>
+              <div class="col-md-4 essay-hint-container" ${q.questionType !== 'essay' ? 'style="display:none;"' : ''}>
+                <label class="form-label">Grading Notes (optional)</label>
+                <textarea name="questions[${i}][explanation]" class="form-control essay-grading-notes" rows="2" placeholder="Key points to look for when grading...">${q.questionType === 'essay' ? (q.explanation || '') : ''}</textarea>
+                <small class="text-muted">Essay answers require manual grading</small>
               </div>
               <div class="col-md-8">
                 <label class="form-label">Explanation (shown after quiz)</label>
@@ -175,16 +183,24 @@
                 <option value="multiple_choice">Multiple Choice</option>
                 <option value="true_false">True/False</option>
                 <option value="fill_blank">Fill in the Blank</option>
+                <option value="essay">Essay</option>
+                <option value="matching">Matching</option>
+                <option value="ordering">Ordering</option>
               </select>
             </div>
             <div class="col-md-8 options-container">
-              <label class="form-label">Options (one per line)</label>
+              <label class="form-label options-label">Options (one per line)</label>
               <textarea name="questions[\${questionCount - 1}][options]" class="form-control options-textarea" rows="4" placeholder="Option A&#10;Option B&#10;Option C&#10;Option D"></textarea>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-4 correct-answer-container">
               <label class="form-label">Correct Answer <span class="text-danger">*</span></label>
-              <input type="text" name="questions[\${questionCount - 1}][correctAnswer]" class="form-control" required>
+              <input type="text" name="questions[\${questionCount - 1}][correctAnswer]" class="form-control correct-answer-input" required>
               <small class="text-muted correct-answer-hint">Enter the correct option exactly</small>
+            </div>
+            <div class="col-md-4 essay-hint-container" style="display:none;">
+              <label class="form-label">Grading Notes (optional)</label>
+              <textarea name="questions[\${questionCount - 1}][explanation]" class="form-control essay-grading-notes" rows="2" placeholder="Key points to look for when grading..."></textarea>
+              <small class="text-muted">Essay answers require manual grading</small>
             </div>
             <div class="col-md-8">
               <label class="form-label">Explanation (shown after quiz)</label>
@@ -226,21 +242,56 @@
     const card = select.closest('.question-card');
     const optionsContainer = card.querySelector('.options-container');
     const optionsTextarea = card.querySelector('.options-textarea');
+    const optionsLabel = card.querySelector('.options-label');
+    const correctAnswerContainer = card.querySelector('.correct-answer-container');
+    const correctAnswerInput = card.querySelector('.correct-answer-input');
     const hintText = card.querySelector('.correct-answer-hint');
+    const essayHintContainer = card.querySelector('.essay-hint-container');
+
+    // Reset visibility
+    optionsContainer.style.display = '';
+    correctAnswerContainer.style.display = '';
+    essayHintContainer.style.display = 'none';
 
     if (select.value === 'fill_blank') {
       optionsContainer.style.display = 'none';
       optionsTextarea.value = '';
+      correctAnswerInput.required = true;
       hintText.textContent = 'Enter the expected answer';
     } else if (select.value === 'true_false') {
-      optionsContainer.style.display = '';
       optionsTextarea.value = 'True\\nFalse';
+      optionsLabel.textContent = 'Options (one per line)';
+      optionsTextarea.placeholder = 'Option A\\nOption B\\nOption C\\nOption D';
+      correctAnswerInput.required = true;
       hintText.textContent = 'Enter "True" or "False"';
+    } else if (select.value === 'essay') {
+      optionsContainer.style.display = 'none';
+      correctAnswerContainer.style.display = 'none';
+      essayHintContainer.style.display = '';
+      correctAnswerInput.required = false;
+      correctAnswerInput.value = '';
+    } else if (select.value === 'matching') {
+      optionsLabel.textContent = 'Matching Pairs (format: left | right, one pair per line)';
+      optionsTextarea.placeholder = 'Apple | Fruit\\nCarrot | Vegetable\\nDog | Animal';
+      optionsTextarea.value = '';
+      correctAnswerContainer.style.display = 'none';
+      correctAnswerInput.required = false;
+      correctAnswerInput.value = '';
+    } else if (select.value === 'ordering') {
+      optionsLabel.textContent = 'Items in Correct Order (one per line)';
+      optionsTextarea.placeholder = 'First item\\nSecond item\\nThird item';
+      optionsTextarea.value = '';
+      correctAnswerContainer.style.display = 'none';
+      correctAnswerInput.required = false;
+      correctAnswerInput.value = '';
     } else {
-      optionsContainer.style.display = '';
+      // multiple_choice
+      optionsLabel.textContent = 'Options (one per line)';
+      optionsTextarea.placeholder = 'Option A\\nOption B\\nOption C\\nOption D';
       if (optionsTextarea.value === 'True\\nFalse') {
         optionsTextarea.value = '';
       }
+      correctAnswerInput.required = true;
       hintText.textContent = 'Enter the correct option exactly';
     }
   }

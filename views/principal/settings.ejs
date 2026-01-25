@@ -1,0 +1,78 @@
+<%- include('../layouts/principal', { body: `
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="mb-0">School Settings</h4>
+</div>
+
+<!-- School Information -->
+<div class="card mb-4">
+  <div class="card-header">
+    <h5 class="mb-0"><i class="bi bi-building me-2"></i>School Information</h5>
+  </div>
+  <div class="card-body">
+    ${school ? '<table class="table table-bordered">' +
+      '<tr><th style="width: 200px;">School Name</th><td>' + school.name + '</td></tr>' +
+      '<tr><th>Address</th><td>' + (school.address || 'Not specified') + '</td></tr>' +
+      '<tr><th>City</th><td>' + (school.city || 'Not specified') + '</td></tr>' +
+      '<tr><th>State</th><td>' + (school.state || 'Not specified') + '</td></tr>' +
+      '<tr><th>ZIP Code</th><td>' + (school.zipCode || 'Not specified') + '</td></tr>' +
+      '<tr><th>Phone</th><td>' + (school.phone || 'Not specified') + '</td></tr>' +
+      '<tr><th>Website</th><td>' + (school.website ? '<a href="' + school.website + '" target="_blank">' + school.website + '</a>' : 'Not specified') + '</td></tr>' +
+      '<tr><th>Subscription</th><td><span class="badge bg-' + (school.subscriptionStatus === 'ACTIVE' ? 'success' : school.subscriptionStatus === 'TRIAL' ? 'warning' : 'secondary') + '">' + (school.subscriptionStatus || 'Unknown') + '</span></td></tr>' +
+      '<tr><th>Student Limit</th><td>' + (school.maxStudents || 'Unlimited') + '</td></tr>' +
+    '</table>' : '<div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>School information not available</div>'}
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card mb-4">
+  <div class="card-header">
+    <h5 class="mb-0"><i class="bi bi-lightning me-2"></i>Quick Actions</h5>
+  </div>
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-4">
+        <a href="${typeof basePath !== 'undefined' ? basePath : ''}/principal/teachers" class="btn btn-outline-primary w-100">
+          <i class="bi bi-person-workspace me-2"></i>View Teachers
+        </a>
+      </div>
+      <div class="col-md-4">
+        <a href="${typeof basePath !== 'undefined' ? basePath : ''}/principal/students" class="btn btn-outline-primary w-100">
+          <i class="bi bi-people me-2"></i>View Students
+        </a>
+      </div>
+      <div class="col-md-4">
+        <a href="${typeof basePath !== 'undefined' ? basePath : ''}/principal/classes" class="btn btn-outline-primary w-100">
+          <i class="bi bi-journal-bookmark me-2"></i>View Classes
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Platform Information -->
+<div class="card">
+  <div class="card-header">
+    <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Platform Information</h5>
+  </div>
+  <div class="card-body">
+    <div class="row">
+      <div class="col-md-6">
+        <h6 class="text-muted">About TutorAI</h6>
+        <p>TutorAI is an AI-powered tutoring platform designed for K-12 education. It provides personalized learning experiences across multiple subjects and grade levels.</p>
+        <ul>
+          <li>74 subjects across 6 categories</li>
+          <li>166 topics from Pre-K to 12th grade</li>
+          <li>Voice and text tutoring modes</li>
+          <li>Progress tracking and analytics</li>
+          <li>24 supported languages</li>
+        </ul>
+      </div>
+      <div class="col-md-6">
+        <h6 class="text-muted">Support</h6>
+        <p>For technical support or questions, please contact your district administrator or the TutorAI support team.</p>
+        <p class="mb-0"><strong>Website:</strong> <a href="https://www.tutorableai.com" target="_blank">www.tutorableai.com</a></p>
+      </div>
+    </div>
+  </div>
+</div>
+`, activePage: 'settings', pageTitle: 'School Settings' }) %>

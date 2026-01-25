@@ -1,0 +1,63 @@
+<%- include('../layouts/vp', { body: `
+<!-- Filters -->
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="GET" class="row g-3 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label">Grade Level</label>
+        <select name="grade" class="form-select">
+          <option value="all">All Grades</option>
+          <option value="-2" ${filters?.grade == '-2' ? 'selected' : ''}>Pre-K 3</option>
+          <option value="-1" ${filters?.grade == '-1' ? 'selected' : ''}>Pre-K 4</option>
+          <option value="0" ${filters?.grade == '0' ? 'selected' : ''}>Kindergarten</option>
+          ${[1,2,3,4,5,6,7,8,9,10,11,12].map(g => '<option value="' + g + '" ' + (filters?.grade == g ? 'selected' : '') + '>Grade ' + g + '</option>').join('')}
+        </select>
+      </div>
+      <div class="col-md-5">
+        <label class="form-label">Search</label>
+        <input type="text" name="search" class="form-control" placeholder="Search by name or email..." value="${filters?.search || ''}">
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100">
+          <i class="bi bi-search me-2"></i>Filter
+        </button>
+      </div>
+      <div class="col-md-2">
+        <a href="${typeof basePath !== 'undefined' ? basePath : ''}/vp/students" class="btn btn-outline-secondary w-100">Clear</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Students Table -->
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0"><i class="bi bi-people me-2"></i>All Students (${students?.length || 0})</h5>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Grade</th>
+            <th>Classes</th>
+            <th>Avg Mastery</th>
+            <th>Sessions</th>
+            <th>Last Activity</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${students && students.length > 0 ? students.map(student => {
+            const masteryClass = student.avgMastery >= 70 ? 'success' : student.avgMastery >= 40 ? 'warning' : 'danger';
+            const lastActivity = student.lastSession ? new Date(student.lastSession.startedAt).toLocaleDateString() : 'Never';
+            return '<tr><td><strong>' + student.firstName + ' ' + student.lastName + '</strong></td><td><small>' + student.email + '</small></td><td>' + (student.gradeLevel !== null ? student.gradeLevel : '-') + '</td><td>' + student.classCount + '</td><td><span class="badge bg-' + masteryClass + '">' + student.avgMastery + '%</span></td><td>' + student.totalSessions + '</td><td><small>' + lastActivity + '</small></td><td><a href="' + (typeof basePath !== 'undefined' ? basePath : '') + '/vp/students/' + student.id + '" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a></td></tr>';
+          }).join('') : '<tr><td colspan="8" class="text-center text-muted py-4"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No students found</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+`, activePage: 'students', pageTitle: 'Students' }) %>

@@ -44,7 +44,35 @@
         <h6 class="mb-0"><i class="bi bi-list-ol me-2"></i>Questions Preview</h6>
       </div>
       <div class="card-body p-0">
-        ${quiz.questions && quiz.questions.length > 0 ? '<div class="list-group list-group-flush">' + quiz.questions.map((q, i) => '<div class="list-group-item"><div class="d-flex justify-content-between align-items-start"><div class="flex-grow-1"><strong>Q' + (i + 1) + '.</strong> ' + q.questionText + '<div class="mt-2">' + (q.questionType === 'multiple_choice' || q.questionType === 'true_false' ? '<div class="small">' + (q.options ? JSON.parse(q.options).map((opt, j) => '<span class="badge ' + (opt === q.correctAnswer ? 'bg-success' : 'bg-light text-dark') + ' me-1">' + String.fromCharCode(65 + j) + '. ' + opt + '</span>').join('') : '') + '</div>' : '<small class="text-muted">Answer: <code>' + q.correctAnswer + '</code></small>') + '</div>' + (q.explanation ? '<small class="text-muted d-block mt-1"><i class="bi bi-lightbulb me-1"></i>' + q.explanation + '</small>' : '') + '</div><div class="text-end"><span class="badge bg-' + (q.questionType === 'multiple_choice' ? 'primary' : (q.questionType === 'true_false' ? 'info' : 'warning')) + '">' + q.questionType.replace('_', ' ') + '</span><br><small class="text-muted">' + q.points + ' pt' + (q.points > 1 ? 's' : '') + '</small></div></div></div>').join('') + '</div>' : '<div class="p-4 text-center text-muted"><i class="bi bi-question-circle fs-1 d-block mb-3"></i><p>No questions added</p></div>'}
+        ${quiz.questions && quiz.questions.length > 0 ? '<div class="list-group list-group-flush">' + quiz.questions.map((q, i) => {
+          let optionsDisplay = '';
+          const qTypeBadgeColor = q.questionType === 'multiple_choice' ? 'primary' : (q.questionType === 'true_false' ? 'info' : (q.questionType === 'essay' ? 'secondary' : (q.questionType === 'matching' ? 'success' : (q.questionType === 'ordering' ? 'warning' : 'dark'))));
+
+          if (q.questionType === 'multiple_choice' || q.questionType === 'true_false') {
+            try {
+              const opts = q.options ? JSON.parse(q.options) : [];
+              optionsDisplay = '<div class="small">' + opts.map((opt, j) => '<span class="badge ' + (opt === q.correctAnswer ? 'bg-success' : 'bg-light text-dark') + ' me-1">' + String.fromCharCode(65 + j) + '. ' + opt + '</span>').join('') + '</div>';
+            } catch(e) { optionsDisplay = ''; }
+          } else if (q.questionType === 'essay') {
+            optionsDisplay = '<small class="text-muted"><i class="bi bi-pencil-square me-1"></i>Free-form essay response (manual grading required)</small>';
+          } else if (q.questionType === 'matching') {
+            try {
+              const parsed = q.options ? JSON.parse(q.options) : {};
+              const pairs = parsed.pairs || [];
+              optionsDisplay = '<div class="small"><strong>Matching pairs:</strong><ul class="mb-0 ps-3">' + pairs.map(p => '<li>' + p.left + ' <i class="bi bi-arrow-right"></i> ' + p.right + '</li>').join('') + '</ul></div>';
+            } catch(e) { optionsDisplay = ''; }
+          } else if (q.questionType === 'ordering') {
+            try {
+              const parsed = q.options ? JSON.parse(q.options) : {};
+              const items = parsed.items || [];
+              optionsDisplay = '<div class="small"><strong>Correct order:</strong><ol class="mb-0 ps-3">' + items.map(item => '<li>' + item + '</li>').join('') + '</ol></div>';
+            } catch(e) { optionsDisplay = ''; }
+          } else {
+            optionsDisplay = '<small class="text-muted">Answer: <code>' + q.correctAnswer + '</code></small>';
+          }
+
+          return '<div class="list-group-item"><div class="d-flex justify-content-between align-items-start"><div class="flex-grow-1"><strong>Q' + (i + 1) + '.</strong> ' + q.questionText + '<div class="mt-2">' + optionsDisplay + '</div>' + (q.explanation ? '<small class="text-muted d-block mt-1"><i class="bi bi-lightbulb me-1"></i>' + q.explanation + '</small>' : '') + '</div><div class="text-end"><span class="badge bg-' + qTypeBadgeColor + '">' + q.questionType.replace(/_/g, ' ') + '</span><br><small class="text-muted">' + q.points + ' pt' + (q.points > 1 ? 's' : '') + '</small></div></div></div>';
+        }).join('') + '</div>' : '<div class="p-4 text-center text-muted"><i class="bi bi-question-circle fs-1 d-block mb-3"></i><p>No questions added</p></div>'}
       </div>
     </div>
   </div>
@@ -74,11 +102,34 @@
         <h6 class="mb-0"><i class="bi bi-people me-2"></i>Student Attempts</h6>
       </div>
       <div class="card-body p-0">
-        ${quiz.attempts && quiz.attempts.length > 0 ? '<div class="table-responsive"><table class="table table-hover mb-0"><thead class="table-light"><tr><th>Student</th><th>Attempt</th><th>Score</th><th>Status</th><th>Date</th></tr></thead><tbody>' + quiz.attempts.sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()).map(a => '<tr><td><strong>' + a.student.firstName + ' ' + a.student.lastName + '</strong><br><small class="text-muted">' + a.student.email + '</small></td><td>#' + a.attemptNum + '</td><td>' + (a.percentage !== null ? '<span class="' + (a.passed ? 'text-success' : 'text-danger') + ' fw-bold">' + Math.round(a.percentage) + '%</span><br><small class="text-muted">' + a.score + '/' + quiz.questions.reduce((sum, q) => sum + q.points, 0) + ' pts</small>' : '<span class="text-muted">-</span>') + '</td><td><span class="badge ' + (a.status === 'in_progress' ? 'bg-warning text-dark' : (a.passed ? 'bg-success' : 'bg-danger')) + '">' + (a.status === 'in_progress' ? 'In Progress' : (a.passed ? 'Passed' : 'Failed')) + '</span></td><td>' + new Date(a.startedAt).toLocaleDateString() + '<br><small class="text-muted">' + new Date(a.startedAt).toLocaleTimeString() + '</small></td></tr>').join('') + '</tbody></table></div>' : '<div class="p-4 text-center text-muted"><i class="bi bi-person-x fs-1 d-block mb-3"></i><p class="mb-0">No student attempts yet</p><small>Students will appear here when they take the quiz</small></div>'}
+        ${quiz.attempts && quiz.attempts.length > 0 ? (function() {
+          const hasEssayQuestions = quiz.questions.some(q => q.questionType === 'essay');
+          return '<div class="table-responsive"><table class="table table-hover mb-0"><thead class="table-light"><tr><th>Student</th><th>Attempt</th><th>Score</th><th>Status</th><th>Date</th>' + (hasEssayQuestions ? '<th>Actions</th>' : '') + '</tr></thead><tbody>' + quiz.attempts.sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()).map(a => {
+            const needsGrading = a.answers?.some(ans => ans.isCorrect === null);
+            const statusBadge = a.status === 'in_progress' ? 'bg-warning text-dark' : (needsGrading ? 'bg-info' : (a.passed === true ? 'bg-success' : (a.passed === false ? 'bg-danger' : 'bg-secondary')));
+            const statusText = a.status === 'in_progress' ? 'In Progress' : (needsGrading ? 'Needs Review' : (a.passed === true ? 'Passed' : (a.passed === false ? 'Failed' : 'Pending')));
+            return '<tr><td><strong>' + a.student.firstName + ' ' + a.student.lastName + '</strong><br><small class="text-muted">' + a.student.email + '</small></td><td>#' + a.attemptNum + '</td><td>' + (a.percentage !== null ? '<span class="' + (a.passed === true ? 'text-success' : (a.passed === false ? 'text-danger' : 'text-muted')) + ' fw-bold">' + Math.round(a.percentage) + '%</span><br><small class="text-muted">' + a.score + '/' + quiz.questions.reduce((sum, q) => sum + q.points, 0) + ' pts</small>' : '<span class="text-muted">-</span>') + '</td><td><span class="badge ' + statusBadge + '">' + statusText + '</span></td><td>' + new Date(a.startedAt).toLocaleDateString() + '<br><small class="text-muted">' + new Date(a.startedAt).toLocaleTimeString() + '</small></td>' + (hasEssayQuestions && a.status !== 'in_progress' ? '<td><a href="#gradeModal' + a.id + '" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"><i class="bi bi-pencil-square me-1"></i>Grade</a></td>' : (hasEssayQuestions ? '<td></td>' : '')) + '</tr>';
+          }).join('') + '</tbody></table></div>';
+        })() : '<div class="p-4 text-center text-muted"><i class="bi bi-person-x fs-1 d-block mb-3"></i><p class="mb-0">No student attempts yet</p><small>Students will appear here when they take the quiz</small></div>'}
       </div>
     </div>
   </div>
 </div>
+
+<!-- Grading Modals for Essay Questions -->
+${quiz.attempts && quiz.attempts.length > 0 && quiz.questions.some(q => q.questionType === 'essay') ? quiz.attempts.filter(a => a.status !== 'in_progress').map(a => {
+  const essayAnswers = a.answers?.filter(ans => {
+    const q = quiz.questions.find(question => question.id === ans.questionId);
+    return q && q.questionType === 'essay';
+  }) || [];
+
+  return '<div class="modal fade" id="gradeModal' + a.id + '" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Grade Essay Responses - ' + a.student.firstName + ' ' + a.student.lastName + '</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body">' +
+    essayAnswers.map(ans => {
+      const question = quiz.questions.find(q => q.id === ans.questionId);
+      return '<div class="mb-4 border-bottom pb-3"><h6>Q' + question.questionNum + ': ' + question.questionText + '</h6><p class="text-muted small mb-2">Max points: ' + question.points + '</p><div class="p-3 bg-light rounded mb-3" style="white-space: pre-wrap;">' + (ans.answer || '<em>No answer provided</em>') + '</div><form action="' + (typeof basePath !== 'undefined' ? basePath : '') + '/teacher/quizzes/' + quiz.id + '/grade/' + a.id + '/' + ans.id + '" method="POST" class="essay-grade-form"><div class="row g-2 align-items-end"><div class="col-md-3"><label class="form-label small">Points Earned</label><input type="number" name="pointsEarned" class="form-control" min="0" max="' + question.points + '" value="' + (ans.pointsEarned || 0) + '" required></div><div class="col-md-7"><label class="form-label small">Feedback (optional)</label><input type="text" name="feedback" class="form-control" value="" placeholder="Optional feedback for student"></div><div class="col-md-2"><button type="submit" class="btn btn-primary w-100">Save</button></div></div></form></div>';
+    }).join('') +
+  '</div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button></div></div></div></div>';
+}).join('') : ''}
 
 <!-- Delete Button -->
 <div class="mt-4">

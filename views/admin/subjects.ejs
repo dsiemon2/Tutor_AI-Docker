@@ -16,6 +16,15 @@
     .nav-divider { border-top: 1px solid rgba(255,255,255,0.2); margin: 0.5rem 0; }
     .nav-section { color: rgba(255,255,255,0.5); font-size: 0.75rem; padding: 0.5rem 1rem; text-transform: uppercase; }
     .card { border: none; box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075); }
+    .category-card { border-left: 4px solid #0ea5e9; }
+    .category-card.inactive { border-left-color: #6c757d; opacity: 0.7; }
+    .subject-item { transition: background-color 0.15s; }
+    .subject-item:hover { background-color: #f0f9ff !important; }
+    .action-buttons { opacity: 0; transition: opacity 0.15s; }
+    .subject-item:hover .action-buttons { opacity: 1; }
+    @media (max-width: 768px) {
+      .action-buttons { opacity: 1; }
+    }
   </style>
 </head>
 <body>
@@ -24,27 +33,91 @@
       <%- include('_sidebar', { token, active: 'subjects', branding, basePath }) %>
 
       <main class="col-md-10 ms-sm-auto main-content p-4">
+        <% if (typeof error !== 'undefined' && error) { %>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          <i class="bi bi-exclamation-triangle me-2"></i><%= error %>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <% } %>
+
         <div class="d-flex justify-content-between align-items-center mb-4">
           <div>
             <h2><i class="bi bi-book text-primary me-2"></i>Subjects & Topics</h2>
-            <p class="text-muted mb-0">Manage curriculum content</p>
+            <p class="text-muted mb-0">Manage curriculum content - categories, subjects, and topics</p>
           </div>
-          <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
-            <i class="bi bi-plus-lg me-2"></i>Add Subject
-          </button>
+          <div>
+            <button class="btn btn-outline-primary me-2" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+              <i class="bi bi-folder-plus me-1"></i>Add Category
+            </button>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
+              <i class="bi bi-plus-lg me-1"></i>Add Subject
+            </button>
+          </div>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="row g-3 mb-4">
+          <div class="col-md-3">
+            <div class="card text-center">
+              <div class="card-body">
+                <i class="bi bi-folder text-primary fs-1"></i>
+                <h3 class="mt-2"><%= categories.length %></h3>
+                <small class="text-muted">Categories</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card text-center">
+              <div class="card-body">
+                <i class="bi bi-book text-success fs-1"></i>
+                <h3 class="mt-2"><%= categories.reduce((sum, c) => sum + c.subjects.length, 0) %></h3>
+                <small class="text-muted">Subjects</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card text-center">
+              <div class="card-body">
+                <i class="bi bi-list-check text-info fs-1"></i>
+                <h3 class="mt-2"><%= categories.reduce((sum, c) => sum + c.subjects.reduce((s, subj) => s + (subj._count?.topics || 0), 0), 0) %></h3>
+                <small class="text-muted">Topics</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card text-center">
+              <div class="card-body">
+                <i class="bi bi-check-circle text-success fs-1"></i>
+                <h3 class="mt-2"><%= categories.filter(c => c.isActive).length %></h3>
+                <small class="text-muted">Active Categories</small>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="row g-4">
           <% categories.forEach(category => { %>
           <div class="col-md-6">
-            <div class="card">
+            <div class="card category-card <%= category.isActive ? '' : 'inactive' %>">
               <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">
-                  <span style="font-size: 1.5rem;"><%= category.icon %></span> <%= category.name %>
+                  <span style="font-size: 1.5rem;"><%= category.icon || '📚' %></span> <%= category.name %>
                 </h5>
-                <span class="badge bg-<%= category.isActive ? 'success' : 'secondary' %>">
-                  <%= category.isActive ? 'Active' : 'Inactive' %>
-                </span>
+                <div>
+                  <span class="badge bg-<%= category.isActive ? 'success' : 'secondary' %> me-2">
+                    <%= category.isActive ? 'Active' : 'Inactive' %>
+                  </span>
+                  <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editCategoryModal<%= category.id %>">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                  <% if (category.subjects.length === 0) { %>
+                  <form action="<%= basePath %>/admin/subjects/categories/<%= category.id %>/delete?token=<%= token %>" method="POST" class="d-inline" onsubmit="return confirm('Delete this category?');">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </form>
+                  <% } %>
+                </div>
               </div>
               <div class="card-body p-0">
                 <div class="list-group list-group-flush">
@@ -82,19 +155,50 @@
                         </small>
                       </div>
                       <% gradeGroups[grade].forEach(subject => { %>
-                      <div class="list-group-item d-flex justify-content-between align-items-center ps-4">
-                        <div>
-                          <strong><%= subject.name %></strong>
-                          <br><small class="text-muted"><%= subject.description || 'No description' %></small>
+                      <div class="list-group-item subject-item d-flex justify-content-between align-items-center ps-4">
+                        <div class="flex-grow-1">
+                          <div class="d-flex align-items-center">
+                            <strong><%= subject.name %></strong>
+                            <% if (!subject.isActive) { %>
+                            <span class="badge bg-secondary ms-2">Inactive</span>
+                            <% } %>
+                          </div>
+                          <small class="text-muted"><%= subject.description || 'No description' %></small>
                         </div>
-                        <span class="badge bg-primary"><%= subject._count?.topics || 0 %> topics</span>
+                        <div class="d-flex align-items-center">
+                          <a href="<%= basePath %>/admin/subjects/<%= subject.id %>/topics?token=<%= token %>" class="badge bg-primary me-2 text-decoration-none" title="Manage Topics">
+                            <i class="bi bi-list-check me-1"></i><%= subject._count?.topics || 0 %> topics
+                          </a>
+                          <div class="action-buttons">
+                            <a href="<%= basePath %>/admin/subjects/<%= subject.id %>/edit?token=<%= token %>" class="btn btn-sm btn-outline-primary" title="Edit Subject">
+                              <i class="bi bi-pencil"></i>
+                            </a>
+                            <% if ((subject._count?.topics || 0) === 0) { %>
+                            <form action="<%= basePath %>/admin/subjects/<%= subject.id %>/delete?token=<%= token %>" method="POST" class="d-inline" onsubmit="return confirm('Delete this subject?');">
+                              <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Subject">
+                                <i class="bi bi-trash"></i>
+                              </button>
+                            </form>
+                            <% } %>
+                          </div>
+                        </div>
                       </div>
                       <% }); %>
                     <% }); %>
                   <% } else { %>
-                  <div class="list-group-item text-muted text-center py-3">No subjects yet</div>
+                  <div class="list-group-item text-muted text-center py-3">
+                    <i class="bi bi-inbox me-2"></i>No subjects yet
+                    <button class="btn btn-sm btn-link" data-bs-toggle="modal" data-bs-target="#addSubjectModal" onclick="document.getElementById('newSubjectCategoryId').value='<%= category.id %>'">
+                      Add one
+                    </button>
+                  </div>
                   <% } %>
                 </div>
+              </div>
+              <div class="card-footer bg-transparent">
+                <small class="text-muted">
+                  Code: <code><%= category.code %></code> | Order: <%= category.order %>
+                </small>
               </div>
             </div>
           </div>
@@ -103,53 +207,204 @@
           <div class="col-12">
             <div class="card">
               <div class="card-body text-center py-5 text-muted">
-                <i class="bi bi-book fs-1 mb-3"></i>
-                <p>No subject categories yet</p>
+                <i class="bi bi-book fs-1 mb-3 d-block"></i>
+                <h5>No Subject Categories Yet</h5>
+                <p>Start by creating a category to organize your subjects.</p>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+                  <i class="bi bi-folder-plus me-1"></i>Add Category
+                </button>
               </div>
             </div>
           </div>
           <% } %>
         </div>
-
-        <!-- Add Subject Modal -->
-        <div class="modal fade" id="addSubjectModal" tabindex="-1">
-          <div class="modal-dialog">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-book me-2"></i>Add New Subject</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-              </div>
-              <form>
-                <div class="modal-body">
-                  <div class="mb-3">
-                    <label class="form-label">Subject Name</label>
-                    <input type="text" class="form-control" name="name" required>
-                  </div>
-                  <div class="mb-3">
-                    <label class="form-label">Category</label>
-                    <select class="form-select" name="categoryId">
-                      <% categories.forEach(cat => { %>
-                      <option value="<%= cat.id %>"><%= cat.name %></option>
-                      <% }); %>
-                    </select>
-                  </div>
-                  <div class="mb-3">
-                    <label class="form-label">Description</label>
-                    <textarea class="form-control" name="description" rows="2"></textarea>
-                  </div>
-                </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                  <button type="submit" class="btn btn-primary">Create Subject</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
       </main>
     </div>
   </div>
 
+  <!-- Add Category Modal -->
+  <div class="modal fade" id="addCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form action="<%= basePath %>/admin/subjects/categories?token=<%= token %>" method="POST">
+          <div class="modal-header">
+            <h5 class="modal-title"><i class="bi bi-folder-plus me-2"></i>Add Category</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Code <span class="text-danger">*</span></label>
+                <input type="text" name="code" class="form-control font-monospace" placeholder="e.g., MATH" required pattern="[A-Z0-9_-]+" title="Uppercase letters, numbers, underscores, and hyphens only">
+                <small class="text-muted">Unique identifier (uppercase)</small>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Name <span class="text-danger">*</span></label>
+                <input type="text" name="name" class="form-control" placeholder="e.g., Mathematics" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Icon</label>
+                <input type="text" name="icon" class="form-control" placeholder="e.g., 🔢 or emoji">
+                <small class="text-muted">Emoji or icon</small>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Color</label>
+                <input type="color" name="color" class="form-control form-control-color" value="#0ea5e9">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Order</label>
+                <input type="number" name="order" class="form-control" value="0" min="0">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Status</label>
+                <div class="form-check form-switch mt-2">
+                  <input type="checkbox" name="isActive" class="form-check-input" id="newCatActive" checked>
+                  <label class="form-check-label" for="newCatActive">Active</label>
+                </div>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Description</label>
+                <textarea name="description" class="form-control" rows="2" placeholder="Brief description of this category"></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Create Category</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Subject Modal -->
+  <div class="modal fade" id="addSubjectModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form action="<%= basePath %>/admin/subjects?token=<%= token %>" method="POST">
+          <div class="modal-header">
+            <h5 class="modal-title"><i class="bi bi-book me-2"></i>Add New Subject</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Code <span class="text-danger">*</span></label>
+                <input type="text" name="code" class="form-control font-monospace" placeholder="e.g., MATH-K" required pattern="[A-Za-z0-9_-]+" title="Letters, numbers, underscores, and hyphens only">
+                <small class="text-muted">Unique identifier</small>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Name <span class="text-danger">*</span></label>
+                <input type="text" name="name" class="form-control" placeholder="e.g., Kindergarten Math" required>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Category <span class="text-danger">*</span></label>
+                <select name="categoryId" id="newSubjectCategoryId" class="form-select" required>
+                  <option value="">Select a category...</option>
+                  <% categories.forEach(cat => { %>
+                  <option value="<%= cat.id %>"><%= cat.icon || '' %> <%= cat.name %></option>
+                  <% }); %>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Grade Range</label>
+                <input type="text" name="gradeRange" class="form-control" placeholder="e.g., K, 3-5, 9-12">
+                <small class="text-muted">Target grade level(s)</small>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Order</label>
+                <input type="number" name="order" class="form-control" value="0" min="0">
+              </div>
+              <div class="col-12">
+                <label class="form-label">Description</label>
+                <textarea name="description" class="form-control" rows="2" placeholder="Brief description of this subject"></textarea>
+              </div>
+              <div class="col-12">
+                <div class="form-check form-switch">
+                  <input type="checkbox" name="isActive" class="form-check-input" id="newSubjectActive" checked>
+                  <label class="form-check-label" for="newSubjectActive">Active</label>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Create Subject</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Category Modals -->
+  <% categories.forEach(category => { %>
+  <div class="modal fade" id="editCategoryModal<%= category.id %>" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form action="<%= basePath %>/admin/subjects/categories/<%= category.id %>?token=<%= token %>" method="POST">
+          <div class="modal-header">
+            <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Edit Category</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Code <span class="text-danger">*</span></label>
+                <input type="text" name="code" class="form-control font-monospace" value="<%= category.code %>" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Name <span class="text-danger">*</span></label>
+                <input type="text" name="name" class="form-control" value="<%= category.name %>" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Icon</label>
+                <input type="text" name="icon" class="form-control" value="<%= category.icon || '' %>">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Color</label>
+                <input type="color" name="color" class="form-control form-control-color" value="<%= category.color || '#0ea5e9' %>">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Order</label>
+                <input type="number" name="order" class="form-control" value="<%= category.order %>" min="0">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Status</label>
+                <div class="form-check form-switch mt-2">
+                  <input type="checkbox" name="isActive" class="form-check-input" id="catActive<%= category.id %>" <%= category.isActive ? 'checked' : '' %>>
+                  <label class="form-check-label" for="catActive<%= category.id %>">Active</label>
+                </div>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Description</label>
+                <textarea name="description" class="form-control" rows="2"><%= category.description || '' %></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <% }); %>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Parse query string for error messages
+    const urlParams = new URLSearchParams(window.location.search);
+    const error = urlParams.get('error');
+    if (error && !document.querySelector('.alert-danger')) {
+      const alertDiv = document.createElement('div');
+      alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+      alertDiv.role = 'alert';
+      alertDiv.innerHTML = `<i class="bi bi-exclamation-triangle me-2"></i>${error}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>`;
+      document.querySelector('.main-content').prepend(alertDiv);
+      // Clean URL
+      window.history.replaceState({}, '', window.location.pathname + '?token=' + urlParams.get('token'));
+    }
+  </script>
 </body>
 </html>

@@ -167,7 +167,12 @@ export function requireAuthOrToken(req: Request, res: Response, next: NextFuncti
         role: string;
         schoolId: string | null;
       };
-      req.user = decoded;
+      req.user = {
+        id: decoded.userId,
+        email: decoded.email,
+        role: decoded.role,
+        schoolId: decoded.schoolId
+      };
       return next();
     } catch (error) {
       // Invalid token, continue to auth check
@@ -201,7 +206,12 @@ export function verifyToken(req: Request, res: Response, next: NextFunction) {
       role: string;
       schoolId: string | null;
     };
-    req.user = decoded;
+    req.user = {
+      id: decoded.userId,
+      email: decoded.email,
+      role: decoded.role,
+      schoolId: decoded.schoolId
+    };
     return next();
   } catch (error) {
     return res.status(401).json({ error: 'Invalid token' });
@@ -223,7 +233,12 @@ export function optionalAuth(req: Request, res: Response, next: NextFunction) {
         role: string;
         schoolId: string | null;
       };
-      req.user = decoded;
+      req.user = {
+        id: decoded.userId,
+        email: decoded.email,
+        role: decoded.role,
+        schoolId: decoded.schoolId
+      };
     } catch (error) {
       // Invalid token, continue without user
     }

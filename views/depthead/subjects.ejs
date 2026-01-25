@@ -1,0 +1,21 @@
+<%- include('../layouts/depthead', { body: `
+<!-- Department Info -->
+${category ? '<div class="alert alert-warning mb-4"><i class="bi bi-diagram-3 me-2"></i><strong>' + category.name + ' Department</strong> - Subjects</div>' : ''}
+
+<!-- Subjects List -->
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0"><i class="bi bi-book me-2"></i>Department Subjects</h5>
+    <span class="badge bg-warning text-dark">${subjects ? subjects.length : 0} subjects</span>
+  </div>
+  <div class="card-body p-0">
+    ${subjects && subjects.length > 0 ? '<div class="accordion accordion-flush" id="subjectsAccordion">' + subjects.map((s, idx) => {
+      const topicCount = s.topics ? s.topics.length : 0;
+      const classCount = s.classes ? s.classes.length : 0;
+      const sessionCount = s.sessions ? s.sessions.length : 0;
+      const teachers = s.classes ? [...new Set(s.classes.flatMap(c => c.teachers ? c.teachers.map(t => t.teacher.firstName + ' ' + t.teacher.lastName) : []))] : [];
+      return '<div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button ' + (idx !== 0 ? 'collapsed' : '') + '" type="button" data-bs-toggle="collapse" data-bs-target="#subject' + idx + '"><div class="d-flex w-100 justify-content-between align-items-center pe-3"><div><strong>' + s.name + '</strong><br><small class="text-muted">' + (s.gradeRange || 'All Grades') + '</small></div><div class="text-end"><span class="badge bg-secondary me-2">' + topicCount + ' topics</span><span class="badge bg-primary">' + classCount + ' classes</span></div></div></button></h2><div id="subject' + idx + '" class="accordion-collapse collapse ' + (idx === 0 ? 'show' : '') + '" data-bs-parent="#subjectsAccordion"><div class="accordion-body"><div class="row"><div class="col-md-6"><h6 class="text-muted mb-2">Topics</h6><ul class="list-unstyled">' + (s.topics && s.topics.length > 0 ? s.topics.map(t => '<li><i class="bi bi-check-circle text-success me-2"></i>' + t.name + (t.gradeLevel !== null ? ' <small class="text-muted">(Grade ' + t.gradeLevel + ')</small>' : '') + '</li>').join('') : '<li class="text-muted">No topics</li>') + '</ul></div><div class="col-md-6"><h6 class="text-muted mb-2">Teachers</h6>' + (teachers.length > 0 ? '<ul class="list-unstyled">' + teachers.map(name => '<li><i class="bi bi-person me-2"></i>' + name + '</li>').join('') + '</ul>' : '<p class="text-muted">No teachers assigned</p>') + '<h6 class="text-muted mb-2 mt-3">Stats</h6><p class="mb-1"><i class="bi bi-chat-dots me-2"></i>' + sessionCount + ' tutoring sessions</p></div></div></div></div></div>';
+    }).join('') + '</div>' : '<div class="p-5 text-center text-muted"><i class="bi bi-inbox fs-1 d-block mb-3"></i><p>No subjects in this department</p></div>'}
+  </div>
+</div>
+`, activePage: 'subjects', pageTitle: 'Subjects' }) %>

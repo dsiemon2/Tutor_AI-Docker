@@ -25,11 +25,44 @@
     <div class="col-lg-8">
       ${questions.map((q, i) => {
         const savedAnswer = attempt.answers?.find(a => a.questionId === q.id)?.answer || '';
-        const options = q.options ? JSON.parse(q.options) : [];
+        let options = [];
+        let matchingPairs = [];
+        let orderingItems = [];
+        try {
+          if (q.options) {
+            const parsed = JSON.parse(q.options);
+            if (q.questionType === 'matching' && parsed.pairs) {
+              matchingPairs = parsed.pairs;
+            } else if (q.questionType === 'ordering' && parsed.items) {
+              orderingItems = parsed.items;
+            } else if (Array.isArray(parsed)) {
+              options = parsed;
+            }
+          }
+        } catch(e) { options = []; }
 
-        return '<div class="card mb-3 question-card" data-question="' + i + '"><div class="card-header bg-white d-flex justify-content-between align-items-center"><span class="fw-bold">Question ' + (i + 1) + '</span><span class="badge bg-primary">' + q.points + ' pt' + (q.points > 1 ? 's' : '') + '</span></div><div class="card-body"><p class="fs-5 mb-4">' + q.questionText + '</p>' +
+        let savedMatchingAnswers = {};
+        let savedOrderingAnswer = [];
+        try {
+          if (savedAnswer && q.questionType === 'matching') {
+            savedMatchingAnswers = JSON.parse(savedAnswer);
+          } else if (savedAnswer && q.questionType === 'ordering') {
+            savedOrderingAnswer = JSON.parse(savedAnswer);
+          }
+        } catch(e) {}
+
+        // Shuffle right side for matching
+        const shuffledRightSide = matchingPairs.length > 0 ? [...matchingPairs].map(p => p.right).sort(() => Math.random() - 0.5) : [];
+
+        return '<div class="card mb-3 question-card" data-question="' + i + '" data-type="' + q.questionType + '"><div class="card-header bg-white d-flex justify-content-between align-items-center"><span class="fw-bold">Question ' + (i + 1) + '</span><span class="badge bg-primary">' + q.points + ' pt' + (q.points > 1 ? 's' : '') + '</span></div><div class="card-body"><p class="fs-5 mb-4">' + q.questionText + '</p>' +
           (q.questionType === 'multiple_choice' || q.questionType === 'true_false' ?
             '<div class="d-grid gap-2">' + options.map((opt, j) => '<div class="form-check p-3 border rounded ' + (savedAnswer === opt ? 'border-primary bg-light' : '') + '"><input class="form-check-input" type="radio" name="answers[' + q.id + ']" id="q' + q.id + '_' + j + '" value="' + opt + '" ' + (savedAnswer === opt ? 'checked' : '') + ' onchange="updateProgress()"><label class="form-check-label w-100" for="q' + q.id + '_' + j + '"><span class="badge bg-secondary me-2">' + String.fromCharCode(65 + j) + '</span>' + opt + '</label></div>').join('') + '</div>' :
+          q.questionType === 'essay' ?
+            '<textarea name="answers[' + q.id + ']" class="form-control" rows="6" placeholder="Write your essay response here..." onchange="updateProgress()">' + savedAnswer + '</textarea><small class="text-muted mt-2 d-block"><i class="bi bi-info-circle me-1"></i>Essay questions are graded manually by your teacher.</small>' :
+          q.questionType === 'matching' ?
+            '<input type="hidden" name="answers[' + q.id + ']" class="matching-answer-input" value=\\'' + (savedAnswer || '{}') + '\\'><div class="matching-container"><div class="row"><div class="col-md-6"><h6 class="text-muted mb-3">Items</h6>' + matchingPairs.map((pair, j) => '<div class="matching-item p-2 border rounded mb-2 d-flex justify-content-between align-items-center" data-left="' + pair.left + '"><span>' + pair.left + '</span><select class="form-select form-select-sm w-auto matching-select" data-qid="' + q.id + '" data-left="' + pair.left + '" onchange="updateMatchingAnswer(this)"><option value="">-- Select --</option>' + shuffledRightSide.map(r => '<option value="' + r + '"' + (savedMatchingAnswers[pair.left] === r ? ' selected' : '') + '>' + r + '</option>').join('') + '</select></div>').join('') + '</div></div></div>' :
+          q.questionType === 'ordering' ?
+            '<input type="hidden" name="answers[' + q.id + ']" class="ordering-answer-input" value=\\'' + (savedAnswer || '[]') + '\\'><div class="ordering-container" data-qid="' + q.id + '"><p class="text-muted mb-2"><i class="bi bi-arrows-move me-1"></i>Drag items to arrange them in the correct order</p><ul class="list-group ordering-list" id="ordering-' + q.id + '">' + (savedOrderingAnswer.length > 0 ? savedOrderingAnswer : [...orderingItems].sort(() => Math.random() - 0.5)).map((item, j) => '<li class="list-group-item d-flex align-items-center ordering-item" data-item="' + item + '" draggable="true"><span class="me-2 text-muted ordering-number">' + (j + 1) + '.</span><i class="bi bi-grip-vertical me-2 text-muted"></i>' + item + '</li>').join('') + '</ul></div>' :
             '<input type="text" name="answers[' + q.id + ']" class="form-control form-control-lg" placeholder="Type your answer..." value="' + savedAnswer + '" onchange="updateProgress()">'
           ) +
         '</div></div>';
@@ -95,12 +128,32 @@
 
   // Progress tracking
   function updateProgress() {
-    const questions = document.querySelectorAll('.question-card');
+    const questionCards = document.querySelectorAll('.question-card');
     let answered = 0;
 
-    questions.forEach((card, index) => {
-      const inputs = card.querySelectorAll('input[type="radio"]:checked, input[type="text"]');
-      const hasAnswer = Array.from(inputs).some(inp => inp.checked || (inp.type === 'text' && inp.value.trim()));
+    questionCards.forEach((card, index) => {
+      const qType = card.dataset.type;
+      let hasAnswer = false;
+
+      if (qType === 'matching') {
+        const hiddenInput = card.querySelector('.matching-answer-input');
+        try {
+          const matches = JSON.parse(hiddenInput.value);
+          hasAnswer = Object.keys(matches).length > 0;
+        } catch(e) {}
+      } else if (qType === 'ordering') {
+        const hiddenInput = card.querySelector('.ordering-answer-input');
+        try {
+          const order = JSON.parse(hiddenInput.value);
+          hasAnswer = order.length > 0;
+        } catch(e) {}
+      } else if (qType === 'essay') {
+        const textarea = card.querySelector('textarea[name^="answers"]');
+        hasAnswer = textarea && textarea.value.trim().length > 0;
+      } else {
+        const inputs = card.querySelectorAll('input[type="radio"]:checked, input[type="text"][name^="answers"]');
+        hasAnswer = Array.from(inputs).some(inp => inp.checked || (inp.type === 'text' && inp.value.trim()));
+      }
 
       const navBtn = document.querySelectorAll('.question-nav-btn')[index];
       if (hasAnswer) {
@@ -114,6 +167,83 @@
     });
 
     document.getElementById('progressText').textContent = answered + ' / ${questions.length}';
+  }
+
+  // Matching question handler
+  function updateMatchingAnswer(select) {
+    const qid = select.dataset.qid;
+    const left = select.dataset.left;
+    const card = select.closest('.question-card');
+    const hiddenInput = card.querySelector('.matching-answer-input');
+
+    let matches = {};
+    try {
+      matches = JSON.parse(hiddenInput.value);
+    } catch(e) {}
+
+    if (select.value) {
+      matches[left] = select.value;
+    } else {
+      delete matches[left];
+    }
+
+    hiddenInput.value = JSON.stringify(matches);
+    updateProgress();
+  }
+
+  // Ordering question - drag and drop
+  document.querySelectorAll('.ordering-list').forEach(list => {
+    let draggedItem = null;
+
+    list.querySelectorAll('.ordering-item').forEach(item => {
+      item.addEventListener('dragstart', function(e) {
+        draggedItem = this;
+        this.classList.add('bg-light');
+      });
+
+      item.addEventListener('dragend', function() {
+        this.classList.remove('bg-light');
+        draggedItem = null;
+      });
+
+      item.addEventListener('dragover', function(e) {
+        e.preventDefault();
+      });
+
+      item.addEventListener('drop', function(e) {
+        e.preventDefault();
+        if (draggedItem !== this) {
+          const allItems = [...list.querySelectorAll('.ordering-item')];
+          const draggedIdx = allItems.indexOf(draggedItem);
+          const dropIdx = allItems.indexOf(this);
+
+          if (draggedIdx < dropIdx) {
+            this.parentNode.insertBefore(draggedItem, this.nextSibling);
+          } else {
+            this.parentNode.insertBefore(draggedItem, this);
+          }
+
+          updateOrderingNumbers(list);
+          updateOrderingAnswer(list);
+        }
+      });
+    });
+  });
+
+  function updateOrderingNumbers(list) {
+    list.querySelectorAll('.ordering-item').forEach((item, idx) => {
+      item.querySelector('.ordering-number').textContent = (idx + 1) + '.';
+    });
+  }
+
+  function updateOrderingAnswer(list) {
+    const qid = list.closest('.ordering-container').dataset.qid;
+    const card = list.closest('.question-card');
+    const hiddenInput = card.querySelector('.ordering-answer-input');
+
+    const order = [...list.querySelectorAll('.ordering-item')].map(item => item.dataset.item);
+    hiddenInput.value = JSON.stringify(order);
+    updateProgress();
   }
 
   function scrollToQuestion(index) {

@@ -1,0 +1,61 @@
+<%- include('../layouts/vp', { body: `
+<!-- Back Button -->
+<div class="mb-4">
+  <a href="${typeof basePath !== 'undefined' ? basePath : ''}/vp/sessions" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left me-2"></i>Back to Sessions
+  </a>
+</div>
+
+<!-- Session Header -->
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="row align-items-center">
+      <div class="col-auto">
+        <div class="rounded-circle ${session.endedAt ? 'bg-secondary' : 'bg-success'} bg-opacity-10 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+          <i class="bi bi-chat-dots fs-3 ${session.endedAt ? 'text-secondary' : 'text-success'}"></i>
+        </div>
+      </div>
+      <div class="col">
+        <h4 class="mb-1">${session.subject?.name || 'General Tutoring'} Session</h4>
+        <p class="text-muted mb-0">${session.topic?.name || 'General tutoring session'}</p>
+        <div class="mt-2">
+          <span class="badge ${session.endedAt ? 'bg-secondary' : 'bg-success'}">${session.endedAt ? 'Completed' : 'Active'}</span>
+          <span class="badge bg-info ms-2">${session.mode || 'text'} mode</span>
+        </div>
+      </div>
+      <div class="col-auto">
+        <div class="text-end">
+          <div class="mb-2">
+            <strong>Student:</strong>
+            <a href="${typeof basePath !== 'undefined' ? basePath : ''}/vp/students/${session.student?.id}">${session.student?.firstName} ${session.student?.lastName}</a>
+          </div>
+          <div class="mb-2">
+            <strong>Grade:</strong> ${session.student?.gradeLevel !== null ? session.student?.gradeLevel : 'N/A'}
+          </div>
+          <div>
+            <strong>Started:</strong> ${new Date(session.startedAt).toLocaleString()}
+          </div>
+          ${session.endedAt ? '<div><strong>Ended:</strong> ' + new Date(session.endedAt).toLocaleString() + '</div>' : ''}
+          ${session.duration ? '<div><strong>Duration:</strong> ' + Math.round(session.duration / 60) + ' minutes</div>' : ''}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Conversation -->
+<div class="card">
+  <div class="card-header">
+    <h5 class="mb-0"><i class="bi bi-chat-left-text me-2"></i>Conversation (${session.messages?.length || 0} messages)</h5>
+  </div>
+  <div class="card-body" style="max-height: 600px; overflow-y: auto; background: #f8f9fa;">
+    ${session.messages && session.messages.length > 0 ? session.messages.map(msg => {
+      const isUser = msg.role === 'user';
+      const bgClass = isUser ? 'bg-primary text-white' : 'bg-white';
+      const alignClass = isUser ? 'ms-auto' : 'me-auto';
+      const time = new Date(msg.createdAt).toLocaleTimeString();
+      return '<div class="d-flex mb-3"><div class="card ' + bgClass + ' ' + alignClass + '" style="max-width: 75%;"><div class="card-body py-2 px-3"><div class="d-flex justify-content-between align-items-center mb-1"><small class="' + (isUser ? 'text-white-50' : 'text-muted') + '">' + (isUser ? 'Student' : 'AI Tutor') + '</small><small class="' + (isUser ? 'text-white-50' : 'text-muted') + '">' + time + '</small></div><div>' + (msg.content || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\\n/g, '<br>') + '</div>' + (msg.visualAid ? '<div class="mt-2 p-2 bg-light rounded"><small class="text-muted"><i class="bi bi-image me-1"></i>Visual Aid: ' + msg.visualAid + '</small></div>' : '') + '</div></div></div>';
+    }).join('') : '<div class="text-center text-muted py-5"><i class="bi bi-chat-dots fs-1 d-block mb-2"></i>No messages in this session</div>'}
+  </div>
+</div>
+`, activePage: 'sessions', pageTitle: 'Session Details' }) %>

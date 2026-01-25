@@ -52,12 +52,52 @@
 <!-- Question Review -->
 ${quiz.showAnswers ? '<div class="card"><div class="card-header bg-white"><h6 class="mb-0"><i class="bi bi-list-check me-2"></i>Question Review</h6></div><div class="card-body p-0"><div class="list-group list-group-flush">' + quiz.questions.map((q, i) => {
   const answer = attempt.answers?.find(a => a.questionId === q.id);
-  const options = q.options ? JSON.parse(q.options) : [];
-  const isCorrect = answer?.isCorrect;
+  let options = [];
+  let matchingPairs = [];
+  let orderingItems = [];
+  try {
+    if (q.options) {
+      const parsed = JSON.parse(q.options);
+      if (q.questionType === 'matching' && parsed.pairs) {
+        matchingPairs = parsed.pairs;
+      } else if (q.questionType === 'ordering' && parsed.items) {
+        orderingItems = parsed.items;
+      } else if (Array.isArray(parsed)) {
+        options = parsed;
+      }
+    }
+  } catch(e) { options = []; }
 
-  return '<div class="list-group-item"><div class="d-flex justify-content-between align-items-start mb-2"><div><strong>Q' + (i + 1) + '.</strong> ' + q.questionText + '</div><span class="badge ' + (isCorrect ? 'bg-success' : 'bg-danger') + '">' + (isCorrect ? '+' + q.points : '0') + ' pt' + (q.points !== 1 ? 's' : '') + '</span></div>' +
+  const isCorrect = answer?.isCorrect;
+  const isPendingReview = answer?.isCorrect === null;
+
+  // Parse student answers for matching/ordering
+  let studentMatchingAnswers = {};
+  let studentOrderingAnswer = [];
+  try {
+    if (answer?.answer && q.questionType === 'matching') {
+      studentMatchingAnswers = JSON.parse(answer.answer);
+    } else if (answer?.answer && q.questionType === 'ordering') {
+      studentOrderingAnswer = JSON.parse(answer.answer);
+    }
+  } catch(e) {}
+
+  return '<div class="list-group-item"><div class="d-flex justify-content-between align-items-start mb-2"><div><strong>Q' + (i + 1) + '.</strong> ' + q.questionText + '</div><span class="badge ' + (isPendingReview ? 'bg-warning text-dark' : (isCorrect ? 'bg-success' : 'bg-danger')) + '">' + (isPendingReview ? 'Pending Review' : (isCorrect ? '+' + (answer?.pointsEarned || q.points) : '0')) + ' pt' + (q.points !== 1 ? 's' : '') + '</span></div>' +
     (q.questionType === 'multiple_choice' || q.questionType === 'true_false' ?
       '<div class="ms-3">' + options.map(opt => '<div class="py-1 ' + (opt === q.correctAnswer ? 'text-success fw-bold' : (opt === answer?.answer && !isCorrect ? 'text-danger text-decoration-line-through' : 'text-muted')) + '">' + (opt === q.correctAnswer ? '<i class="bi bi-check-circle-fill me-1"></i>' : (opt === answer?.answer && !isCorrect ? '<i class="bi bi-x-circle-fill me-1"></i>' : '<i class="bi bi-circle me-1"></i>')) + opt + '</div>').join('') + '</div>' :
+    q.questionType === 'essay' ?
+      '<div class="ms-3"><div class="mb-2"><strong>Your response:</strong></div><div class="p-3 bg-light rounded mb-2" style="white-space: pre-wrap;">' + (answer?.answer || '<em>No answer provided</em>') + '</div>' + (isPendingReview ? '<div class="alert alert-warning py-2 mb-0"><i class="bi bi-hourglass-split me-1"></i>This essay is pending manual review by your teacher.</div>' : (answer?.pointsEarned !== null ? '<div class="alert alert-info py-2 mb-0"><i class="bi bi-check-circle me-1"></i>Graded: ' + answer.pointsEarned + '/' + q.points + ' points</div>' : '')) + '</div>' :
+    q.questionType === 'matching' ?
+      '<div class="ms-3"><div class="row"><div class="col-md-6"><table class="table table-sm table-bordered"><thead class="table-light"><tr><th>Item</th><th>Your Match</th><th>Correct Match</th></tr></thead><tbody>' + matchingPairs.map(pair => {
+        const studentMatch = studentMatchingAnswers[pair.left] || '<em>Not matched</em>';
+        const isMatchCorrect = studentMatchingAnswers[pair.left] === pair.right;
+        return '<tr><td>' + pair.left + '</td><td class="' + (isMatchCorrect ? 'text-success' : 'text-danger') + '">' + (isMatchCorrect ? '<i class="bi bi-check-circle me-1"></i>' : '<i class="bi bi-x-circle me-1"></i>') + studentMatch + '</td><td class="text-success">' + pair.right + '</td></tr>';
+      }).join('') + '</tbody></table></div></div></div>' :
+    q.questionType === 'ordering' ?
+      '<div class="ms-3"><div class="row"><div class="col-md-6"><h6 class="text-muted">Your Order</h6><ol class="mb-3">' + studentOrderingAnswer.map((item, idx) => {
+        const isInCorrectPosition = orderingItems[idx] === item;
+        return '<li class="' + (isInCorrectPosition ? 'text-success' : 'text-danger') + '">' + (isInCorrectPosition ? '<i class="bi bi-check-circle me-1"></i>' : '<i class="bi bi-x-circle me-1"></i>') + item + '</li>';
+      }).join('') + '</ol></div><div class="col-md-6"><h6 class="text-muted">Correct Order</h6><ol class="text-success">' + orderingItems.map(item => '<li>' + item + '</li>').join('') + '</ol></div></div></div>' :
       '<div class="ms-3"><div class="mb-1"><strong>Your answer:</strong> <span class="' + (isCorrect ? 'text-success' : 'text-danger') + '">' + (answer?.answer || '<em>No answer</em>') + '</span></div><div><strong>Correct answer:</strong> <span class="text-success">' + q.correctAnswer + '</span></div></div>'
     ) +
     (q.explanation ? '<div class="alert alert-info py-2 mt-2 mb-0"><i class="bi bi-lightbulb me-1"></i>' + q.explanation + '</div>' : '') +

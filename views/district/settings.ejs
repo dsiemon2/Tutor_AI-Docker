@@ -1,0 +1,137 @@
+<%- include('../layouts/district', { body: `
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h4 class="mb-1">District Settings</h4>
+    <p class="text-muted mb-0">Manage settings for ${district?.name || 'your district'}</p>
+  </div>
+</div>
+
+<!-- District Information -->
+<div class="card mb-4">
+  <div class="card-header">
+    <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>District Information</h5>
+  </div>
+  <div class="card-body">
+    <div class="row">
+      <div class="col-md-6">
+        <table class="table table-borderless">
+          <tr>
+            <th class="text-muted" style="width: 150px;">District Name</th>
+            <td><strong>${district?.name || '-'}</strong></td>
+          </tr>
+          <tr>
+            <th class="text-muted">District Code</th>
+            <td><code>${district?.code || '-'}</code></td>
+          </tr>
+          <tr>
+            <th class="text-muted">State</th>
+            <td>${district?.state || '-'}</td>
+          </tr>
+          <tr>
+            <th class="text-muted">Superintendent</th>
+            <td>${district?.superintendent || '-'}</td>
+          </tr>
+        </table>
+      </div>
+      <div class="col-md-6">
+        <table class="table table-borderless">
+          <tr>
+            <th class="text-muted" style="width: 150px;">Address</th>
+            <td>${district?.address || '-'}</td>
+          </tr>
+          <tr>
+            <th class="text-muted">City</th>
+            <td>${district?.city || '-'}</td>
+          </tr>
+          <tr>
+            <th class="text-muted">Zip Code</th>
+            <td>${district?.zipCode || '-'}</td>
+          </tr>
+          <tr>
+            <th class="text-muted">Status</th>
+            <td><span class="badge bg-${district?.isActive ? 'success' : 'danger'}">${district?.isActive ? 'Active' : 'Inactive'}</span></td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Contact Information -->
+<div class="card mb-4">
+  <div class="card-header">
+    <h5 class="mb-0"><i class="bi bi-telephone me-2"></i>Contact Information</h5>
+  </div>
+  <div class="card-body">
+    <div class="row">
+      <div class="col-md-6">
+        <table class="table table-borderless">
+          <tr>
+            <th class="text-muted" style="width: 150px;">Phone</th>
+            <td>${district?.phone || '-'}</td>
+          </tr>
+          <tr>
+            <th class="text-muted">Email</th>
+            <td>${district?.email ? '<a href="mailto:' + district.email + '">' + district.email + '</a>' : '-'}</td>
+          </tr>
+        </table>
+      </div>
+      <div class="col-md-6">
+        <table class="table table-borderless">
+          <tr>
+            <th class="text-muted" style="width: 150px;">Website</th>
+            <td>${district?.website ? '<a href="' + district.website + '" target="_blank">' + district.website + '</a>' : '-'}</td>
+          </tr>
+          <tr>
+            <th class="text-muted">Logo</th>
+            <td>${district?.logoUrl ? '<img src="' + district.logoUrl + '" alt="District Logo" style="max-height: 40px;">' : '-'}</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Links -->
+<div class="card">
+  <div class="card-header">
+    <h5 class="mb-0"><i class="bi bi-link-45deg me-2"></i>Quick Links</h5>
+  </div>
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-4">
+        <a href="${typeof basePath !== 'undefined' ? basePath : ''}/district/schools" class="btn btn-outline-primary w-100 py-3">
+          <i class="bi bi-building d-block fs-3 mb-2"></i>
+          Manage Schools
+        </a>
+      </div>
+      <div class="col-md-4">
+        <a href="${typeof basePath !== 'undefined' ? basePath : ''}/district/users" class="btn btn-outline-primary w-100 py-3">
+          <i class="bi bi-people d-block fs-3 mb-2"></i>
+          Manage Users
+        </a>
+      </div>
+      <div class="col-md-4">
+        <a href="${typeof basePath !== 'undefined' ? basePath : ''}/district/analytics" class="btn btn-outline-primary w-100 py-3">
+          <i class="bi bi-graph-up d-block fs-3 mb-2"></i>
+          View Analytics
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Info Card -->
+<div class="card mt-4 bg-light">
+  <div class="card-body">
+    <div class="d-flex align-items-center gap-3">
+      <i class="bi bi-shield-check text-success fs-4"></i>
+      <div>
+        <strong>Need to update district information?</strong>
+        <p class="text-muted mb-0">Contact your platform administrator to make changes to district settings.</p>
+      </div>
+    </div>
+  </div>
+</div>
+`, activePage: 'settings', pageTitle: 'District Settings' }) %>

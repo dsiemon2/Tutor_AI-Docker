@@ -1,0 +1,149 @@
+<%- include('../layouts/vp', { body: `
+<!-- Back Button -->
+<div class="mb-4">
+  <a href="${typeof basePath !== 'undefined' ? basePath : ''}/vp/students" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left me-2"></i>Back to Students
+  </a>
+</div>
+
+<!-- Student Header -->
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="row align-items-center">
+      <div class="col-auto">
+        <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+          <i class="bi bi-person fs-1 text-primary"></i>
+        </div>
+      </div>
+      <div class="col">
+        <h3 class="mb-1">${student.firstName} ${student.lastName}</h3>
+        <p class="text-muted mb-0">${student.email}</p>
+        <div class="mt-2">
+          <span class="badge bg-secondary me-2">Grade ${student.gradeLevel !== null ? student.gradeLevel : 'N/A'}</span>
+          <span class="badge bg-info">${student.classesAsStudent?.length || 0} Classes</span>
+        </div>
+      </div>
+      <div class="col-auto text-end">
+        <div class="row g-4 text-center">
+          <div class="col-4">
+            <div class="fs-4 fw-bold text-primary">${stats?.avgMastery || 0}%</div>
+            <small class="text-muted">Avg Mastery</small>
+          </div>
+          <div class="col-4">
+            <div class="fs-4 fw-bold text-success">${stats?.totalSessions || 0}</div>
+            <small class="text-muted">Sessions</small>
+          </div>
+          <div class="col-4">
+            <div class="fs-4 fw-bold text-info">${Math.round((stats?.totalTime || 0) / 60)}</div>
+            <small class="text-muted">Minutes</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Progress by Topic -->
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-graph-up me-2"></i>Progress by Topic</h5>
+      </div>
+      <div class="card-body p-0">
+        <div class="list-group list-group-flush" style="max-height: 400px; overflow-y: auto;">
+          ${student.progress && student.progress.length > 0 ? student.progress.map(p => {
+            const progressClass = p.masteryLevel >= 70 ? 'success' : p.masteryLevel >= 40 ? 'warning' : 'danger';
+            return '<div class="list-group-item"><div class="d-flex justify-content-between align-items-center"><div><strong>' + (p.topic?.subject?.name || '') + '</strong><br><small class="text-muted">' + (p.topic?.name || '') + '</small></div><div class="text-end"><div class="progress" style="width: 100px; height: 8px;"><div class="progress-bar bg-' + progressClass + '" style="width: ' + p.masteryLevel + '%;"></div></div><small class="text-muted">' + p.masteryLevel + '% mastery</small></div></div></div>';
+          }).join('') : '<div class="p-4 text-center text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No progress data yet</div>'}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Sessions -->
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-chat-dots me-2"></i>Recent Sessions</h5>
+      </div>
+      <div class="card-body p-0">
+        <div class="list-group list-group-flush" style="max-height: 400px; overflow-y: auto;">
+          ${student.tutoringSessionsAsStudent && student.tutoringSessionsAsStudent.length > 0 ? student.tutoringSessionsAsStudent.map(session => {
+            const status = session.endedAt ? 'Completed' : 'Active';
+            const statusClass = session.endedAt ? 'secondary' : 'success';
+            const date = new Date(session.startedAt).toLocaleString();
+            return '<a href="' + (typeof basePath !== 'undefined' ? basePath : '') + '/vp/sessions/' + session.id + '" class="list-group-item list-group-item-action"><div class="d-flex justify-content-between align-items-center"><div><strong>' + (session.subject?.name || 'General') + '</strong><br><small class="text-muted">' + (session.topic?.name || 'General tutoring') + '</small></div><div class="text-end"><span class="badge bg-' + statusClass + '">' + status + '</span><br><small class="text-muted">' + date + '</small></div></div></a>';
+          }).join('') : '<div class="p-4 text-center text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No sessions yet</div>'}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Classes Enrolled -->
+<div class="row g-4 mt-2">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-journal-bookmark me-2"></i>Classes Enrolled</h5>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Class Name</th>
+                <th>Subject</th>
+                <th>Teacher(s)</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${student.classesAsStudent && student.classesAsStudent.length > 0 ? student.classesAsStudent.map(ce => {
+                const teachers = ce.class.teachers?.map(t => t.teacher.firstName + ' ' + t.teacher.lastName).join(', ') || 'N/A';
+                return '<tr><td><strong>' + ce.class.name + '</strong></td><td>' + (ce.class.subject?.name || 'N/A') + '</td><td>' + teachers + '</td></tr>';
+              }).join('') : '<tr><td colspan="3" class="text-center text-muted py-4"><i class="bi bi-inbox fs-1 d-block mb-2"></i>Not enrolled in any classes</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Submissions & Quiz Attempts -->
+<div class="row g-4 mt-2">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-file-earmark-text me-2"></i>Recent Submissions</h5>
+      </div>
+      <div class="card-body p-0">
+        <div class="list-group list-group-flush" style="max-height: 300px; overflow-y: auto;">
+          ${student.submissions && student.submissions.length > 0 ? student.submissions.map(sub => {
+            const status = sub.status === 'graded' ? 'Graded' : sub.status;
+            const statusClass = sub.status === 'graded' ? 'success' : 'warning';
+            return '<div class="list-group-item"><div class="d-flex justify-content-between align-items-center"><div><strong>' + (sub.assignment?.title || 'Assignment') + '</strong><br><small class="text-muted">Submitted: ' + new Date(sub.submittedAt).toLocaleDateString() + '</small></div><div class="text-end"><span class="badge bg-' + statusClass + '">' + status + '</span>' + (sub.grade !== null ? '<br><small>Grade: ' + sub.grade + '</small>' : '') + '</div></div></div>';
+          }).join('') : '<div class="p-4 text-center text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No submissions yet</div>'}
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-question-circle me-2"></i>Quiz Attempts</h5>
+      </div>
+      <div class="card-body p-0">
+        <div class="list-group list-group-flush" style="max-height: 300px; overflow-y: auto;">
+          ${student.quizAttempts && student.quizAttempts.length > 0 ? student.quizAttempts.map(attempt => {
+            const passed = attempt.passed ? 'Passed' : 'Failed';
+            const passedClass = attempt.passed ? 'success' : 'danger';
+            return '<div class="list-group-item"><div class="d-flex justify-content-between align-items-center"><div><strong>' + (attempt.quiz?.title || 'Quiz') + '</strong><br><small class="text-muted">' + new Date(attempt.startedAt).toLocaleDateString() + '</small></div><div class="text-end"><span class="badge bg-' + passedClass + '">' + passed + '</span><br><small>Score: ' + (attempt.score || 0) + '%</small></div></div></div>';
+          }).join('') : '<div class="p-4 text-center text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No quiz attempts yet</div>'}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`, activePage: 'students', pageTitle: 'Student Details' }) %>

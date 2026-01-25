@@ -1,0 +1,133 @@
+<%- include('../layouts/district', { body: `
+<!-- District Info -->
+${district ? '<div class="alert alert-info mb-4"><i class="bi bi-diagram-3 me-2"></i><strong>' + district.name + '</strong> - District Administration Portal</div>' : ''}
+
+<!-- Stats Cards -->
+<div class="row g-4 mb-4">
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Schools</div>
+          <div class="stat-value">${stats?.totalSchools || 0}</div>
+        </div>
+        <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+          <i class="bi bi-building"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Students</div>
+          <div class="stat-value">${stats?.totalStudents || 0}</div>
+        </div>
+        <div class="stat-icon bg-success bg-opacity-10 text-success">
+          <i class="bi bi-mortarboard"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Teachers</div>
+          <div class="stat-value">${stats?.totalTeachers || 0}</div>
+        </div>
+        <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+          <i class="bi bi-person-workspace"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Tutoring Sessions</div>
+          <div class="stat-value">${stats?.totalSessions || 0}</div>
+        </div>
+        <div class="stat-icon bg-info bg-opacity-10 text-info">
+          <i class="bi bi-chat-dots"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Schools Table -->
+<div class="row g-4 mb-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-building me-2"></i>Schools in District</h5>
+        <a href="${typeof basePath !== 'undefined' ? basePath : ''}/district/schools" class="btn btn-sm btn-outline-primary">View All</a>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>School Name</th>
+                <th>Type</th>
+                <th class="text-center">Students</th>
+                <th class="text-center">Teachers</th>
+                <th class="text-center">Sessions</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              ${schools && schools.length > 0 ? schools.map(school => '<tr><td><strong>' + school.name + '</strong></td><td><span class="badge bg-secondary">' + (school.schoolType || 'N/A') + '</span></td><td class="text-center">' + (school.studentCount || 0) + '</td><td class="text-center">' + (school.teacherCount || 0) + '</td><td class="text-center">' + (school.sessionCount || 0) + '</td><td><span class="badge bg-' + (school.isActive ? 'success' : 'danger') + '">' + (school.isActive ? 'Active' : 'Inactive') + '</span></td><td><a href="' + (typeof basePath !== 'undefined' ? basePath : '') + '/district/schools/' + school.id + '" class="btn btn-sm btn-outline-primary">View</a></td></tr>').join('') : '<tr><td colspan="7" class="text-center py-4 text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No schools found in this district</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Recent Sessions -->
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Recent Tutoring Sessions</h5>
+      </div>
+      <div class="card-body p-0">
+        <div class="list-group list-group-flush">
+          ${recentSessions && recentSessions.length > 0 ? recentSessions.map(session => '<div class="list-group-item"><div class="d-flex justify-content-between align-items-center"><div><strong>' + (session.student?.firstName || 'Unknown') + ' ' + (session.student?.lastName || '') + '</strong><br><small class="text-muted">' + (session.subject?.name || 'General') + ' - ' + (session.student?.school?.name || 'Unknown School') + '</small></div><small class="text-muted">' + new Date(session.startedAt).toLocaleDateString() + '</small></div></div>').join('') : '<div class="p-4 text-center text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No recent sessions</div>'}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-lightning me-2"></i>Quick Actions</h5>
+      </div>
+      <div class="card-body">
+        <div class="d-grid gap-2">
+          <a href="${typeof basePath !== 'undefined' ? basePath : ''}/district/schools" class="btn btn-outline-primary text-start">
+            <i class="bi bi-building me-2"></i>Manage Schools
+          </a>
+          <a href="${typeof basePath !== 'undefined' ? basePath : ''}/district/users" class="btn btn-outline-primary text-start">
+            <i class="bi bi-people me-2"></i>Manage Users
+          </a>
+          <a href="${typeof basePath !== 'undefined' ? basePath : ''}/district/analytics" class="btn btn-outline-primary text-start">
+            <i class="bi bi-graph-up me-2"></i>View Analytics
+          </a>
+          <a href="${typeof basePath !== 'undefined' ? basePath : ''}/district/settings" class="btn btn-outline-primary text-start">
+            <i class="bi bi-gear me-2"></i>District Settings
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`, activePage: 'dashboard', pageTitle: 'District Admin Dashboard' }) %>

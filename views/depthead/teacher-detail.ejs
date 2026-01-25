@@ -1,0 +1,89 @@
+<%- include('../layouts/depthead', { body: `
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-4">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="${typeof basePath !== 'undefined' ? basePath : ''}/depthead/teachers">Teachers</a></li>
+    <li class="breadcrumb-item active">${teacher.firstName} ${teacher.lastName}</li>
+  </ol>
+</nav>
+
+<!-- Teacher Header -->
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="d-flex align-items-center gap-4">
+      <div class="rounded-circle bg-warning bg-opacity-25 d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+        <i class="bi bi-person-workspace fs-1 text-warning"></i>
+      </div>
+      <div>
+        <h3 class="mb-1">${teacher.firstName} ${teacher.lastName}</h3>
+        <p class="text-muted mb-1">${teacher.email}</p>
+        <span class="badge bg-warning text-dark">Teacher</span>
+        ${teacher.employeeId ? '<span class="badge bg-secondary ms-2">ID: ' + teacher.employeeId + '</span>' : ''}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="row g-4 mb-4">
+  <div class="col-md-4">
+    <div class="stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Classes in Department</div>
+          <div class="stat-value">${departmentClasses ? departmentClasses.length : 0}</div>
+        </div>
+        <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+          <i class="bi bi-journal-bookmark"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Total Students</div>
+          <div class="stat-value">${departmentClasses ? departmentClasses.reduce((sum, tc) => sum + (tc.class.students ? tc.class.students.length : 0), 0) : 0}</div>
+        </div>
+        <div class="stat-icon bg-success bg-opacity-10 text-success">
+          <i class="bi bi-mortarboard"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Lessons Created</div>
+          <div class="stat-value">${teacher.lessonsCreated ? teacher.lessonsCreated.length : 0}</div>
+        </div>
+        <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+          <i class="bi bi-file-earmark-text"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Classes -->
+<div class="card mb-4">
+  <div class="card-header">
+    <h5 class="mb-0"><i class="bi bi-journal-bookmark me-2"></i>Department Classes</h5>
+  </div>
+  <div class="card-body p-0">
+    ${departmentClasses && departmentClasses.length > 0 ? '<div class="table-responsive"><table class="table table-hover mb-0"><thead class="table-light"><tr><th>Class Name</th><th>Subject</th><th>Students</th><th>Assignments</th><th>Quizzes</th></tr></thead><tbody>' + departmentClasses.map(tc => '<tr><td><strong>' + tc.class.name + '</strong></td><td>' + (tc.class.subject ? tc.class.subject.name : '-') + '</td><td>' + (tc.class.students ? tc.class.students.length : 0) + '</td><td>' + (tc.class.assignments ? tc.class.assignments.length : 0) + '</td><td>' + (tc.class.quizzes ? tc.class.quizzes.length : 0) + '</td></tr>').join('') + '</tbody></table></div>' : '<div class="p-4 text-center text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No classes in this department</div>'}
+  </div>
+</div>
+
+<!-- Recent Lessons -->
+<div class="card">
+  <div class="card-header">
+    <h5 class="mb-0"><i class="bi bi-file-earmark-text me-2"></i>Recent Lessons Created</h5>
+  </div>
+  <div class="card-body p-0">
+    ${teacher.lessonsCreated && teacher.lessonsCreated.length > 0 ? '<div class="list-group list-group-flush">' + teacher.lessonsCreated.map(l => '<div class="list-group-item"><div class="d-flex justify-content-between align-items-center"><div><strong>' + l.title + '</strong><br><small class="text-muted">' + (l.topic ? l.topic.name + (l.topic.subject ? ' - ' + l.topic.subject.name : '') : 'No topic') + '</small></div><small class="text-muted">' + new Date(l.createdAt).toLocaleDateString() + '</small></div></div>').join('') + '</div>' : '<div class="p-4 text-center text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No lessons created</div>'}
+  </div>
+</div>
+`, activePage: 'teachers', pageTitle: teacher.firstName + ' ' + teacher.lastName }) %>

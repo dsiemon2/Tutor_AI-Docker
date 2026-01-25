@@ -1,0 +1,40 @@
+<%- include('../layouts/principal', { body: `
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="mb-0">All Students</h4>
+  <span class="badge bg-primary fs-6">${students?.length || 0} Students</span>
+</div>
+
+<div class="card">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="bg-light">
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Grade Level</th>
+            <th>Classes</th>
+            <th>Progress Topics</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${students && students.length > 0 ? students.map(student => {
+            const classCount = student.classesAsStudent?.length || 0;
+            const progressCount = student.progress?.length || 0;
+            const gradeDisplay = student.gradeLevel !== null ? (student.gradeLevel < 0 ? 'Pre-K' : student.gradeLevel === 0 ? 'K' : 'Grade ' + student.gradeLevel) : 'N/A';
+            return '<tr>' +
+              '<td><strong>' + student.firstName + ' ' + student.lastName + '</strong></td>' +
+              '<td>' + student.email + '</td>' +
+              '<td>' + gradeDisplay + '</td>' +
+              '<td>' + classCount + '</td>' +
+              '<td>' + progressCount + '</td>' +
+              '<td><a href="' + (typeof basePath !== 'undefined' ? basePath : '') + '/principal/students/' + student.id + '" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye me-1"></i>View</a></td>' +
+            '</tr>';
+          }).join('') : '<tr><td colspan="6" class="text-center text-muted py-4"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No students found</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+`, activePage: 'students', pageTitle: 'Students' }) %>

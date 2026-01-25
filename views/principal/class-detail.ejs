@@ -1,0 +1,97 @@
+<%- include('../layouts/principal', { body: `
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <a href="${typeof basePath !== 'undefined' ? basePath : ''}/principal/classes" class="text-muted text-decoration-none mb-2 d-inline-block">
+      <i class="bi bi-arrow-left me-1"></i>Back to Classes
+    </a>
+    <h4 class="mb-0">${classData.name}</h4>
+  </div>
+  <span class="badge bg-primary fs-6">${classData.subject?.name || 'No Subject'}</span>
+</div>
+
+<div class="row g-4">
+  <!-- Class Info -->
+  <div class="col-lg-4">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Class Information</h5>
+      </div>
+      <div class="card-body">
+        <table class="table table-sm">
+          <tr>
+            <td class="text-muted">Class Name</td>
+            <td class="text-end">${classData.name}</td>
+          </tr>
+          <tr>
+            <td class="text-muted">Subject</td>
+            <td class="text-end">${classData.subject?.name || 'No Subject'}</td>
+          </tr>
+          <tr>
+            <td class="text-muted">Teachers</td>
+            <td class="text-end">${classData.teachers?.length || 0}</td>
+          </tr>
+          <tr>
+            <td class="text-muted">Students</td>
+            <td class="text-end">${classData.students?.length || 0}</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Teachers -->
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-person-workspace me-2"></i>Teachers (${classData.teachers?.length || 0})</h5>
+      </div>
+      <div class="card-body p-0">
+        <div class="list-group list-group-flush">
+          ${classData.teachers && classData.teachers.length > 0 ? classData.teachers.map(ct =>
+            '<div class="list-group-item">' +
+              '<div class="d-flex justify-content-between align-items-center">' +
+                '<div>' +
+                  '<strong>' + ct.teacher.firstName + ' ' + ct.teacher.lastName + '</strong><br>' +
+                  '<small class="text-muted">' + ct.teacher.email + '</small>' +
+                '</div>' +
+                '<a href="' + (typeof basePath !== 'undefined' ? basePath : '') + '/principal/teachers/' + ct.teacher.id + '" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye me-1"></i>View</a>' +
+              '</div>' +
+            '</div>'
+          ).join('') : '<div class="p-4 text-center text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No teachers assigned</div>'}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Students -->
+<div class="card mt-4">
+  <div class="card-header">
+    <h5 class="mb-0"><i class="bi bi-people me-2"></i>Enrolled Students (${classData.students?.length || 0})</h5>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="bg-light">
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Grade Level</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${classData.students && classData.students.length > 0 ? classData.students.map(cs =>
+            '<tr>' +
+              '<td><strong>' + cs.student.firstName + ' ' + cs.student.lastName + '</strong></td>' +
+              '<td>' + cs.student.email + '</td>' +
+              '<td>' + (cs.student.gradeLevel !== null ? (cs.student.gradeLevel < 0 ? 'Pre-K' : cs.student.gradeLevel === 0 ? 'K' : 'Grade ' + cs.student.gradeLevel) : 'N/A') + '</td>' +
+              '<td><a href="' + (typeof basePath !== 'undefined' ? basePath : '') + '/principal/students/' + cs.student.id + '" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye me-1"></i>View</a></td>' +
+            '</tr>'
+          ).join('') : '<tr><td colspan="4" class="text-center text-muted py-4"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No students enrolled</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+`, activePage: 'classes', pageTitle: classData.name }) %>

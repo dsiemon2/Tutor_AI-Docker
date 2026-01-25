@@ -1,0 +1,72 @@
+<%- include('../layouts/vp', { body: `
+<!-- Filters -->
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="GET" class="row g-3 align-items-end">
+      <div class="col-md-2">
+        <label class="form-label">Status</label>
+        <select name="status" class="form-select">
+          <option value="">All</option>
+          <option value="active" ${filters?.status === 'active' ? 'selected' : ''}>Active</option>
+          <option value="completed" ${filters?.status === 'completed' ? 'selected' : ''}>Completed</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Subject</label>
+        <select name="subject" class="form-select">
+          <option value="all">All Subjects</option>
+          ${subjects ? subjects.map(s => '<option value="' + s.id + '" ' + (filters?.subject === s.id ? 'selected' : '') + '>' + s.name + '</option>').join('') : ''}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Date</label>
+        <input type="date" name="date" class="form-control" value="${filters?.date || ''}">
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100">
+          <i class="bi bi-search me-2"></i>Filter
+        </button>
+      </div>
+      <div class="col-md-2">
+        <a href="${typeof basePath !== 'undefined' ? basePath : ''}/vp/sessions" class="btn btn-outline-secondary w-100">Clear</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Sessions Table -->
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0"><i class="bi bi-chat-dots me-2"></i>Tutoring Sessions (${sessions?.length || 0})</h5>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Student</th>
+            <th>Grade</th>
+            <th>Subject</th>
+            <th>Topic</th>
+            <th>Started</th>
+            <th>Duration</th>
+            <th>Messages</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${sessions && sessions.length > 0 ? sessions.map(session => {
+            const status = session.endedAt ? 'Completed' : 'Active';
+            const statusClass = session.endedAt ? 'secondary' : 'success';
+            const startTime = new Date(session.startedAt).toLocaleString();
+            const duration = session.duration ? Math.round(session.duration / 60) + ' min' : (session.endedAt ? 'N/A' : 'In progress');
+            const messageCount = session.messages?.length || 0;
+            return '<tr><td><a href="' + (typeof basePath !== 'undefined' ? basePath : '') + '/vp/students/' + session.student?.id + '">' + (session.student?.firstName || '') + ' ' + (session.student?.lastName || '') + '</a></td><td>' + (session.student?.gradeLevel || '-') + '</td><td>' + (session.subject?.name || 'General') + '</td><td><small>' + (session.topic?.name || '-') + '</small></td><td><small>' + startTime + '</small></td><td>' + duration + '</td><td><span class="badge bg-info">' + messageCount + '</span></td><td><span class="badge bg-' + statusClass + '">' + status + '</span></td><td><a href="' + (typeof basePath !== 'undefined' ? basePath : '') + '/vp/sessions/' + session.id + '" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a></td></tr>';
+          }).join('') : '<tr><td colspan="9" class="text-center text-muted py-4"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No sessions found</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+`, activePage: 'sessions', pageTitle: 'Tutoring Sessions' }) %>

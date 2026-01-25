@@ -22,7 +22,7 @@ jest.mock('../../../config', () => ({
   }
 }));
 
-import { requireAuth, requireRole, requireMinRole } from '../../../middleware/auth';
+import { requireAuth, requireRole, requireMinRole, requireAuthOrToken } from '../../../middleware/auth';
 import { prisma } from '../../../config/database';
 
 describe('Authentication Middleware', () => {
@@ -68,28 +68,24 @@ describe('Authentication Middleware', () => {
       expect(mockNext).not.toHaveBeenCalled();
     });
 
-    it('should allow access with valid admin token', async () => {
+    it('should allow access with valid admin token via requireAuthOrToken', async () => {
       mockReq.query = { token: 'test-admin-token' };
       mockReq.session = {} as any;
+      mockReq.headers = {};
 
-      (prisma.user.findUnique as jest.Mock).mockResolvedValue({
-        id: 'admin-123',
-        role: 'SUPER_ADMIN',
-        email: 'admin@test.com'
-      });
-
-      await requireAuth(mockReq as Request, mockRes as Response, mockNext);
+      await requireAuthOrToken(mockReq as Request, mockRes as Response, mockNext);
 
       expect(mockNext).toHaveBeenCalled();
     });
 
-    it('should reject invalid admin token', async () => {
+    it('should reject invalid admin token via requireAuthOrToken', async () => {
       mockReq.query = { token: 'invalid-token' };
       mockReq.session = {} as any;
+      mockReq.headers = {};
 
-      await requireAuth(mockReq as Request, mockRes as Response, mockNext);
+      await requireAuthOrToken(mockReq as Request, mockRes as Response, mockNext);
 
-      expect(mockRes.redirect).toHaveBeenCalledWith(expect.stringContaining('/auth/login'));
+      expect(mockRes.redirect).toHaveBeenCalledWith(expect.stringContaining('/admin/auth/login'));
       expect(mockNext).not.toHaveBeenCalled();
     });
   });

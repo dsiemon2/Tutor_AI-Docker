@@ -1,0 +1,20 @@
+<%- include('../layouts/depthead', { body: `
+<!-- Department Info -->
+${category ? '<div class="alert alert-warning mb-4"><i class="bi bi-diagram-3 me-2"></i><strong>' + category.name + ' Department</strong> - Teachers</div>' : ''}
+
+<!-- Teachers List -->
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0"><i class="bi bi-person-workspace me-2"></i>Department Teachers</h5>
+    <span class="badge bg-warning text-dark">${teachers ? teachers.length : 0} teachers</span>
+  </div>
+  <div class="card-body p-0">
+    ${teachers && teachers.length > 0 ? '<div class="table-responsive"><table class="table table-hover mb-0"><thead class="table-light"><tr><th>Name</th><th>Email</th><th>Classes</th><th>Students</th><th>Actions</th></tr></thead><tbody>' + teachers.map(t => {
+      const classCount = t.classesAsTeacher ? t.classesAsTeacher.length : 0;
+      const studentCount = t.classesAsTeacher ? t.classesAsTeacher.reduce((sum, ct) => sum + (ct.class.students ? ct.class.students.length : 0), 0) : 0;
+      const classNames = t.classesAsTeacher ? t.classesAsTeacher.slice(0, 3).map(ct => ct.class.name).join(', ') : '';
+      return '<tr><td><strong>' + t.firstName + ' ' + t.lastName + '</strong></td><td>' + t.email + '</td><td><span class="badge bg-secondary">' + classCount + '</span><br><small class="text-muted">' + classNames + (classCount > 3 ? '...' : '') + '</small></td><td>' + studentCount + '</td><td><a href="' + (typeof basePath !== 'undefined' ? basePath : '') + '/depthead/teachers/' + t.id + '" class="btn btn-sm btn-outline-warning"><i class="bi bi-eye"></i> View</a></td></tr>';
+    }).join('') + '</tbody></table></div>' : '<div class="p-5 text-center text-muted"><i class="bi bi-inbox fs-1 d-block mb-3"></i><p>No teachers in this department</p></div>'}
+  </div>
+</div>
+`, activePage: 'teachers', pageTitle: 'Teachers' }) %>

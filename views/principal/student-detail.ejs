@@ -1,0 +1,134 @@
+<%- include('../layouts/principal', { body: `
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <a href="${typeof basePath !== 'undefined' ? basePath : ''}/principal/students" class="text-muted text-decoration-none mb-2 d-inline-block">
+      <i class="bi bi-arrow-left me-1"></i>Back to Students
+    </a>
+    <h4 class="mb-0">${student.firstName} ${student.lastName}</h4>
+  </div>
+  <span class="badge bg-success fs-6">${student.gradeLevel !== null ? (student.gradeLevel < 0 ? 'Pre-K' : student.gradeLevel === 0 ? 'K' : 'Grade ' + student.gradeLevel) : 'N/A'}</span>
+</div>
+
+<div class="row g-4">
+  <!-- Student Info -->
+  <div class="col-lg-4">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-person me-2"></i>Student Information</h5>
+      </div>
+      <div class="card-body">
+        <table class="table table-sm">
+          <tr>
+            <td class="text-muted">Email</td>
+            <td class="text-end">${student.email}</td>
+          </tr>
+          <tr>
+            <td class="text-muted">Grade Level</td>
+            <td class="text-end">${student.gradeLevel !== null ? (student.gradeLevel < 0 ? 'Pre-K' : student.gradeLevel === 0 ? 'K' : 'Grade ' + student.gradeLevel) : 'N/A'}</td>
+          </tr>
+          <tr>
+            <td class="text-muted">Enrolled Classes</td>
+            <td class="text-end">${student.classesAsStudent?.length || 0}</td>
+          </tr>
+          <tr>
+            <td class="text-muted">Progress Topics</td>
+            <td class="text-end">${student.progress?.length || 0}</td>
+          </tr>
+          <tr>
+            <td class="text-muted">Tutoring Sessions</td>
+            <td class="text-end">${student.tutoringSessionsAsStudent?.length || 0}</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Classes -->
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-journal-bookmark me-2"></i>Enrolled Classes (${student.classesAsStudent?.length || 0})</h5>
+      </div>
+      <div class="card-body p-0">
+        <div class="list-group list-group-flush">
+          ${student.classesAsStudent && student.classesAsStudent.length > 0 ? student.classesAsStudent.map(sc =>
+            '<div class="list-group-item">' +
+              '<div class="d-flex justify-content-between align-items-center">' +
+                '<div>' +
+                  '<strong>' + sc.class.name + '</strong><br>' +
+                  '<small class="text-muted">' + (sc.class.subject?.name || 'No Subject') + '</small>' +
+                '</div>' +
+                '<div class="text-end">' +
+                  (sc.class.teachers && sc.class.teachers.length > 0 ?
+                    '<small class="text-muted">Teacher: ' + sc.class.teachers.map(t => t.teacher.firstName + ' ' + t.teacher.lastName).join(', ') + '</small><br>' : '') +
+                  '<a href="' + (typeof basePath !== 'undefined' ? basePath : '') + '/principal/classes/' + sc.class.id + '" class="btn btn-sm btn-link">View Class</a>' +
+                '</div>' +
+              '</div>' +
+            '</div>'
+          ).join('') : '<div class="p-4 text-center text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No classes enrolled</div>'}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Progress -->
+<div class="card mt-4">
+  <div class="card-header">
+    <h5 class="mb-0"><i class="bi bi-graph-up me-2"></i>Learning Progress</h5>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="bg-light">
+          <tr>
+            <th>Topic</th>
+            <th>Subject</th>
+            <th>Mastery Level</th>
+            <th>Practice Count</th>
+            <th>Last Practiced</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${student.progress && student.progress.length > 0 ? student.progress.map(p =>
+            '<tr>' +
+              '<td><strong>' + (p.topic?.name || 'Unknown Topic') + '</strong></td>' +
+              '<td>' + (p.topic?.subject?.name || 'Unknown Subject') + '</td>' +
+              '<td>' +
+                '<div class="progress" style="width: 100px; height: 20px;">' +
+                  '<div class="progress-bar bg-' + (p.masteryLevel >= 80 ? 'success' : p.masteryLevel >= 50 ? 'warning' : 'danger') + '" style="width: ' + p.masteryLevel + '%;"></div>' +
+                '</div>' +
+                '<small>' + p.masteryLevel + '%</small>' +
+              '</td>' +
+              '<td>' + (p.practiceCount || 0) + '</td>' +
+              '<td>' + (p.lastPracticedAt ? new Date(p.lastPracticedAt).toLocaleDateString() : 'Never') + '</td>' +
+            '</tr>'
+          ).join('') : '<tr><td colspan="5" class="text-center text-muted py-4"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No progress records</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Sessions -->
+<div class="card mt-4">
+  <div class="card-header">
+    <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Recent Tutoring Sessions</h5>
+  </div>
+  <div class="card-body p-0">
+    <div class="list-group list-group-flush">
+      ${student.tutoringSessionsAsStudent && student.tutoringSessionsAsStudent.length > 0 ? student.tutoringSessionsAsStudent.map(session =>
+        '<div class="list-group-item">' +
+          '<div class="d-flex justify-content-between align-items-center">' +
+            '<div>' +
+              '<strong>' + (session.subject?.name || 'General Tutoring') + '</strong><br>' +
+              '<small class="text-muted">' + new Date(session.startedAt).toLocaleString() + '</small>' +
+            '</div>' +
+            '<span class="badge bg-' + (session.status === 'COMPLETED' ? 'success' : session.status === 'IN_PROGRESS' ? 'primary' : 'secondary') + '">' + (session.status || 'Unknown') + '</span>' +
+          '</div>' +
+        '</div>'
+      ).join('') : '<div class="p-4 text-center text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No tutoring sessions</div>'}
+    </div>
+  </div>
+</div>
+`, activePage: 'students', pageTitle: student.firstName + ' ' + student.lastName }) %>

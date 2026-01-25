@@ -1,0 +1,121 @@
+<%- include('../layouts/vp', { body: `
+<!-- Stats Cards -->
+<div class="row g-4 mb-4">
+  <div class="col-md-3">
+    <div class="stat-card border-start border-4 border-danger">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Critical</div>
+          <div class="stat-value text-danger">${stats?.critical || 0}</div>
+        </div>
+        <div class="stat-icon bg-danger bg-opacity-10 text-danger">
+          <i class="bi bi-exclamation-octagon"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card border-start border-4 border-warning">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Warning</div>
+          <div class="stat-value text-warning">${stats?.warning || 0}</div>
+        </div>
+        <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+          <i class="bi bi-exclamation-triangle"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card border-start border-4 border-info">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Low Progress</div>
+          <div class="stat-value text-info">${stats?.lowProgress || 0}</div>
+        </div>
+        <div class="stat-icon bg-info bg-opacity-10 text-info">
+          <i class="bi bi-graph-down"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card border-start border-4 border-secondary">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Inactive (7+ days)</div>
+          <div class="stat-value text-secondary">${stats?.inactive || 0}</div>
+        </div>
+        <div class="stat-icon bg-secondary bg-opacity-10 text-secondary">
+          <i class="bi bi-clock-history"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="GET" class="row g-3 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label">Severity</label>
+        <select name="severity" class="form-select">
+          <option value="">All Alerts</option>
+          <option value="critical" ${filters?.severity === 'critical' ? 'selected' : ''}>Critical Only</option>
+          <option value="warning" ${filters?.severity === 'warning' ? 'selected' : ''}>Warnings Only</option>
+          <option value="low" ${filters?.severity === 'low' ? 'selected' : ''}>Low Progress Only</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-funnel me-2"></i>Filter
+        </button>
+      </div>
+      <div class="col-md-3">
+        <a href="${typeof basePath !== 'undefined' ? basePath : ''}/vp/alerts" class="btn btn-outline-secondary">Clear Filters</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Struggling Students -->
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-exclamation-triangle text-danger me-2"></i>Struggling Students</h5>
+        <span class="badge bg-danger">${alerts?.length || 0} alerts</span>
+      </div>
+      <div class="card-body p-0">
+        <div class="list-group list-group-flush">
+          ${alerts && alerts.length > 0 ? alerts.map(p => {
+            const severity = p.masteryLevel < 20 || p.wrongAttempts >= 10 ? 'danger' : p.masteryLevel < 30 || p.wrongAttempts >= 5 ? 'warning' : 'info';
+            const severityLabel = severity === 'danger' ? 'Critical' : severity === 'warning' ? 'Warning' : 'Low';
+            return '<div class="list-group-item"><div class="row align-items-center"><div class="col-auto"><span class="badge bg-' + severity + '">' + severityLabel + '</span></div><div class="col"><a href="' + (typeof basePath !== 'undefined' ? basePath : '') + '/vp/students/' + (p.student?.id || '') + '"><strong>' + (p.student?.firstName || '') + ' ' + (p.student?.lastName || '') + '</strong></a><br><small class="text-muted">Grade ' + (p.student?.gradeLevel || 'N/A') + ' - ' + (p.topic?.subject?.name || '') + ': ' + (p.topic?.name || '') + '</small></div><div class="col-auto text-end"><div class="mb-1"><strong>' + (p.masteryLevel || 0) + '%</strong> mastery</div><div><small class="text-muted">' + (p.wrongAttempts || 0) + ' wrong attempts</small></div></div></div></div>';
+          }).join('') : '<div class="p-4 text-center text-muted"><i class="bi bi-check-circle fs-1 d-block mb-2 text-success"></i>No struggling students at this time</div>'}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inactive Students -->
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-clock-history text-secondary me-2"></i>Inactive Students</h5>
+      </div>
+      <div class="card-body p-0">
+        <div class="list-group list-group-flush" style="max-height: 500px; overflow-y: auto;">
+          ${inactiveStudents && inactiveStudents.length > 0 ? inactiveStudents.map(student => {
+            const lastSession = student.tutoringSessionsAsStudent?.[0];
+            const lastActivity = lastSession ? new Date(lastSession.startedAt).toLocaleDateString() : 'Never';
+            return '<a href="' + (typeof basePath !== 'undefined' ? basePath : '') + '/vp/students/' + student.id + '" class="list-group-item list-group-item-action"><div class="d-flex justify-content-between align-items-center"><div><strong>' + student.firstName + ' ' + student.lastName + '</strong><br><small class="text-muted">Grade ' + (student.gradeLevel || 'N/A') + '</small></div><div class="text-end"><small class="text-muted">Last: ' + lastActivity + '</small></div></div></a>';
+          }).join('') : '<div class="p-4 text-center text-muted"><i class="bi bi-check-circle fs-1 d-block mb-2 text-success"></i>All students are active</div>'}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`, activePage: 'alerts', pageTitle: 'Student Alerts' }) %>

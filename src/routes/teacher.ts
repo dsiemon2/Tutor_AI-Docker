@@ -1086,14 +1086,46 @@ router.post('/quizzes', async (req, res) => {
       for (let i = 0; i < questions.length; i++) {
         const q = questions[i];
         if (q.questionText) {
+          let options: string | null = null;
+          let correctAnswer = q.correctAnswer || '';
+
+          // Parse options based on question type
+          if (q.questionType === 'matching') {
+            // Parse matching pairs from "left | right" format
+            const lines = (q.options || '').split('\n').filter((line: string) => line.trim());
+            const pairs = lines.map((line: string) => {
+              const parts = line.split('|').map((p: string) => p.trim());
+              return { left: parts[0] || '', right: parts[1] || '' };
+            }).filter((p: { left: string; right: string }) => p.left && p.right);
+            options = JSON.stringify({ pairs });
+            correctAnswer = ''; // Matching uses options for correctness
+          } else if (q.questionType === 'ordering') {
+            // Parse ordering items (each line is an item in correct order)
+            const items = (q.options || '').split('\n').map((line: string) => line.trim()).filter((line: string) => line);
+            options = JSON.stringify({ items });
+            correctAnswer = ''; // Ordering uses options for correctness
+          } else if (q.questionType === 'essay') {
+            // Essay has no options or correct answer
+            options = null;
+            correctAnswer = '';
+          } else {
+            // multiple_choice, true_false, fill_blank - parse as array of strings
+            if (q.options) {
+              const optionsArray = (typeof q.options === 'string' ? q.options.split('\n') : q.options)
+                .map((opt: string) => opt.trim())
+                .filter((opt: string) => opt);
+              options = optionsArray.length > 0 ? JSON.stringify(optionsArray) : null;
+            }
+          }
+
           await prisma.quizQuestion.create({
             data: {
               quizId: quiz.id,
               questionNum: i + 1,
               questionText: q.questionText,
               questionType: q.questionType || 'multiple_choice',
-              options: q.options ? JSON.stringify(q.options) : null,
-              correctAnswer: q.correctAnswer,
+              options,
+              correctAnswer,
               explanation: q.explanation || null,
               points: q.points ? parseInt(q.points) : 1
             }
@@ -1258,14 +1290,46 @@ router.post('/quizzes/:id', async (req, res) => {
       for (let i = 0; i < questions.length; i++) {
         const q = questions[i];
         if (q.questionText) {
+          let options: string | null = null;
+          let correctAnswer = q.correctAnswer || '';
+
+          // Parse options based on question type
+          if (q.questionType === 'matching') {
+            // Parse matching pairs from "left | right" format
+            const lines = (q.options || '').split('\n').filter((line: string) => line.trim());
+            const pairs = lines.map((line: string) => {
+              const parts = line.split('|').map((p: string) => p.trim());
+              return { left: parts[0] || '', right: parts[1] || '' };
+            }).filter((p: { left: string; right: string }) => p.left && p.right);
+            options = JSON.stringify({ pairs });
+            correctAnswer = ''; // Matching uses options for correctness
+          } else if (q.questionType === 'ordering') {
+            // Parse ordering items (each line is an item in correct order)
+            const items = (q.options || '').split('\n').map((line: string) => line.trim()).filter((line: string) => line);
+            options = JSON.stringify({ items });
+            correctAnswer = ''; // Ordering uses options for correctness
+          } else if (q.questionType === 'essay') {
+            // Essay has no options or correct answer
+            options = null;
+            correctAnswer = '';
+          } else {
+            // multiple_choice, true_false, fill_blank - parse as array of strings
+            if (q.options) {
+              const optionsArray = (typeof q.options === 'string' ? q.options.split('\n') : q.options)
+                .map((opt: string) => opt.trim())
+                .filter((opt: string) => opt);
+              options = optionsArray.length > 0 ? JSON.stringify(optionsArray) : null;
+            }
+          }
+
           await prisma.quizQuestion.create({
             data: {
               quizId: req.params.id,
               questionNum: i + 1,
               questionText: q.questionText,
               questionType: q.questionType || 'multiple_choice',
-              options: q.options ? JSON.stringify(q.options) : null,
-              correctAnswer: q.correctAnswer,
+              options,
+              correctAnswer,
               explanation: q.explanation || null,
               points: q.points ? parseInt(q.points) : 1
             }
@@ -1298,6 +1362,103 @@ router.post('/quizzes/:id/delete', async (req, res) => {
 
   } catch (error) {
     logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Delete quiz error:');
+    res.status(500).render('errors/500', {
+      basePath: config.basePath,
+      title: 'Error'
+    });
+  }
+});
+
+// Grade Essay Answer
+router.post('/quizzes/:quizId/grade/:attemptId/:answerId', async (req, res) => {
+  try {
+    const userId = req.session.userId!;
+    const { quizId, attemptId, answerId } = req.params;
+    const { pointsEarned, feedback } = req.body;
+
+    // Verify teacher owns the quiz
+    const quiz = await prisma.quiz.findFirst({
+      where: { id: quizId, createdById: userId },
+      include: { questions: true }
+    });
+
+    if (!quiz) {
+      return res.status(404).json({ error: 'Quiz not found' });
+    }
+
+    // Verify the attempt exists and get the answer
+    const attempt = await prisma.quizAttempt.findFirst({
+      where: { id: attemptId, quizId },
+      include: {
+        answers: {
+          include: { question: true }
+        }
+      }
+    });
+
+    if (!attempt) {
+      return res.status(404).json({ error: 'Attempt not found' });
+    }
+
+    const answer = attempt.answers.find(a => a.id === answerId);
+    if (!answer) {
+      return res.status(404).json({ error: 'Answer not found' });
+    }
+
+    // Get the question to validate points
+    const question = answer.question;
+    const maxPoints = question.points;
+    const points = Math.min(Math.max(parseInt(pointsEarned) || 0, 0), maxPoints);
+
+    // Update the answer with grade
+    await prisma.quizAnswer.update({
+      where: { id: answerId },
+      data: {
+        pointsEarned: points,
+        isCorrect: points === maxPoints
+      }
+    });
+
+    // Recalculate attempt totals
+    const allAnswers = await prisma.quizAnswer.findMany({
+      where: { attemptId },
+      include: { question: true }
+    });
+
+    let totalScore = 0;
+    let totalPossible = 0;
+    let hasPendingEssays = false;
+
+    for (const ans of allAnswers) {
+      if (ans.isCorrect === null) {
+        // Still has ungraded essay questions
+        hasPendingEssays = true;
+      } else {
+        totalScore += ans.pointsEarned || 0;
+      }
+      totalPossible += ans.question.points;
+    }
+
+    // Calculate new percentage
+    const percentage = totalPossible > 0 ? (totalScore / totalPossible) * 100 : 0;
+    const passed = percentage >= quiz.passingScore;
+
+    // Update attempt with new totals
+    await prisma.quizAttempt.update({
+      where: { id: attemptId },
+      data: {
+        score: totalScore,
+        percentage,
+        passed: hasPendingEssays ? null : passed,
+        status: hasPendingEssays ? 'submitted' : 'graded'
+      }
+    });
+
+    // Redirect back to quiz detail page
+    res.redirect(`${config.basePath}/teacher/quizzes/${quizId}`);
+
+  } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Grade essay error:');
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'

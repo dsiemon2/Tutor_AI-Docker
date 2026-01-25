@@ -1,0 +1,164 @@
+<%- include('../layouts/vp', { body: `
+<!-- School Info -->
+${school ? '<div class="alert alert-info mb-4"><i class="bi bi-building me-2"></i><strong>' + school.name + '</strong> - Vice Principal Portal</div>' : ''}
+
+<!-- Stats Cards -->
+<div class="row g-4 mb-4">
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Total Students</div>
+          <div class="stat-value">${stats?.totalStudents || 0}</div>
+        </div>
+        <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+          <i class="bi bi-people"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Active Sessions</div>
+          <div class="stat-value">${stats?.activeSessions || 0}</div>
+        </div>
+        <div class="stat-icon bg-success bg-opacity-10 text-success">
+          <i class="bi bi-chat-dots"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Alerts</div>
+          <div class="stat-value">${stats?.alertCount || 0}</div>
+        </div>
+        <div class="stat-icon bg-danger bg-opacity-10 text-danger">
+          <i class="bi bi-exclamation-triangle"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Avg Progress</div>
+          <div class="stat-value">${stats?.avgProgress || 0}%</div>
+        </div>
+        <div class="stat-icon bg-info bg-opacity-10 text-info">
+          <i class="bi bi-graph-up"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Alerts Section -->
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-exclamation-triangle text-danger me-2"></i>Students Needing Attention</h5>
+        <a href="${typeof basePath !== 'undefined' ? basePath : ''}/vp/alerts" class="btn btn-sm btn-outline-danger">View All</a>
+      </div>
+      <div class="card-body p-0">
+        <div class="list-group list-group-flush">
+          ${strugglingStudents && strugglingStudents.length > 0 ? strugglingStudents.map(p => {
+            const severity = p.masteryLevel < 20 ? 'danger' : p.masteryLevel < 30 ? 'warning' : 'info';
+            return '<div class="list-group-item"><div class="d-flex justify-content-between align-items-center"><div><strong>' + (p.student?.firstName || '') + ' ' + (p.student?.lastName || '') + '</strong><br><small class="text-muted">' + (p.topic?.subject?.name || '') + ' - ' + (p.topic?.name || '') + '</small></div><div class="text-end"><span class="badge bg-' + severity + '">' + (p.masteryLevel || 0) + '% Mastery</span><br><small class="text-muted">' + (p.wrongAttempts || 0) + ' wrong attempts</small></div></div></div>';
+          }).join('') : '<div class="p-4 text-center text-muted"><i class="bi bi-check-circle fs-1 d-block mb-2 text-success"></i>No struggling students - Great work!</div>'}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Sessions -->
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Recent Sessions</h5>
+        <a href="${typeof basePath !== 'undefined' ? basePath : ''}/vp/sessions" class="btn btn-sm btn-outline-primary">View All</a>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Student</th>
+                <th>Subject</th>
+                <th>Grade</th>
+                <th>Started</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${recentSessions && recentSessions.length > 0 ? recentSessions.map(session => {
+                const status = session.endedAt ? 'Completed' : 'Active';
+                const statusClass = session.endedAt ? 'secondary' : 'success';
+                const startTime = new Date(session.startedAt).toLocaleString();
+                return '<tr><td><a href="' + (typeof basePath !== 'undefined' ? basePath : '') + '/vp/students/' + session.student?.id + '">' + (session.student?.firstName || '') + ' ' + (session.student?.lastName || '') + '</a></td><td>' + (session.subject?.name || 'General') + '</td><td>' + (session.student?.gradeLevel || '-') + '</td><td><small>' + startTime + '</small></td><td><span class="badge bg-' + statusClass + '">' + status + '</span></td></tr>';
+              }).join('') : '<tr><td colspan="5" class="text-center text-muted py-4"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No recent sessions</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Stats Row -->
+<div class="row g-4 mt-2">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-bar-chart me-2"></i>Quick Stats</h5>
+      </div>
+      <div class="card-body">
+        <div class="row text-center">
+          <div class="col-4">
+            <div class="fs-3 fw-bold text-primary">${stats?.totalClasses || 0}</div>
+            <div class="text-muted small">Classes</div>
+          </div>
+          <div class="col-4">
+            <div class="fs-3 fw-bold text-success">${stats?.totalSessions || 0}</div>
+            <div class="text-muted small">Total Sessions</div>
+          </div>
+          <div class="col-4">
+            <div class="fs-3 fw-bold text-info">${stats?.avgProgress || 0}%</div>
+            <div class="text-muted small">Avg Mastery</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-lightning me-2"></i>Quick Actions</h5>
+      </div>
+      <div class="card-body">
+        <div class="d-flex gap-3 flex-wrap">
+          <a href="${typeof basePath !== 'undefined' ? basePath : ''}/vp/students" class="btn btn-outline-primary">
+            <i class="bi bi-people me-2"></i>View Students
+          </a>
+          <a href="${typeof basePath !== 'undefined' ? basePath : ''}/vp/sessions" class="btn btn-outline-primary">
+            <i class="bi bi-chat-dots me-2"></i>Monitor Sessions
+          </a>
+          <a href="${typeof basePath !== 'undefined' ? basePath : ''}/vp/alerts" class="btn btn-outline-danger">
+            <i class="bi bi-exclamation-triangle me-2"></i>Check Alerts
+          </a>
+          <a href="${typeof basePath !== 'undefined' ? basePath : ''}/vp/analytics" class="btn btn-outline-info">
+            <i class="bi bi-graph-up me-2"></i>View Analytics
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`, activePage: 'dashboard', pageTitle: 'Vice Principal Dashboard' }) %>

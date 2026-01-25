@@ -5,6 +5,7 @@ import { Router } from 'express';
 import { prisma } from '../config/database';
 import { config } from '../config';
 import { requireAuth, requireRole } from '../middleware/auth';
+import { logger } from '../utils/logger';
 
 const router = Router();
 

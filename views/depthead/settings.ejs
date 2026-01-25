@@ -1,0 +1,150 @@
+<%- include('../layouts/depthead', { body: `
+<!-- Department Info -->
+${department ? '<div class="alert alert-warning mb-4"><i class="bi bi-diagram-3 me-2"></i><strong>' + department.name + '</strong> - Settings</div>' : category ? '<div class="alert alert-warning mb-4"><i class="bi bi-diagram-3 me-2"></i><strong>' + category.name + ' Department</strong> - Settings</div>' : ''}
+
+<!-- Department Information -->
+<div class="card mb-4">
+  <div class="card-header">
+    <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Department Information</h5>
+  </div>
+  <div class="card-body">
+    <div class="row">
+      <div class="col-md-6">
+        <table class="table table-borderless">
+          <tbody>
+            <tr>
+              <th width="40%">Department Name</th>
+              <td>${department ? department.name : (category ? category.name + ' Department' : 'Not Assigned')}</td>
+            </tr>
+            <tr>
+              <th>Department Code</th>
+              <td><span class="badge bg-secondary">${department ? department.code : (category ? category.code : '-')}</span></td>
+            </tr>
+            <tr>
+              <th>Subject Category</th>
+              <td>${category ? category.name : 'Not Linked'}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="col-md-6">
+        <table class="table table-borderless">
+          <tbody>
+            <tr>
+              <th width="40%">School</th>
+              <td>${school ? school.name : 'Not Assigned'}</td>
+            </tr>
+            <tr>
+              <th>School Type</th>
+              <td>${school ? school.schoolType.replace('_', ' ') : '-'}</td>
+            </tr>
+            <tr>
+              <th>Grade Range</th>
+              <td>${school ? (school.gradeMin === 0 ? 'K' : school.gradeMin) + ' - ' + school.gradeMax : '-'}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Your Profile -->
+<div class="card mb-4">
+  <div class="card-header">
+    <h5 class="mb-0"><i class="bi bi-person me-2"></i>Your Profile</h5>
+  </div>
+  <div class="card-body">
+    <div class="row">
+      <div class="col-md-6">
+        <table class="table table-borderless">
+          <tbody>
+            <tr>
+              <th width="40%">Name</th>
+              <td>${user.firstName} ${user.lastName}</td>
+            </tr>
+            <tr>
+              <th>Email</th>
+              <td>${user.email}</td>
+            </tr>
+            <tr>
+              <th>Role</th>
+              <td><span class="badge bg-warning text-dark">${user.role.replace('_', ' ')}</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="col-md-6">
+        <table class="table table-borderless">
+          <tbody>
+            <tr>
+              <th width="40%">Department Code</th>
+              <td><span class="badge bg-secondary">${user.departmentCode || 'Not Set'}</span></td>
+            </tr>
+            <tr>
+              <th>School ID</th>
+              <td><code>${user.schoolId || 'Not Set'}</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Links -->
+<div class="card">
+  <div class="card-header">
+    <h5 class="mb-0"><i class="bi bi-link-45deg me-2"></i>Quick Links</h5>
+  </div>
+  <div class="card-body">
+    <div class="d-flex gap-3 flex-wrap">
+      <a href="${typeof basePath !== 'undefined' ? basePath : ''}/depthead" class="btn btn-outline-warning">
+        <i class="bi bi-house me-2"></i>Dashboard
+      </a>
+      <a href="${typeof basePath !== 'undefined' ? basePath : ''}/depthead/teachers" class="btn btn-outline-warning">
+        <i class="bi bi-person-workspace me-2"></i>Teachers
+      </a>
+      <a href="${typeof basePath !== 'undefined' ? basePath : ''}/depthead/curriculum" class="btn btn-outline-warning">
+        <i class="bi bi-journal-bookmark me-2"></i>Curriculum
+      </a>
+      <a href="${typeof basePath !== 'undefined' ? basePath : ''}/teacher" class="btn btn-outline-primary">
+        <i class="bi bi-easel me-2"></i>Teacher Portal
+      </a>
+      <a href="${typeof basePath !== 'undefined' ? basePath : ''}/auth/logout" class="btn btn-outline-danger">
+        <i class="bi bi-box-arrow-right me-2"></i>Logout
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Help Section -->
+<div class="card mt-4">
+  <div class="card-header">
+    <h5 class="mb-0"><i class="bi bi-question-circle me-2"></i>Help & Information</h5>
+  </div>
+  <div class="card-body">
+    <div class="row">
+      <div class="col-md-6">
+        <h6 class="text-muted">About Department Head Portal</h6>
+        <p>As a Department Head, you have access to:</p>
+        <ul>
+          <li>View and support teachers in your department</li>
+          <li>Review curriculum, lessons, and assessments</li>
+          <li>Monitor student progress in department subjects</li>
+          <li>Access analytics and performance data</li>
+        </ul>
+      </div>
+      <div class="col-md-6">
+        <h6 class="text-muted">Need Changes?</h6>
+        <p>To update department settings or your profile, please contact:</p>
+        <ul>
+          <li><strong>School Admin</strong> - For department assignments</li>
+          <li><strong>Principal</strong> - For role changes</li>
+          <li><strong>IT Support</strong> - For technical issues</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+`, activePage: 'settings', pageTitle: 'Settings' }) %>

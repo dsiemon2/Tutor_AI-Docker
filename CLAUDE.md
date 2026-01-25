@@ -5,7 +5,7 @@
 **URL Prefix:** /TutorAI/
 **Status:** Active (Development)
 **Live URL:** https://www.tutorableai.com
-**Last Updated:** 2026-01-23
+**Last Updated:** 2026-01-24
 
 ---
 
@@ -16,7 +16,13 @@
 | Landing | http://localhost:8091/TutorAI/ |
 | Student | http://localhost:8091/TutorAI/student |
 | Teacher | http://localhost:8091/TutorAI/teacher |
-| Admin | http://localhost:8091/TutorAI/admin?token=admin |
+| Dept Head | http://localhost:8091/TutorAI/depthead |
+| Vice Principal | http://localhost:8091/TutorAI/vp |
+| Principal | http://localhost:8091/TutorAI/principal |
+| District Admin | http://localhost:8091/TutorAI/district |
+| School Admin | http://localhost:8091/TutorAI/schooladmin |
+| Super Admin | http://localhost:8091/TutorAI/admin?token=admin |
+| Parent | http://localhost:8091/TutorAI/parent |
 | Login | http://localhost:8091/TutorAI/auth/login |
 
 ---
@@ -426,7 +432,7 @@ Framework: Jest with ts-jest
 | Authentication | 100+ | Login, RBAC, session management |
 | Payment Services | 100+ | All 5 gateway integrations |
 
-**Total: 745+ unit tests**
+**Total: 851 unit tests**
 
 Run tests:
 ```bash

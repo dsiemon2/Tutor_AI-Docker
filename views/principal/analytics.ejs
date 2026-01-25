@@ -1,0 +1,119 @@
+<%- include('../layouts/principal', { body: `
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="mb-0">School Analytics</h4>
+</div>
+
+<!-- Summary Stats -->
+<div class="row g-4 mb-4">
+  <div class="col-md-4">
+    <div class="stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Total Sessions</div>
+          <div class="stat-value">${analytics?.totalSessions || 0}</div>
+        </div>
+        <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+          <i class="bi bi-chat-dots"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Active (Last 7 Days)</div>
+          <div class="stat-value">${analytics?.activeSessions || 0}</div>
+        </div>
+        <div class="stat-icon bg-success bg-opacity-10 text-success">
+          <i class="bi bi-activity"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Total Messages</div>
+          <div class="stat-value">${analytics?.totalMessages || 0}</div>
+        </div>
+        <div class="stat-icon bg-info bg-opacity-10 text-info">
+          <i class="bi bi-envelope"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Sessions by Subject -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-book me-2"></i>Sessions by Subject</h5>
+      </div>
+      <div class="card-body p-0">
+        <div class="list-group list-group-flush">
+          ${analytics?.subjectStats && analytics.subjectStats.length > 0 ? analytics.subjectStats.map(stat =>
+            '<div class="list-group-item d-flex justify-content-between align-items-center">' +
+              '<span>' + (stat.subjectName || 'Unknown Subject') + '</span>' +
+              '<span class="badge bg-primary rounded-pill">' + stat._count.id + '</span>' +
+            '</div>'
+          ).join('') : '<div class="p-4 text-center text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No subject data available</div>'}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Students by Grade Level -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-people me-2"></i>Students by Grade Level</h5>
+      </div>
+      <div class="card-body p-0">
+        <div class="list-group list-group-flush">
+          ${analytics?.gradeStats && analytics.gradeStats.length > 0 ? analytics.gradeStats.map(stat => {
+            const gradeDisplay = stat.gradeLevel === null ? 'Unknown' : stat.gradeLevel < 0 ? 'Pre-K' : stat.gradeLevel === 0 ? 'Kindergarten' : 'Grade ' + stat.gradeLevel;
+            return '<div class="list-group-item d-flex justify-content-between align-items-center">' +
+              '<span>' + gradeDisplay + '</span>' +
+              '<span class="badge bg-success rounded-pill">' + stat._count.id + '</span>' +
+            '</div>';
+          }).join('') : '<div class="p-4 text-center text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No grade data available</div>'}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Analytics Overview -->
+<div class="card mt-4">
+  <div class="card-header">
+    <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Analytics Overview</h5>
+  </div>
+  <div class="card-body">
+    <div class="row">
+      <div class="col-md-6">
+        <h6 class="text-muted">What These Metrics Mean</h6>
+        <ul>
+          <li><strong>Total Sessions</strong>: All tutoring sessions ever started at your school</li>
+          <li><strong>Active Sessions</strong>: Sessions started in the last 7 days</li>
+          <li><strong>Total Messages</strong>: All messages exchanged during tutoring sessions</li>
+          <li><strong>Sessions by Subject</strong>: Which subjects are most used for tutoring</li>
+          <li><strong>Students by Grade</strong>: Distribution of students across grade levels</li>
+        </ul>
+      </div>
+      <div class="col-md-6">
+        <h6 class="text-muted">Tips for Improvement</h6>
+        <ul>
+          <li>Encourage teachers to recommend the AI tutor for struggling students</li>
+          <li>Review which subjects have low engagement and investigate why</li>
+          <li>Share success stories with students to boost adoption</li>
+          <li>Monitor grade levels with low participation</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+`, activePage: 'analytics', pageTitle: 'School Analytics' }) %>

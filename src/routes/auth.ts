@@ -166,6 +166,14 @@ router.post('/login',
     switch (user.role) {
       case 'SUPER_ADMIN':
         return res.redirect(`${config.basePath}/admin`);
+      case 'DISTRICT_ADMIN':
+        return res.redirect(`${config.basePath}/district`);
+      case 'PRINCIPAL':
+        return res.redirect(`${config.basePath}/principal`);
+      case 'VICE_PRINCIPAL':
+        return res.redirect(`${config.basePath}/vp`);
+      case 'DEPARTMENT_HEAD':
+        return res.redirect(`${config.basePath}/depthead`);
       case 'SCHOOL_ADMIN':
         return res.redirect(`${config.basePath}/schooladmin`);
       case 'TEACHER':

@@ -1,0 +1,39 @@
+<%- include('../layouts/principal', { body: `
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="mb-0">All Teachers</h4>
+  <span class="badge bg-primary fs-6">${teachers?.length || 0} Teachers</span>
+</div>
+
+<div class="card">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="bg-light">
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Classes</th>
+            <th>Students</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${teachers && teachers.length > 0 ? teachers.map(teacher => {
+            const classCount = teacher.classesAsTeacher?.length || 0;
+            const studentCount = teacher.classesAsTeacher?.reduce((sum, tc) => sum + (tc.class?.students?.length || 0), 0) || 0;
+            return '<tr>' +
+              '<td><strong>' + teacher.firstName + ' ' + teacher.lastName + '</strong></td>' +
+              '<td>' + teacher.email + '</td>' +
+              '<td><span class="badge bg-' + (teacher.role === 'DEPARTMENT_HEAD' ? 'info' : 'primary') + '">' + teacher.role + '</span></td>' +
+              '<td>' + classCount + '</td>' +
+              '<td>' + studentCount + '</td>' +
+              '<td><a href="' + (typeof basePath !== 'undefined' ? basePath : '') + '/principal/teachers/' + teacher.id + '" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye me-1"></i>View</a></td>' +
+            '</tr>';
+          }).join('') : '<tr><td colspan="6" class="text-center text-muted py-4"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No teachers found</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+`, activePage: 'teachers', pageTitle: 'Teachers' }) %>

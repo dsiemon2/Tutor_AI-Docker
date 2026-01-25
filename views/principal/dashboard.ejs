@@ -1,0 +1,151 @@
+<%- include('../layouts/principal', { body: `
+<!-- School Info -->
+${school ? '<div class="alert alert-success mb-4"><i class="bi bi-building me-2"></i><strong>' + school.name + '</strong> - Principal Portal</div>' : ''}
+
+<!-- Stats Cards -->
+<div class="row g-4 mb-4">
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Total Teachers</div>
+          <div class="stat-value">${stats?.totalTeachers || 0}</div>
+        </div>
+        <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+          <i class="bi bi-person-workspace"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Total Students</div>
+          <div class="stat-value">${stats?.totalStudents || 0}</div>
+        </div>
+        <div class="stat-icon bg-info bg-opacity-10 text-info">
+          <i class="bi bi-people"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Total Classes</div>
+          <div class="stat-value">${stats?.totalClasses || 0}</div>
+        </div>
+        <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+          <i class="bi bi-journal-bookmark"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="stat-label">Active Sessions</div>
+          <div class="stat-value">${stats?.totalSessions || 0}</div>
+        </div>
+        <div class="stat-icon bg-success bg-opacity-10 text-success">
+          <i class="bi bi-chat-dots"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Quick Links -->
+  <div class="col-lg-4">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-lightning me-2"></i>Quick Links</h5>
+      </div>
+      <div class="card-body">
+        <div class="d-grid gap-2">
+          <a href="${typeof basePath !== 'undefined' ? basePath : ''}/principal/teachers" class="btn btn-outline-primary text-start">
+            <i class="bi bi-person-workspace me-2"></i>View All Teachers
+          </a>
+          <a href="${typeof basePath !== 'undefined' ? basePath : ''}/principal/students" class="btn btn-outline-primary text-start">
+            <i class="bi bi-people me-2"></i>View All Students
+          </a>
+          <a href="${typeof basePath !== 'undefined' ? basePath : ''}/principal/classes" class="btn btn-outline-primary text-start">
+            <i class="bi bi-journal-bookmark me-2"></i>View All Classes
+          </a>
+          <a href="${typeof basePath !== 'undefined' ? basePath : ''}/principal/analytics" class="btn btn-outline-primary text-start">
+            <i class="bi bi-graph-up me-2"></i>View Analytics
+          </a>
+          <a href="${typeof basePath !== 'undefined' ? basePath : ''}/principal/settings" class="btn btn-outline-primary text-start">
+            <i class="bi bi-gear me-2"></i>School Settings
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Tutoring Sessions -->
+  <div class="col-lg-8">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Recent Tutoring Sessions</h5>
+      </div>
+      <div class="card-body p-0">
+        <div class="list-group list-group-flush">
+          ${recentSessions && recentSessions.length > 0 ? recentSessions.map(session => '<div class="list-group-item"><div class="d-flex justify-content-between align-items-center"><div><strong>' + (session.student?.firstName || 'Unknown') + ' ' + (session.student?.lastName || '') + '</strong><br><small class="text-muted">' + (session.subject?.name || 'General Tutoring') + '</small></div><div class="text-end"><span class="badge bg-' + (session.status === 'COMPLETED' ? 'success' : session.status === 'IN_PROGRESS' ? 'primary' : 'secondary') + '">' + (session.status || 'Unknown') + '</span><br><small class="text-muted">' + new Date(session.startedAt).toLocaleDateString() + '</small></div></div></div>').join('') : '<div class="p-4 text-center text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No recent tutoring sessions</div>'}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Overview Cards -->
+<div class="row g-4 mt-2">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>School Overview</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6">
+            <h6 class="text-muted">About This Portal</h6>
+            <p>Welcome to the Principal Portal. From here you can:</p>
+            <ul>
+              <li>Monitor all teachers and their class assignments</li>
+              <li>Track student enrollment and progress</li>
+              <li>View class schedules and configurations</li>
+              <li>Analyze school-wide tutoring usage</li>
+              <li>Manage school settings and preferences</li>
+            </ul>
+          </div>
+          <div class="col-md-6">
+            <h6 class="text-muted">Quick Stats</h6>
+            <table class="table table-sm">
+              <tr>
+                <td>Teachers</td>
+                <td class="text-end fw-bold">${stats?.totalTeachers || 0}</td>
+              </tr>
+              <tr>
+                <td>Students</td>
+                <td class="text-end fw-bold">${stats?.totalStudents || 0}</td>
+              </tr>
+              <tr>
+                <td>Classes</td>
+                <td class="text-end fw-bold">${stats?.totalClasses || 0}</td>
+              </tr>
+              <tr>
+                <td>Tutoring Sessions</td>
+                <td class="text-end fw-bold">${stats?.totalSessions || 0}</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`, activePage: 'dashboard', pageTitle: 'Principal Dashboard' }) %>

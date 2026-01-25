@@ -28,6 +28,10 @@ import teacherRoutes from './routes/teacher';
 import apiRoutes from './routes/api';
 import adminRoutes from './routes/admin';
 import schoolAdminRoutes from './routes/schooladmin';
+import principalRoutes from './routes/principal';
+import deptHeadRoutes from './routes/depthead';
+import districtRoutes from './routes/district';
+import vpRoutes from './routes/vp';
 import coppaRoutes from './routes/coppa';
 import parentRoutes from './routes/parent';
 
@@ -148,6 +152,22 @@ app.use(`${config.basePath}/admin`, adminRoutes);
 // School Admin routes
 app.use('/schooladmin', schoolAdminRoutes);
 app.use(`${config.basePath}/schooladmin`, schoolAdminRoutes);
+
+// Principal Portal routes
+app.use('/principal', principalRoutes);
+app.use(`${config.basePath}/principal`, principalRoutes);
+
+// Department Head routes
+app.use('/depthead', deptHeadRoutes);
+app.use(`${config.basePath}/depthead`, deptHeadRoutes);
+
+// District Admin routes
+app.use('/district', districtRoutes);
+app.use(`${config.basePath}/district`, districtRoutes);
+
+// Vice Principal routes
+app.use('/vp', vpRoutes);
+app.use(`${config.basePath}/vp`, vpRoutes);
 
 // Parent Portal routes
 app.use('/parent', parentRoutes);

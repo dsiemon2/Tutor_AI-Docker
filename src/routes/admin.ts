@@ -2649,4 +2649,344 @@ router.get('/gamification', async (req, res) => {
   }
 });
 
+// =====================
+// CURRICULUM CRUD ROUTES (Subject Categories, Subjects, Topics)
+// =====================
+
+// --- Subject Categories ---
+
+// Create Subject Category
+router.post('/subjects/categories', async (req, res) => {
+  try {
+    const { code, name, description, icon, color, order, isActive } = req.body;
+
+    await prisma.subjectCategory.create({
+      data: {
+        code,
+        name,
+        description: description || null,
+        icon: icon || null,
+        color: color || null,
+        order: order ? parseInt(order) : 0,
+        isActive: isActive === 'on' || isActive === 'true' || isActive === true
+      }
+    });
+
+    res.redirect(`${config.basePath}/admin/subjects?token=${req.query.token || config.adminToken}`);
+  } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Create subject category error:');
+    res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
+  }
+});
+
+// Update Subject Category
+router.post('/subjects/categories/:id', async (req, res) => {
+  try {
+    const { code, name, description, icon, color, order, isActive } = req.body;
+
+    await prisma.subjectCategory.update({
+      where: { id: req.params.id },
+      data: {
+        code,
+        name,
+        description: description || null,
+        icon: icon || null,
+        color: color || null,
+        order: order ? parseInt(order) : 0,
+        isActive: isActive === 'on' || isActive === 'true'
+      }
+    });
+
+    res.redirect(`${config.basePath}/admin/subjects?token=${req.query.token || config.adminToken}`);
+  } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Update subject category error:');
+    res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
+  }
+});
+
+// Delete Subject Category
+router.post('/subjects/categories/:id/delete', async (req, res) => {
+  try {
+    // Check if category has subjects
+    const subjectCount = await prisma.subject.count({
+      where: { categoryId: req.params.id }
+    });
+
+    if (subjectCount > 0) {
+      // Redirect with error message in query string
+      return res.redirect(`${config.basePath}/admin/subjects?token=${req.query.token || config.adminToken}&error=Category has subjects. Delete subjects first.`);
+    }
+
+    await prisma.subjectCategory.delete({
+      where: { id: req.params.id }
+    });
+
+    res.redirect(`${config.basePath}/admin/subjects?token=${req.query.token || config.adminToken}`);
+  } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Delete subject category error:');
+    res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
+  }
+});
+
+// --- Subjects ---
+
+// Create Subject
+router.post('/subjects', async (req, res) => {
+  try {
+    const { code, name, description, categoryId, gradeRange, order, isActive } = req.body;
+
+    await prisma.subject.create({
+      data: {
+        code,
+        name,
+        description: description || null,
+        categoryId,
+        gradeRange: gradeRange || null,
+        order: order ? parseInt(order) : 0,
+        isActive: isActive === 'on' || isActive === 'true' || isActive === true
+      }
+    });
+
+    res.redirect(`${config.basePath}/admin/subjects?token=${req.query.token || config.adminToken}`);
+  } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Create subject error:');
+    res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
+  }
+});
+
+// Edit Subject Form
+router.get('/subjects/:id/edit', async (req, res) => {
+  try {
+    const branding = await getBranding();
+    const subject = await prisma.subject.findUnique({
+      where: { id: req.params.id },
+      include: {
+        category: true,
+        _count: { select: { topics: true } }
+      }
+    });
+
+    if (!subject) {
+      return res.status(404).render('errors/404', { basePath: config.basePath, title: 'Subject Not Found' });
+    }
+
+    const categories = await prisma.subjectCategory.findMany({
+      orderBy: { order: 'asc' }
+    });
+
+    res.render('admin/subject-edit', {
+      title: `Edit ${subject.name} - TutorAI Admin`,
+      branding,
+      token: req.query.token || config.adminToken,
+      basePath: config.basePath,
+      subject,
+      categories
+    });
+  } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Edit subject form error:');
+    res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
+  }
+});
+
+// Update Subject
+router.post('/subjects/:id', async (req, res) => {
+  try {
+    const { code, name, description, categoryId, gradeRange, order, isActive } = req.body;
+
+    await prisma.subject.update({
+      where: { id: req.params.id },
+      data: {
+        code,
+        name,
+        description: description || null,
+        categoryId,
+        gradeRange: gradeRange || null,
+        order: order ? parseInt(order) : 0,
+        isActive: isActive === 'on' || isActive === 'true'
+      }
+    });
+
+    res.redirect(`${config.basePath}/admin/subjects?token=${req.query.token || config.adminToken}`);
+  } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Update subject error:');
+    res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
+  }
+});
+
+// Delete Subject
+router.post('/subjects/:id/delete', async (req, res) => {
+  try {
+    // Check if subject has topics
+    const topicCount = await prisma.topic.count({
+      where: { subjectId: req.params.id }
+    });
+
+    if (topicCount > 0) {
+      return res.redirect(`${config.basePath}/admin/subjects?token=${req.query.token || config.adminToken}&error=Subject has topics. Delete topics first.`);
+    }
+
+    await prisma.subject.delete({
+      where: { id: req.params.id }
+    });
+
+    res.redirect(`${config.basePath}/admin/subjects?token=${req.query.token || config.adminToken}`);
+  } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Delete subject error:');
+    res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
+  }
+});
+
+// --- Topics ---
+
+// List Topics for a Subject
+router.get('/subjects/:subjectId/topics', async (req, res) => {
+  try {
+    const branding = await getBranding();
+    const subject = await prisma.subject.findUnique({
+      where: { id: req.params.subjectId },
+      include: {
+        category: true,
+        topics: {
+          orderBy: { order: 'asc' }
+        }
+      }
+    });
+
+    if (!subject) {
+      return res.status(404).render('errors/404', { basePath: config.basePath, title: 'Subject Not Found' });
+    }
+
+    res.render('admin/topics', {
+      title: `Topics - ${subject.name} - TutorAI Admin`,
+      branding,
+      token: req.query.token || config.adminToken,
+      basePath: config.basePath,
+      subject
+    });
+  } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'List topics error:');
+    res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
+  }
+});
+
+// Create Topic
+router.post('/subjects/:subjectId/topics', async (req, res) => {
+  try {
+    const { code, name, description, gradeLevel, difficulty, order, isActive } = req.body;
+
+    await prisma.topic.create({
+      data: {
+        code,
+        name,
+        description: description || null,
+        subjectId: req.params.subjectId,
+        gradeLevel: gradeLevel ? parseInt(gradeLevel) : null,
+        difficulty: difficulty ? parseInt(difficulty) : 1,
+        order: order ? parseInt(order) : 0,
+        isActive: isActive === 'on' || isActive === 'true' || isActive === true
+      }
+    });
+
+    res.redirect(`${config.basePath}/admin/subjects/${req.params.subjectId}/topics?token=${req.query.token || config.adminToken}`);
+  } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Create topic error:');
+    res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
+  }
+});
+
+// Edit Topic Form
+router.get('/topics/:id/edit', async (req, res) => {
+  try {
+    const branding = await getBranding();
+    const topic = await prisma.topic.findUnique({
+      where: { id: req.params.id },
+      include: {
+        subject: {
+          include: { category: true }
+        }
+      }
+    });
+
+    if (!topic) {
+      return res.status(404).render('errors/404', { basePath: config.basePath, title: 'Topic Not Found' });
+    }
+
+    res.render('admin/topic-edit', {
+      title: `Edit ${topic.name} - TutorAI Admin`,
+      branding,
+      token: req.query.token || config.adminToken,
+      basePath: config.basePath,
+      topic
+    });
+  } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Edit topic form error:');
+    res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
+  }
+});
+
+// Update Topic
+router.post('/topics/:id', async (req, res) => {
+  try {
+    const { code, name, description, gradeLevel, difficulty, order, isActive } = req.body;
+
+    const topic = await prisma.topic.findUnique({
+      where: { id: req.params.id }
+    });
+
+    if (!topic) {
+      return res.status(404).render('errors/404', { basePath: config.basePath, title: 'Topic Not Found' });
+    }
+
+    await prisma.topic.update({
+      where: { id: req.params.id },
+      data: {
+        code,
+        name,
+        description: description || null,
+        gradeLevel: gradeLevel ? parseInt(gradeLevel) : null,
+        difficulty: difficulty ? parseInt(difficulty) : 1,
+        order: order ? parseInt(order) : 0,
+        isActive: isActive === 'on' || isActive === 'true'
+      }
+    });
+
+    res.redirect(`${config.basePath}/admin/subjects/${topic.subjectId}/topics?token=${req.query.token || config.adminToken}`);
+  } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Update topic error:');
+    res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
+  }
+});
+
+// Delete Topic
+router.post('/topics/:id/delete', async (req, res) => {
+  try {
+    const topic = await prisma.topic.findUnique({
+      where: { id: req.params.id }
+    });
+
+    if (!topic) {
+      return res.status(404).render('errors/404', { basePath: config.basePath, title: 'Topic Not Found' });
+    }
+
+    // Check for related records
+    const [progressCount, sessionCount] = await Promise.all([
+      prisma.studentProgress.count({ where: { topicId: req.params.id } }),
+      prisma.tutoringSession.count({ where: { topicId: req.params.id } })
+    ]);
+
+    if (progressCount > 0 || sessionCount > 0) {
+      return res.redirect(`${config.basePath}/admin/subjects/${topic.subjectId}/topics?token=${req.query.token || config.adminToken}&error=Topic has student progress or sessions. Cannot delete.`);
+    }
+
+    await prisma.topic.delete({
+      where: { id: req.params.id }
+    });
+
+    res.redirect(`${config.basePath}/admin/subjects/${topic.subjectId}/topics?token=${req.query.token || config.adminToken}`);
+  } catch (error) {
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Delete topic error:');
+    res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
+  }
+});
+
 export default router;

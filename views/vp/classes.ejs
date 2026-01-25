@@ -1,0 +1,63 @@
+<%- include('../layouts/vp', { body: `
+<!-- Classes Overview -->
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0"><i class="bi bi-journal-bookmark me-2"></i>All Classes (${classes?.length || 0})</h5>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Class Name</th>
+            <th>Subject</th>
+            <th>Category</th>
+            <th>Teachers</th>
+            <th>Students</th>
+            <th>Sessions</th>
+            <th>Avg Progress</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${classes && classes.length > 0 ? classes.map(cls => {
+            const progressClass = cls.avgProgress >= 70 ? 'success' : cls.avgProgress >= 40 ? 'warning' : 'danger';
+            const teachers = cls.teachers?.map(t => t.teacher.firstName + ' ' + t.teacher.lastName).join(', ') || 'N/A';
+            return '<tr><td><strong>' + cls.name + '</strong></td><td>' + (cls.subject?.name || 'N/A') + '</td><td><small class="text-muted">' + (cls.subject?.category?.name || '-') + '</small></td><td>' + teachers + '</td><td><span class="badge bg-primary">' + (cls.students?.length || 0) + '</span></td><td><span class="badge bg-info">' + (cls.sessionCount || 0) + '</span></td><td><div class="d-flex align-items-center gap-2"><div class="progress flex-grow-1" style="height: 8px;"><div class="progress-bar bg-' + progressClass + '" style="width: ' + cls.avgProgress + '%;"></div></div><small>' + cls.avgProgress + '%</small></div></td></tr>';
+          }).join('') : '<tr><td colspan="7" class="text-center text-muted py-4"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No classes found</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Summary Stats -->
+<div class="row g-4 mt-4">
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-body text-center">
+        <i class="bi bi-journal-bookmark fs-1 text-primary mb-2"></i>
+        <h3 class="mb-1">${classes?.length || 0}</h3>
+        <p class="text-muted mb-0">Total Classes</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-body text-center">
+        <i class="bi bi-people fs-1 text-success mb-2"></i>
+        <h3 class="mb-1">${classes ? classes.reduce((sum, c) => sum + (c.students?.length || 0), 0) : 0}</h3>
+        <p class="text-muted mb-0">Total Enrollments</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-body text-center">
+        <i class="bi bi-person-workspace fs-1 text-info mb-2"></i>
+        <h3 class="mb-1">${classes ? new Set(classes.flatMap(c => c.teachers?.map(t => t.teacher.id) || [])).size : 0}</h3>
+        <p class="text-muted mb-0">Teachers</p>
+      </div>
+    </div>
+  </div>
+</div>
+`, activePage: 'classes', pageTitle: 'Classes Overview' }) %>
