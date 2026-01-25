@@ -3,47 +3,13 @@
  * Tests for admin CRUD operations: Knowledge Base, Logic Rules, Functions, SMS, Webhooks
  */
 
-// Mock Prisma
-const mockPrisma = {
-  knowledgeDocument: {
-    findMany: jest.fn(),
-    findUnique: jest.fn(),
-    create: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn()
-  },
-  logicRule: {
-    findMany: jest.fn(),
-    findUnique: jest.fn(),
-    create: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn()
-  },
-  aIFunction: {
-    findMany: jest.fn(),
-    findUnique: jest.fn(),
-    create: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn()
-  },
-  sMSConfig: {
-    findFirst: jest.fn(),
-    upsert: jest.fn()
-  },
-  webhook: {
-    findMany: jest.fn(),
-    findUnique: jest.fn(),
-    create: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn()
-  },
-  branding: {
-    findFirst: jest.fn()
-  }
-};
+import { createMockPrisma, MockPrismaClient } from '../mocks/prisma.mock';
+
+// Create the mock instance
+const adminMockPrisma: MockPrismaClient = createMockPrisma();
 
 jest.mock('../../config/database', () => ({
-  prisma: mockPrisma
+  prisma: adminMockPrisma
 }));
 
 jest.mock('../../config', () => ({
@@ -67,16 +33,16 @@ describe('Admin Knowledge Base CRUD', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockPrisma.branding.findFirst.mockResolvedValue({
+    adminMockPrisma.branding.findFirst.mockResolvedValue({
       primaryColor: '#0ea5e9'
     });
   });
 
   describe('List Documents', () => {
     it('should return all documents', async () => {
-      mockPrisma.knowledgeDocument.findMany.mockResolvedValue([mockDocument]);
+      adminMockPrisma.knowledgeDocument.findMany.mockResolvedValue([mockDocument]);
 
-      const documents = await mockPrisma.knowledgeDocument.findMany({
+      const documents = await adminMockPrisma.knowledgeDocument.findMany({
         orderBy: { createdAt: 'desc' }
       });
 
@@ -87,9 +53,9 @@ describe('Admin Knowledge Base CRUD', () => {
 
   describe('Create Document', () => {
     it('should create document with required fields', async () => {
-      mockPrisma.knowledgeDocument.create.mockResolvedValue(mockDocument);
+      adminMockPrisma.knowledgeDocument.create.mockResolvedValue(mockDocument);
 
-      const result = await mockPrisma.knowledgeDocument.create({
+      const result = await adminMockPrisma.knowledgeDocument.create({
         data: {
           title: 'Algebra Fundamentals',
           content: 'This document covers basic algebra concepts...',
@@ -104,9 +70,9 @@ describe('Admin Knowledge Base CRUD', () => {
 
     it('should support optional tags', async () => {
       const docWithTags = { ...mockDocument, tags: 'algebra, math' };
-      mockPrisma.knowledgeDocument.create.mockResolvedValue(docWithTags);
+      adminMockPrisma.knowledgeDocument.create.mockResolvedValue(docWithTags);
 
-      const result = await mockPrisma.knowledgeDocument.create({
+      const result = await adminMockPrisma.knowledgeDocument.create({
         data: {
           title: 'Algebra Fundamentals',
           content: 'Content here',
@@ -121,9 +87,9 @@ describe('Admin Knowledge Base CRUD', () => {
   describe('Update Document', () => {
     it('should update document fields', async () => {
       const updatedDoc = { ...mockDocument, title: 'Updated Title', isActive: false };
-      mockPrisma.knowledgeDocument.update.mockResolvedValue(updatedDoc);
+      adminMockPrisma.knowledgeDocument.update.mockResolvedValue(updatedDoc);
 
-      const result = await mockPrisma.knowledgeDocument.update({
+      const result = await adminMockPrisma.knowledgeDocument.update({
         where: { id: 'doc-123' },
         data: { title: 'Updated Title', isActive: false }
       });
@@ -135,13 +101,13 @@ describe('Admin Knowledge Base CRUD', () => {
 
   describe('Delete Document', () => {
     it('should delete document', async () => {
-      mockPrisma.knowledgeDocument.delete.mockResolvedValue(mockDocument);
+      adminMockPrisma.knowledgeDocument.delete.mockResolvedValue(mockDocument);
 
-      await mockPrisma.knowledgeDocument.delete({
+      await adminMockPrisma.knowledgeDocument.delete({
         where: { id: 'doc-123' }
       });
 
-      expect(mockPrisma.knowledgeDocument.delete).toHaveBeenCalledWith({
+      expect(adminMockPrisma.knowledgeDocument.delete).toHaveBeenCalledWith({
         where: { id: 'doc-123' }
       });
     });
@@ -171,9 +137,9 @@ describe('Admin Logic Rules CRUD', () => {
         { ...mockRule, priority: 10 },
         { ...mockRule, id: 'rule-2', priority: 5 }
       ];
-      mockPrisma.logicRule.findMany.mockResolvedValue(rules);
+      adminMockPrisma.logicRule.findMany.mockResolvedValue(rules);
 
-      const result = await mockPrisma.logicRule.findMany({
+      const result = await adminMockPrisma.logicRule.findMany({
         orderBy: { priority: 'desc' }
       });
 
@@ -183,9 +149,9 @@ describe('Admin Logic Rules CRUD', () => {
 
   describe('Create Rule', () => {
     it('should create rule with condition and action', async () => {
-      mockPrisma.logicRule.create.mockResolvedValue(mockRule);
+      adminMockPrisma.logicRule.create.mockResolvedValue(mockRule);
 
-      const result = await mockPrisma.logicRule.create({
+      const result = await adminMockPrisma.logicRule.create({
         data: {
           name: 'Struggling Student Support',
           condition: 'student.incorrectAnswers >= 3',
@@ -211,9 +177,9 @@ describe('Admin Logic Rules CRUD', () => {
   describe('Update Rule', () => {
     it('should toggle rule active status', async () => {
       const inactiveRule = { ...mockRule, isActive: false };
-      mockPrisma.logicRule.update.mockResolvedValue(inactiveRule);
+      adminMockPrisma.logicRule.update.mockResolvedValue(inactiveRule);
 
-      const result = await mockPrisma.logicRule.update({
+      const result = await adminMockPrisma.logicRule.update({
         where: { id: 'rule-123' },
         data: { isActive: false }
       });
@@ -241,9 +207,9 @@ describe('Admin AI Functions CRUD', () => {
 
   describe('List Functions', () => {
     it('should return all functions', async () => {
-      mockPrisma.aIFunction.findMany.mockResolvedValue([mockFunction]);
+      adminMockPrisma.aIFunction.findMany.mockResolvedValue([mockFunction]);
 
-      const functions = await mockPrisma.aIFunction.findMany({
+      const functions = await adminMockPrisma.aIFunction.findMany({
         orderBy: { createdAt: 'desc' }
       });
 
@@ -254,9 +220,9 @@ describe('Admin AI Functions CRUD', () => {
 
   describe('Create Function', () => {
     it('should create function with JSON parameters', async () => {
-      mockPrisma.aIFunction.create.mockResolvedValue(mockFunction);
+      adminMockPrisma.aIFunction.create.mockResolvedValue(mockFunction);
 
-      const result = await mockPrisma.aIFunction.create({
+      const result = await adminMockPrisma.aIFunction.create({
         data: {
           name: 'generatePracticeProblems',
           description: 'Generates practice problems',
@@ -303,9 +269,9 @@ describe('Admin SMS Settings', () => {
 
   describe('Get SMS Config', () => {
     it('should return default SMS config', async () => {
-      mockPrisma.sMSConfig.findFirst.mockResolvedValue(mockSMSConfig);
+      adminMockPrisma.sMSConfig.findFirst.mockResolvedValue(mockSMSConfig);
 
-      const config = await mockPrisma.sMSConfig.findFirst({
+      const config = await adminMockPrisma.sMSConfig.findFirst({
         where: { id: 'default' }
       });
 
@@ -314,9 +280,9 @@ describe('Admin SMS Settings', () => {
     });
 
     it('should return default values if no config exists', async () => {
-      mockPrisma.sMSConfig.findFirst.mockResolvedValue(null);
+      adminMockPrisma.sMSConfig.findFirst.mockResolvedValue(null);
 
-      const config = await mockPrisma.sMSConfig.findFirst({
+      const config = await adminMockPrisma.sMSConfig.findFirst({
         where: { id: 'default' }
       });
 
@@ -326,9 +292,9 @@ describe('Admin SMS Settings', () => {
 
   describe('Update SMS Config', () => {
     it('should upsert SMS config', async () => {
-      mockPrisma.sMSConfig.upsert.mockResolvedValue(mockSMSConfig);
+      adminMockPrisma.sMSConfig.upsert.mockResolvedValue(mockSMSConfig);
 
-      const result = await mockPrisma.sMSConfig.upsert({
+      const result = await adminMockPrisma.sMSConfig.upsert({
         where: { id: 'default' },
         update: { isEnabled: true, accountSid: 'AC1234567890' },
         create: { id: 'default', isEnabled: true, accountSid: 'AC1234567890' }
@@ -368,9 +334,9 @@ describe('Admin Webhooks CRUD', () => {
 
   describe('List Webhooks', () => {
     it('should return all webhooks', async () => {
-      mockPrisma.webhook.findMany.mockResolvedValue([mockWebhook]);
+      adminMockPrisma.webhook.findMany.mockResolvedValue([mockWebhook]);
 
-      const webhooks = await mockPrisma.webhook.findMany({
+      const webhooks = await adminMockPrisma.webhook.findMany({
         orderBy: { createdAt: 'desc' }
       });
 
@@ -381,9 +347,9 @@ describe('Admin Webhooks CRUD', () => {
 
   describe('Create Webhook', () => {
     it('should create webhook with events as JSON array', async () => {
-      mockPrisma.webhook.create.mockResolvedValue(mockWebhook);
+      adminMockPrisma.webhook.create.mockResolvedValue(mockWebhook);
 
-      const result = await mockPrisma.webhook.create({
+      const result = await adminMockPrisma.webhook.create({
         data: {
           name: 'LMS Integration',
           url: 'https://lms.school.edu/webhook',
@@ -420,9 +386,9 @@ describe('Admin Webhooks CRUD', () => {
   describe('Update Webhook', () => {
     it('should update last triggered timestamp', async () => {
       const triggeredWebhook = { ...mockWebhook, lastTriggeredAt: new Date() };
-      mockPrisma.webhook.update.mockResolvedValue(triggeredWebhook);
+      adminMockPrisma.webhook.update.mockResolvedValue(triggeredWebhook);
 
-      const result = await mockPrisma.webhook.update({
+      const result = await adminMockPrisma.webhook.update({
         where: { id: 'webhook-123' },
         data: { lastTriggeredAt: new Date() }
       });
@@ -432,9 +398,9 @@ describe('Admin Webhooks CRUD', () => {
 
     it('should toggle webhook active status', async () => {
       const inactiveWebhook = { ...mockWebhook, isActive: false };
-      mockPrisma.webhook.update.mockResolvedValue(inactiveWebhook);
+      adminMockPrisma.webhook.update.mockResolvedValue(inactiveWebhook);
 
-      const result = await mockPrisma.webhook.update({
+      const result = await adminMockPrisma.webhook.update({
         where: { id: 'webhook-123' },
         data: { isActive: false }
       });
@@ -445,13 +411,13 @@ describe('Admin Webhooks CRUD', () => {
 
   describe('Delete Webhook', () => {
     it('should delete webhook', async () => {
-      mockPrisma.webhook.delete.mockResolvedValue(mockWebhook);
+      adminMockPrisma.webhook.delete.mockResolvedValue(mockWebhook);
 
-      await mockPrisma.webhook.delete({
+      await adminMockPrisma.webhook.delete({
         where: { id: 'webhook-123' }
       });
 
-      expect(mockPrisma.webhook.delete).toHaveBeenCalledWith({
+      expect(adminMockPrisma.webhook.delete).toHaveBeenCalledWith({
         where: { id: 'webhook-123' }
       });
     });

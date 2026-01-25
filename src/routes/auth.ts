@@ -3,7 +3,7 @@
 
 import { Router } from 'express';
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import crypto from 'crypto';
 import { prisma } from '../config/database';
 import { config } from '../config';
@@ -21,22 +21,7 @@ import { logUserAction, logSecurityEvent, AuditAction } from '../services/audit.
 
 const router = Router();
 
-// Extend Express Session
-declare module 'express-session' {
-  interface SessionData {
-    userId?: string;
-    schoolId?: string | null;
-    role?: string;
-    user?: {
-      id: string;
-      email: string;
-      firstName: string;
-      lastName: string;
-      role: string;
-      schoolId: string | null;
-    };
-  }
-}
+// Note: SessionData type is defined in middleware/auth.ts with all fields
 
 // Helper to get branding
 async function getBranding() {
@@ -882,6 +867,7 @@ router.post('/api/login', async (req, res) => {
     }
 
     // Generate JWT
+    const signOptions: SignOptions = { expiresIn: config.jwtExpiresIn as SignOptions['expiresIn'] };
     const token = jwt.sign(
       {
         userId: user.id,
@@ -890,7 +876,7 @@ router.post('/api/login', async (req, res) => {
         schoolId: user.schoolId
       },
       config.jwtSecret,
-      { expiresIn: config.jwtExpiresIn }
+      signOptions
     );
 
     // Update last login

@@ -167,7 +167,7 @@ router.get('/', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Department head dashboard error:');
+    logger.error('Department head dashboard error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -227,7 +227,7 @@ router.get('/teachers', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Department teachers error:');
+    logger.error('Department teachers error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -299,7 +299,7 @@ router.get('/teachers/:id', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Teacher detail error:');
+    logger.error('Teacher detail error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -354,7 +354,7 @@ router.get('/subjects', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Department subjects error:');
+    logger.error('Department subjects error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -436,7 +436,7 @@ router.get('/curriculum', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Curriculum error:');
+    logger.error('Curriculum error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -515,7 +515,7 @@ router.get('/students', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Department students error:');
+    logger.error('Department students error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -611,7 +611,7 @@ router.get('/analytics', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Department analytics error:');
+    logger.error('Department analytics error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -645,7 +645,7 @@ router.get('/settings', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Department settings error:');
+    logger.error('Department settings error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'

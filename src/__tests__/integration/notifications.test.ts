@@ -3,32 +3,13 @@
  * Tests for notifications CRUD and messaging
  */
 
-// Mock Prisma
-const mockPrisma = {
-  notification: {
-    findMany: jest.fn(),
-    findFirst: jest.fn(),
-    create: jest.fn(),
-    update: jest.fn(),
-    updateMany: jest.fn(),
-    delete: jest.fn(),
-    count: jest.fn()
-  },
-  message: {
-    findMany: jest.fn(),
-    findFirst: jest.fn(),
-    create: jest.fn(),
-    updateMany: jest.fn(),
-    delete: jest.fn(),
-    count: jest.fn()
-  },
-  user: {
-    findUnique: jest.fn()
-  }
-};
+import { createMockPrisma, MockPrismaClient } from '../mocks/prisma.mock';
+
+// Create the mock instance
+const notificationMockPrisma: MockPrismaClient = createMockPrisma();
 
 jest.mock('../../config/database', () => ({
-  prisma: mockPrisma
+  prisma: notificationMockPrisma
 }));
 
 jest.mock('../../config', () => ({
@@ -61,20 +42,20 @@ describe('Notification System', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockPrisma.user.findUnique.mockResolvedValue(mockUser);
+    notificationMockPrisma.user.findUnique.mockResolvedValue(mockUser);
   });
 
   describe('Get Notifications', () => {
     it('should return all notifications for user', async () => {
-      mockPrisma.notification.findMany.mockResolvedValue([mockNotification]);
-      mockPrisma.notification.count.mockResolvedValue(1);
+      notificationMockPrisma.notification.findMany.mockResolvedValue([mockNotification]);
+      notificationMockPrisma.notification.count.mockResolvedValue(1);
 
-      const notifications = await mockPrisma.notification.findMany({
+      const notifications = await notificationMockPrisma.notification.findMany({
         where: { userId: 'user-123' },
         orderBy: { createdAt: 'desc' }
       });
 
-      const unreadCount = await mockPrisma.notification.count({
+      const unreadCount = await notificationMockPrisma.notification.count({
         where: { userId: 'user-123', isRead: false }
       });
 
@@ -84,9 +65,9 @@ describe('Notification System', () => {
 
     it('should filter unread only notifications', async () => {
       const readNotification = { ...mockNotification, isRead: true };
-      mockPrisma.notification.findMany.mockResolvedValue([mockNotification]); // Only unread
+      notificationMockPrisma.notification.findMany.mockResolvedValue([mockNotification]); // Only unread
 
-      const notifications = await mockPrisma.notification.findMany({
+      const notifications = await notificationMockPrisma.notification.findMany({
         where: { userId: 'user-123', isRead: false }
       });
 
@@ -98,9 +79,9 @@ describe('Notification System', () => {
         ...mockNotification,
         id: `notif-${i}`
       }));
-      mockPrisma.notification.findMany.mockResolvedValue(notifications.slice(0, 20));
+      notificationMockPrisma.notification.findMany.mockResolvedValue(notifications.slice(0, 20));
 
-      const result = await mockPrisma.notification.findMany({
+      const result = await notificationMockPrisma.notification.findMany({
         where: { userId: 'user-123' },
         take: 20
       });
@@ -111,9 +92,9 @@ describe('Notification System', () => {
 
   describe('Create Notification', () => {
     it('should create notification with required fields', async () => {
-      mockPrisma.notification.create.mockResolvedValue(mockNotification);
+      notificationMockPrisma.notification.create.mockResolvedValue(mockNotification);
 
-      const result = await mockPrisma.notification.create({
+      const result = await notificationMockPrisma.notification.create({
         data: {
           userId: 'user-123',
           type: 'info',
@@ -136,9 +117,9 @@ describe('Notification System', () => {
 
     it('should support optional link field', async () => {
       const notifWithLink = { ...mockNotification, link: '/student/assignments/123' };
-      mockPrisma.notification.create.mockResolvedValue(notifWithLink);
+      notificationMockPrisma.notification.create.mockResolvedValue(notifWithLink);
 
-      const result = await mockPrisma.notification.create({
+      const result = await notificationMockPrisma.notification.create({
         data: {
           userId: 'user-123',
           type: 'info',
@@ -155,16 +136,16 @@ describe('Notification System', () => {
   describe('Mark Notification as Read', () => {
     it('should mark single notification as read', async () => {
       const readNotification = { ...mockNotification, isRead: true, readAt: new Date() };
-      mockPrisma.notification.findFirst.mockResolvedValue(mockNotification);
-      mockPrisma.notification.update.mockResolvedValue(readNotification);
+      notificationMockPrisma.notification.findFirst.mockResolvedValue(mockNotification);
+      notificationMockPrisma.notification.update.mockResolvedValue(readNotification);
 
-      const notification = await mockPrisma.notification.findFirst({
+      const notification = await notificationMockPrisma.notification.findFirst({
         where: { id: 'notif-123', userId: 'user-123' }
       });
 
       expect(notification).not.toBeNull();
 
-      const result = await mockPrisma.notification.update({
+      const result = await notificationMockPrisma.notification.update({
         where: { id: 'notif-123' },
         data: { isRead: true, readAt: new Date() }
       });
@@ -174,9 +155,9 @@ describe('Notification System', () => {
     });
 
     it('should mark all notifications as read', async () => {
-      mockPrisma.notification.updateMany.mockResolvedValue({ count: 5 });
+      notificationMockPrisma.notification.updateMany.mockResolvedValue({ count: 5 });
 
-      const result = await mockPrisma.notification.updateMany({
+      const result = await notificationMockPrisma.notification.updateMany({
         where: { userId: 'user-123', isRead: false },
         data: { isRead: true, readAt: new Date() }
       });
@@ -187,26 +168,26 @@ describe('Notification System', () => {
 
   describe('Delete Notification', () => {
     it('should delete notification belonging to user', async () => {
-      mockPrisma.notification.findFirst.mockResolvedValue(mockNotification);
-      mockPrisma.notification.delete.mockResolvedValue(mockNotification);
+      notificationMockPrisma.notification.findFirst.mockResolvedValue(mockNotification);
+      notificationMockPrisma.notification.delete.mockResolvedValue(mockNotification);
 
-      const notification = await mockPrisma.notification.findFirst({
+      const notification = await notificationMockPrisma.notification.findFirst({
         where: { id: 'notif-123', userId: 'user-123' }
       });
 
       expect(notification).not.toBeNull();
 
-      await mockPrisma.notification.delete({
+      await notificationMockPrisma.notification.delete({
         where: { id: 'notif-123' }
       });
 
-      expect(mockPrisma.notification.delete).toHaveBeenCalled();
+      expect(notificationMockPrisma.notification.delete).toHaveBeenCalled();
     });
 
     it('should not delete notification belonging to different user', async () => {
-      mockPrisma.notification.findFirst.mockResolvedValue(null);
+      notificationMockPrisma.notification.findFirst.mockResolvedValue(null);
 
-      const notification = await mockPrisma.notification.findFirst({
+      const notification = await notificationMockPrisma.notification.findFirst({
         where: { id: 'notif-123', userId: 'different-user' }
       });
 
@@ -255,9 +236,9 @@ describe('Messaging System', () => {
         mockMessage,
         { ...mockMessage, id: 'msg-124', senderId: 'teacher-456', receiverId: 'user-123' }
       ];
-      mockPrisma.message.findMany.mockResolvedValue(messages);
+      notificationMockPrisma.message.findMany.mockResolvedValue(messages);
 
-      const result = await mockPrisma.message.findMany({
+      const result = await notificationMockPrisma.message.findMany({
         where: {
           OR: [
             { senderId: 'user-123' },
@@ -298,9 +279,9 @@ describe('Messaging System', () => {
         mockMessage,
         { ...mockMessage, id: 'msg-2', senderId: 'teacher-456', receiverId: 'user-123', content: 'Sure, let me explain' }
       ];
-      mockPrisma.message.findMany.mockResolvedValue(messages);
+      notificationMockPrisma.message.findMany.mockResolvedValue(messages);
 
-      const result = await mockPrisma.message.findMany({
+      const result = await notificationMockPrisma.message.findMany({
         where: {
           OR: [
             { senderId: 'user-123', receiverId: 'teacher-456' },
@@ -314,9 +295,9 @@ describe('Messaging System', () => {
     });
 
     it('should mark messages as read when viewing', async () => {
-      mockPrisma.message.updateMany.mockResolvedValue({ count: 2 });
+      notificationMockPrisma.message.updateMany.mockResolvedValue({ count: 2 });
 
-      const result = await mockPrisma.message.updateMany({
+      const result = await notificationMockPrisma.message.updateMany({
         where: {
           senderId: 'teacher-456',
           receiverId: 'user-123',
@@ -331,16 +312,16 @@ describe('Messaging System', () => {
 
   describe('Send Message', () => {
     it('should create message with required fields', async () => {
-      mockPrisma.user.findUnique.mockResolvedValue(mockTeacher);
-      mockPrisma.message.create.mockResolvedValue(mockMessage);
+      notificationMockPrisma.user.findUnique.mockResolvedValue(mockTeacher);
+      notificationMockPrisma.message.create.mockResolvedValue(mockMessage);
 
-      const receiver = await mockPrisma.user.findUnique({
+      const receiver = await notificationMockPrisma.user.findUnique({
         where: { id: 'teacher-456' }
       });
 
       expect(receiver).not.toBeNull();
 
-      const result = await mockPrisma.message.create({
+      const result = await notificationMockPrisma.message.create({
         data: {
           senderId: 'user-123',
           receiverId: 'teacher-456',
@@ -354,9 +335,9 @@ describe('Messaging System', () => {
 
     it('should support optional subject', async () => {
       const messageWithSubject = { ...mockMessage, subject: 'Question about homework' };
-      mockPrisma.message.create.mockResolvedValue(messageWithSubject);
+      notificationMockPrisma.message.create.mockResolvedValue(messageWithSubject);
 
-      const result = await mockPrisma.message.create({
+      const result = await notificationMockPrisma.message.create({
         data: {
           senderId: 'user-123',
           receiverId: 'teacher-456',
@@ -377,9 +358,9 @@ describe('Messaging System', () => {
         parentId: 'msg-123',
         content: 'Here is the answer'
       };
-      mockPrisma.message.create.mockResolvedValue(reply);
+      notificationMockPrisma.message.create.mockResolvedValue(reply);
 
-      const result = await mockPrisma.message.create({
+      const result = await notificationMockPrisma.message.create({
         data: {
           senderId: 'teacher-456',
           receiverId: 'user-123',
@@ -392,8 +373,8 @@ describe('Messaging System', () => {
     });
 
     it('should create notification for receiver', async () => {
-      mockPrisma.message.create.mockResolvedValue(mockMessage);
-      mockPrisma.notification.create.mockResolvedValue({
+      notificationMockPrisma.message.create.mockResolvedValue(mockMessage);
+      notificationMockPrisma.notification.create.mockResolvedValue({
         id: 'notif-123',
         userId: 'teacher-456',
         type: 'info',
@@ -403,11 +384,11 @@ describe('Messaging System', () => {
       });
 
       // Simulate sending message and creating notification
-      const message = await mockPrisma.message.create({
+      const message = await notificationMockPrisma.message.create({
         data: { ...mockMessage }
       });
 
-      const notification = await mockPrisma.notification.create({
+      const notification = await notificationMockPrisma.notification.create({
         data: {
           userId: message.receiverId,
           type: 'info',
@@ -424,26 +405,26 @@ describe('Messaging System', () => {
 
   describe('Delete Message', () => {
     it('should allow sender to delete message', async () => {
-      mockPrisma.message.findFirst.mockResolvedValue(mockMessage);
-      mockPrisma.message.delete.mockResolvedValue(mockMessage);
+      notificationMockPrisma.message.findFirst.mockResolvedValue(mockMessage);
+      notificationMockPrisma.message.delete.mockResolvedValue(mockMessage);
 
-      const message = await mockPrisma.message.findFirst({
+      const message = await notificationMockPrisma.message.findFirst({
         where: { id: 'msg-123', senderId: 'user-123' }
       });
 
       expect(message).not.toBeNull();
 
-      await mockPrisma.message.delete({
+      await notificationMockPrisma.message.delete({
         where: { id: 'msg-123' }
       });
 
-      expect(mockPrisma.message.delete).toHaveBeenCalled();
+      expect(notificationMockPrisma.message.delete).toHaveBeenCalled();
     });
 
     it('should not allow non-sender to delete', async () => {
-      mockPrisma.message.findFirst.mockResolvedValue(null);
+      notificationMockPrisma.message.findFirst.mockResolvedValue(null);
 
-      const message = await mockPrisma.message.findFirst({
+      const message = await notificationMockPrisma.message.findFirst({
         where: { id: 'msg-123', senderId: 'different-user' }
       });
 
@@ -453,9 +434,9 @@ describe('Messaging System', () => {
 
   describe('Unread Count', () => {
     it('should return count of unread messages', async () => {
-      mockPrisma.message.count.mockResolvedValue(5);
+      notificationMockPrisma.message.count.mockResolvedValue(5);
 
-      const unreadCount = await mockPrisma.message.count({
+      const unreadCount = await notificationMockPrisma.message.count({
         where: { receiverId: 'user-123', isRead: false }
       });
 

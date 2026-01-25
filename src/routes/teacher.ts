@@ -101,7 +101,7 @@ router.get('/', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Teacher dashboard error:');
+    logger.error('Teacher dashboard error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -136,7 +136,7 @@ router.get('/classes', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Classes error:');
+    logger.error('Classes error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -193,7 +193,7 @@ router.get('/classes/:id', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Class detail error:');
+    logger.error('Class detail error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -248,7 +248,7 @@ router.get('/students', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Students error:');
+    logger.error('Students error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -299,7 +299,7 @@ router.get('/students/:id', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Student detail error:');
+    logger.error('Student detail error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -358,7 +358,7 @@ router.get('/analytics', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Analytics error:');
+    logger.error('Analytics error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -397,7 +397,7 @@ router.get('/lessons', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Lessons error:');
+    logger.error('Lessons error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -441,7 +441,7 @@ router.get('/lessons/create', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Create lesson form error:');
+    logger.error('Create lesson form error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -475,7 +475,7 @@ router.post('/lessons', async (req, res) => {
     res.redirect(`${config.basePath}/teacher/lessons`);
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Create lesson error:');
+    logger.error('Create lesson error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -517,7 +517,7 @@ router.get('/lessons/:id', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Lesson detail error:');
+    logger.error('Lesson detail error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -572,7 +572,7 @@ router.get('/lessons/:id/edit', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Edit lesson form error:');
+    logger.error('Edit lesson form error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -602,7 +602,7 @@ router.post('/lessons/:id', async (req, res) => {
     res.redirect(`${config.basePath}/teacher/lessons/${req.params.id}`);
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Update lesson error:');
+    logger.error('Update lesson error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -622,7 +622,7 @@ router.post('/lessons/:id/delete', async (req, res) => {
     res.redirect(`${config.basePath}/teacher/lessons`);
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Delete lesson error:');
+    logger.error('Delete lesson error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -660,7 +660,7 @@ router.get('/assignments', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Assignments error:');
+    logger.error('Assignments error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -725,7 +725,7 @@ router.get('/assignments/create', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Create assignment form error:');
+    logger.error('Create assignment form error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -761,7 +761,7 @@ router.post('/assignments', async (req, res) => {
     res.redirect(`${config.basePath}/teacher/assignments`);
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Create assignment error:');
+    logger.error('Create assignment error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -816,7 +816,7 @@ router.get('/assignments/:id', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Assignment detail error:');
+    logger.error('Assignment detail error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -882,7 +882,7 @@ router.get('/assignments/:id/edit', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Edit assignment form error:');
+    logger.error('Edit assignment form error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -915,7 +915,7 @@ router.post('/assignments/:id', async (req, res) => {
     res.redirect(`${config.basePath}/teacher/assignments/${req.params.id}`);
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Update assignment error:');
+    logger.error('Update assignment error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -935,7 +935,7 @@ router.post('/assignments/:id/delete', async (req, res) => {
     res.redirect(`${config.basePath}/teacher/assignments`);
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Delete assignment error:');
+    logger.error('Delete assignment error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -972,7 +972,7 @@ router.post('/assignments/:id/grade/:submissionId', async (req, res) => {
     res.redirect(`${config.basePath}/teacher/assignments/${req.params.id}`);
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Grade submission error:');
+    logger.error('Grade submission error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -1009,7 +1009,7 @@ router.get('/quizzes', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Quizzes error:');
+    logger.error('Quizzes error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -1049,7 +1049,7 @@ router.get('/quizzes/create', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Create quiz form error:');
+    logger.error('Create quiz form error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -1137,7 +1137,7 @@ router.post('/quizzes', async (req, res) => {
     res.redirect(`${config.basePath}/teacher/quizzes/${quiz.id}`);
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Create quiz error:');
+    logger.error('Create quiz error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -1182,7 +1182,7 @@ router.get('/quizzes/:id', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Quiz detail error:');
+    logger.error('Quiz detail error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -1238,7 +1238,7 @@ router.get('/quizzes/:id/edit', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Edit quiz form error:');
+    logger.error('Edit quiz form error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -1341,7 +1341,7 @@ router.post('/quizzes/:id', async (req, res) => {
     res.redirect(`${config.basePath}/teacher/quizzes/${req.params.id}`);
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Update quiz error:');
+    logger.error('Update quiz error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -1361,7 +1361,7 @@ router.post('/quizzes/:id/delete', async (req, res) => {
     res.redirect(`${config.basePath}/teacher/quizzes`);
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Delete quiz error:');
+    logger.error('Delete quiz error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -1458,7 +1458,7 @@ router.post('/quizzes/:quizId/grade/:attemptId/:answerId', async (req, res) => {
     res.redirect(`${config.basePath}/teacher/quizzes/${quizId}`);
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Grade essay error:');
+    logger.error('Grade essay error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -1501,7 +1501,7 @@ router.get('/alerts', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Teacher alerts error:');
+    logger.error('Teacher alerts error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -1526,7 +1526,7 @@ router.get('/alerts/json', async (req, res) => {
     res.json({ success: true, alerts, stats });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Get alerts JSON error:');
+    logger.error('Get alerts JSON error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Failed to get alerts' });
   }
 });
@@ -1546,7 +1546,7 @@ router.post('/alerts/:id/acknowledge', async (req, res) => {
     }
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Acknowledge alert error:');
+    logger.error('Acknowledge alert error:', { error: error instanceof Error ? error.message : String(error) });
     if (req.xhr || req.headers.accept?.includes('application/json')) {
       res.status(500).json({ error: 'Failed to acknowledge alert' });
     } else {
@@ -1569,7 +1569,7 @@ router.post('/alerts/:id/resolve', async (req, res) => {
     }
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Resolve alert error:');
+    logger.error('Resolve alert error:', { error: error instanceof Error ? error.message : String(error) });
     if (req.xhr || req.headers.accept?.includes('application/json')) {
       res.status(500).json({ error: 'Failed to resolve alert' });
     } else {
@@ -1590,7 +1590,7 @@ router.post('/alerts/:id/dismiss', async (req, res) => {
     }
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Dismiss alert error:');
+    logger.error('Dismiss alert error:', { error: error instanceof Error ? error.message : String(error) });
     if (req.xhr || req.headers.accept?.includes('application/json')) {
       res.status(500).json({ error: 'Failed to dismiss alert' });
     } else {
@@ -1636,7 +1636,7 @@ router.post('/alerts/preferences', async (req, res) => {
     }
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Update alert prefs error:');
+    logger.error('Update alert prefs error:', { error: error instanceof Error ? error.message : String(error) });
     if (req.xhr || req.headers.accept?.includes('application/json')) {
       res.status(500).json({ error: 'Failed to update preferences' });
     } else {
@@ -1696,7 +1696,7 @@ router.get('/classes/:classId/gradebook', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Gradebook error:');
+    logger.error('Gradebook error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -1725,7 +1725,7 @@ router.get('/classes/:classId/gradebook/json', async (req, res) => {
     res.json({ success: true, gradebook, statistics });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Get gradebook JSON error:');
+    logger.error('Get gradebook JSON error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Failed to get gradebook' });
   }
 });
@@ -1754,7 +1754,7 @@ router.post('/classes/:classId/gradebook/recalculate', async (req, res) => {
     }
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Recalculate grades error:');
+    logger.error('Recalculate grades error:', { error: error instanceof Error ? error.message : String(error) });
     if (req.xhr || req.headers.accept?.includes('application/json')) {
       res.status(500).json({ error: 'Failed to recalculate grades' });
     } else {
@@ -1784,7 +1784,7 @@ router.post('/classes/:classId/gradebook/student/:studentId/calculate', async (r
     res.json({ success: true, grade });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Calculate student grade error:');
+    logger.error('Calculate student grade error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Failed to calculate grade' });
   }
 });
@@ -1811,7 +1811,7 @@ router.get('/classes/:classId/gradebook/categories', async (req, res) => {
     res.json({ success: true, categories });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Get categories error:');
+    logger.error('Get categories error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Failed to get categories' });
   }
 });
@@ -1843,7 +1843,7 @@ router.post('/classes/:classId/gradebook/categories', async (req, res) => {
     res.json({ success: true, category });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Create category error:');
+    logger.error('Create category error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Failed to create category' });
   }
 });
@@ -1874,7 +1874,7 @@ router.put('/classes/:classId/gradebook/categories/:categoryId', async (req, res
     res.json({ success: true, category });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Update category error:');
+    logger.error('Update category error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Failed to update category' });
   }
 });
@@ -1898,7 +1898,7 @@ router.delete('/classes/:classId/gradebook/categories/:categoryId', async (req, 
     res.json({ success: true });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Delete category error:');
+    logger.error('Delete category error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Failed to delete category' });
   }
 });

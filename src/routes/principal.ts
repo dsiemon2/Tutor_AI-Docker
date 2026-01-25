@@ -76,7 +76,7 @@ router.get('/', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Principal dashboard error:');
+    logger.error('Principal dashboard error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -121,7 +121,7 @@ router.get('/teachers', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Principal teachers error:');
+    logger.error('Principal teachers error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -186,7 +186,7 @@ router.get('/teachers/:id', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Principal teacher detail error:');
+    logger.error('Principal teacher detail error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -232,7 +232,7 @@ router.get('/students', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Principal students error:');
+    logger.error('Principal students error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -311,7 +311,7 @@ router.get('/students/:id', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Principal student detail error:');
+    logger.error('Principal student detail error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -366,7 +366,7 @@ router.get('/classes', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Principal classes error:');
+    logger.error('Principal classes error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -434,7 +434,7 @@ router.get('/classes/:id', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Principal class detail error:');
+    logger.error('Principal class detail error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -518,7 +518,7 @@ router.get('/analytics', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Principal analytics error:');
+    logger.error('Principal analytics error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -547,7 +547,7 @@ router.get('/settings', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Principal settings error:');
+    logger.error('Principal settings error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'

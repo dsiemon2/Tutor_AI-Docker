@@ -150,7 +150,7 @@ router.get('/', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'District admin dashboard error:');
+    logger.error('District admin dashboard error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -217,7 +217,7 @@ router.get('/schools', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'District schools error:');
+    logger.error('District schools error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -309,7 +309,7 @@ router.get('/schools/:id', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'District school detail error:');
+    logger.error('District school detail error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -400,7 +400,7 @@ router.get('/analytics', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'District analytics error:');
+    logger.error('District analytics error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -481,7 +481,7 @@ router.get('/users', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'District users error:');
+    logger.error('District users error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -513,7 +513,7 @@ router.get('/settings', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'District settings error:');
+    logger.error('District settings error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'

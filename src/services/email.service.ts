@@ -56,7 +56,7 @@ function getTransporter(): nodemailer.Transporter {
 /**
  * Send an email
  */
-async function sendEmail(options: {
+export async function sendEmail(options: {
   to: string;
   subject: string;
   html: string;
@@ -361,15 +361,6 @@ export async function sendPasswordChangedEmail(
     html
   });
 }
-
-// Named exports
-export {
-  sendEmail,
-  sendPasswordResetEmail,
-  sendEmailVerificationEmail,
-  sendWelcomeEmail,
-  sendPasswordChangedEmail
-};
 
 // Default export
 export default {

@@ -371,7 +371,7 @@ router.get('/', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Admin dashboard error:');
+    logger.error('Admin dashboard error', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -397,7 +397,7 @@ router.get('/users', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Users error:');
+    logger.error('Users error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -422,7 +422,7 @@ router.get('/schools', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Schools error:');
+    logger.error('Schools error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -452,7 +452,7 @@ router.get('/subjects', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Subjects error:');
+    logger.error('Subjects error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -476,7 +476,7 @@ router.get('/greeting', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Greeting error:');
+    logger.error('Greeting error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -504,7 +504,7 @@ router.get('/ai-config', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'AI config error:');
+    logger.error('AI config error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -526,7 +526,7 @@ router.get('/voices', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Voices error:');
+    logger.error('Voices error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -550,7 +550,7 @@ router.get('/settings', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Settings error:');
+    logger.error('Settings error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -566,7 +566,7 @@ router.get('/analytics', async (req, res) => {
       basePath: config.basePath
     });
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Analytics error:');
+    logger.error('Analytics error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -582,7 +582,7 @@ router.get('/sessions', async (req, res) => {
       basePath: config.basePath
     });
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Sessions error:');
+    logger.error('Sessions error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -598,7 +598,7 @@ router.get('/ai-tools', async (req, res) => {
       basePath: config.basePath
     });
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'AI Tools error:');
+    logger.error('AI Tools error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -614,7 +614,7 @@ router.get('/ai-agents', async (req, res) => {
       basePath: config.basePath
     });
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'AI Agents error:');
+    logger.error('AI Agents error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -644,7 +644,7 @@ router.get('/knowledge-base', async (req, res) => {
       categories
     });
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Knowledge Base error:');
+    logger.error('Knowledge Base error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -666,7 +666,7 @@ router.post('/knowledge-base', async (req, res) => {
     });
     res.redirect(`${config.basePath}/admin/knowledge-base?token=${req.query.token || config.adminToken}`);
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Create knowledge doc error:');
+    logger.error('Create knowledge doc error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -689,7 +689,7 @@ router.post('/knowledge-base/:id', async (req, res) => {
     });
     res.redirect(`${config.basePath}/admin/knowledge-base?token=${req.query.token || config.adminToken}`);
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Update knowledge doc error:');
+    logger.error('Update knowledge doc error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -702,7 +702,7 @@ router.post('/knowledge-base/:id/delete', async (req, res) => {
     });
     res.redirect(`${config.basePath}/admin/knowledge-base?token=${req.query.token || config.adminToken}`);
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Delete knowledge doc error:');
+    logger.error('Delete knowledge doc error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -722,7 +722,7 @@ router.get('/functions', async (req, res) => {
       functions
     });
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Functions error:');
+    logger.error('Functions error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -742,7 +742,7 @@ router.post('/functions', async (req, res) => {
     });
     res.redirect(`${config.basePath}/admin/functions?token=${req.query.token || config.adminToken}`);
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Create function error:');
+    logger.error('Create function error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -763,7 +763,7 @@ router.post('/functions/:id', async (req, res) => {
     });
     res.redirect(`${config.basePath}/admin/functions?token=${req.query.token || config.adminToken}`);
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Update function error:');
+    logger.error('Update function error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -776,7 +776,7 @@ router.post('/functions/:id/delete', async (req, res) => {
     });
     res.redirect(`${config.basePath}/admin/functions?token=${req.query.token || config.adminToken}`);
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Delete function error:');
+    logger.error('Delete function error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -796,7 +796,7 @@ router.get('/logic-rules', async (req, res) => {
       rules
     });
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Logic Rules error:');
+    logger.error('Logic Rules error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -817,7 +817,7 @@ router.post('/logic-rules', async (req, res) => {
     });
     res.redirect(`${config.basePath}/admin/logic-rules?token=${req.query.token || config.adminToken}`);
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Create logic rule error:');
+    logger.error('Create logic rule error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -839,7 +839,7 @@ router.post('/logic-rules/:id', async (req, res) => {
     });
     res.redirect(`${config.basePath}/admin/logic-rules?token=${req.query.token || config.adminToken}`);
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Update logic rule error:');
+    logger.error('Update logic rule error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -852,7 +852,7 @@ router.post('/logic-rules/:id/delete', async (req, res) => {
     });
     res.redirect(`${config.basePath}/admin/logic-rules?token=${req.query.token || config.adminToken}`);
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Delete logic rule error:');
+    logger.error('Delete logic rule error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -883,7 +883,7 @@ router.get('/sms-settings', async (req, res) => {
       }
     });
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'SMS Settings error:');
+    logger.error('SMS Settings error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -932,7 +932,7 @@ router.post('/sms-settings', async (req, res) => {
 
     res.redirect(`${config.basePath}/admin/sms-settings?token=${req.query.token || config.adminToken}`);
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Update SMS settings error:');
+    logger.error('Update SMS settings error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -954,7 +954,7 @@ router.post('/sms-settings/test', async (req, res) => {
       res.json({ success: false, message: 'Invalid Account SID format' });
     }
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Test SMS connection error:');
+    logger.error('Test SMS connection error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ success: false, message: 'Test failed' });
   }
 });
@@ -974,7 +974,7 @@ router.get('/webhooks', async (req, res) => {
       webhooks
     });
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Webhooks error:');
+    logger.error('Webhooks error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -996,7 +996,7 @@ router.post('/webhooks', async (req, res) => {
     });
     res.redirect(`${config.basePath}/admin/webhooks?token=${req.query.token || config.adminToken}`);
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Create webhook error:');
+    logger.error('Create webhook error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -1019,7 +1019,7 @@ router.post('/webhooks/:id', async (req, res) => {
     });
     res.redirect(`${config.basePath}/admin/webhooks?token=${req.query.token || config.adminToken}`);
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Update webhook error:');
+    logger.error('Update webhook error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -1032,7 +1032,7 @@ router.post('/webhooks/:id/delete', async (req, res) => {
     });
     res.redirect(`${config.basePath}/admin/webhooks?token=${req.query.token || config.adminToken}`);
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Delete webhook error:');
+    logger.error('Delete webhook error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -1055,7 +1055,7 @@ router.post('/webhooks/:id/test', async (req, res) => {
 
     res.json({ success: true, message: 'Test webhook sent successfully' });
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Test webhook error:');
+    logger.error('Test webhook error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ success: false, message: 'Test failed' });
   }
 });
@@ -1076,7 +1076,7 @@ router.get('/payment-gateways', async (req, res) => {
       gateways
     });
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Payment gateways error:');
+    logger.error('Payment gateways error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -1113,7 +1113,7 @@ router.get('/subscriptions', async (req, res) => {
       stats
     });
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Subscriptions error:');
+    logger.error('Subscriptions error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -1129,7 +1129,7 @@ router.get('/features', async (req, res) => {
       basePath: config.basePath
     });
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Features error:');
+    logger.error('Features error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -1151,7 +1151,7 @@ router.post('/greeting', async (req, res) => {
 
     res.json({ success: true });
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Update greeting error:');
+    logger.error('Update greeting error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Failed to update greeting' });
   }
 });
@@ -1186,7 +1186,7 @@ router.post('/ai-config', async (req, res) => {
 
     res.json({ success: true });
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Update AI config error:');
+    logger.error('Update AI config error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Failed to update AI config' });
   }
 });
@@ -1204,7 +1204,7 @@ router.post('/branding', async (req, res) => {
 
     res.json({ success: true });
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Update branding error:');
+    logger.error('Update branding error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Failed to update branding' });
   }
 });
@@ -1222,7 +1222,7 @@ router.post('/store-info', async (req, res) => {
 
     res.json({ success: true });
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Update store info error:');
+    logger.error('Update store info error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Failed to update store info' });
   }
 });
@@ -1244,7 +1244,7 @@ router.post('/languages/:code/toggle', async (req, res) => {
 
     res.json({ success: true, enabled: !language.enabled });
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Toggle language error:');
+    logger.error('Toggle language error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Failed to toggle language' });
   }
 });
@@ -1307,7 +1307,7 @@ router.post('/payment-gateways/:provider', async (req, res) => {
 
     res.json({ success: true });
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Update payment gateway error:');
+    logger.error('Update payment gateway error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Failed to update payment gateway' });
   }
 });
@@ -1352,7 +1352,7 @@ router.post('/payment-gateways/test/:provider', async (req, res) => {
       res.json({ success: false, message: `${provider} is missing required credentials` });
     }
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Test gateway error:');
+    logger.error('Test gateway error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ success: false, message: 'Connection test failed' });
   }
 });
@@ -1375,7 +1375,7 @@ router.post('/subscriptions/plans', async (req, res) => {
 
     res.json({ success: true });
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Add subscription plan error:');
+    logger.error('Add subscription plan error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Failed to add subscription plan' });
   }
 });
@@ -1409,7 +1409,7 @@ router.get('/trial-codes', async (req, res) => {
       stats
     });
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Trial codes page error:');
+    logger.error('Trial codes page error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).send('Error loading trial codes');
   }
 });
@@ -1438,7 +1438,7 @@ router.post('/trial-codes', async (req, res) => {
 
     res.json({ success: true, message: 'Trial code created and sent' });
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Create trial code error:');
+    logger.error('Create trial code error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Failed to create trial code' });
   }
 });
@@ -1451,7 +1451,7 @@ router.post('/trial-codes/:id/revoke', async (req, res) => {
     });
     res.json({ success: true });
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Revoke trial code error:');
+    logger.error('Revoke trial code error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Failed to revoke trial code' });
   }
 });
@@ -1473,7 +1473,7 @@ router.post('/trial-codes/:id/extend', async (req, res) => {
 
     res.json({ success: true, newExpiresAt });
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Extend trial code error:');
+    logger.error('Extend trial code error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Failed to extend trial code' });
   }
 });
@@ -1496,7 +1496,7 @@ router.get('/account', async (req, res) => {
       user
     });
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Account page error:');
+    logger.error('Account page error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).send('Error loading account settings');
   }
 });
@@ -1508,16 +1508,16 @@ router.post('/account/update', async (req, res) => {
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
-    const { firstName, lastName, email, phone } = req.body;
+    const { firstName, lastName, email } = req.body;
 
     await prisma.user.update({
       where: { id: userId },
-      data: { firstName, lastName, email, phone }
+      data: { firstName, lastName, email }
     });
 
     res.json({ success: true });
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Update account error:');
+    logger.error('Update account error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Failed to update account' });
   }
 });
@@ -1549,7 +1549,7 @@ router.post('/account/change-password', async (req, res) => {
 
     res.json({ success: true });
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Change password error:');
+    logger.error('Change password error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Failed to change password' });
   }
 });
@@ -1589,7 +1589,7 @@ router.get('/my-subscription', async (req, res) => {
       plans
     });
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'My subscription page error:');
+    logger.error('My subscription page error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).send('Error loading subscription');
   }
 });
@@ -1626,7 +1626,7 @@ router.get('/pricing', async (req, res) => {
       currentPlan
     });
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Pricing page error:');
+    logger.error('Pricing page error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).send('Error loading pricing');
   }
 });
@@ -1708,7 +1708,7 @@ router.get('/audit-logs', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Audit logs error:');
+    logger.error('Audit logs error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -1751,7 +1751,7 @@ router.get('/api/audit-logs', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Audit logs API error:');
+    logger.error('Audit logs API error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Failed to fetch audit logs' });
   }
 });
@@ -1763,7 +1763,7 @@ router.get('/api/admin-stats', async (req, res) => {
     const stats = await getAdminStats(parseInt(days as string, 10));
     res.json(stats);
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Admin stats API error:');
+    logger.error('Admin stats API error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Failed to fetch admin stats' });
   }
 });
@@ -1791,7 +1791,7 @@ router.get('/api/search', async (req, res) => {
     res.json({ query: q, results, count: results.length });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Global search error:');
+    logger.error('Global search error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Search failed' });
   }
 });
@@ -1818,7 +1818,7 @@ router.get('/api/search/users', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'User search error:');
+    logger.error('User search error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'User search failed' });
   }
 });
@@ -1847,7 +1847,7 @@ router.get('/api/search/sessions', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Session search error:');
+    logger.error('Session search error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Session search failed' });
   }
 });
@@ -1874,7 +1874,7 @@ router.get('/bulk-import', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Bulk import page error:');
+    logger.error('Bulk import page error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -1915,7 +1915,7 @@ router.post('/api/bulk/users', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Bulk create users error:');
+    logger.error('Bulk create users error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Bulk user creation failed' });
   }
 });
@@ -1942,7 +1942,7 @@ router.post('/api/bulk/users/status', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Bulk status update error:');
+    logger.error('Bulk status update error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Bulk status update failed' });
   }
 });
@@ -1969,7 +1969,7 @@ router.post('/api/bulk/enroll', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Bulk enroll error:');
+    logger.error('Bulk enroll error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Bulk enrollment failed' });
   }
 });
@@ -1996,7 +1996,7 @@ router.post('/api/bulk/unenroll', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Bulk unenroll error:');
+    logger.error('Bulk unenroll error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Bulk unenrollment failed' });
   }
 });
@@ -2023,7 +2023,7 @@ router.post('/api/bulk/assign-teachers', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Bulk assign teachers error:');
+    logger.error('Bulk assign teachers error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Bulk teacher assignment failed' });
   }
 });
@@ -2049,7 +2049,7 @@ router.post('/api/bulk/reset-passwords', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Bulk password reset error:');
+    logger.error('Bulk password reset error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Bulk password reset failed' });
   }
 });
@@ -2072,7 +2072,7 @@ router.get('/api/export/users', async (req, res) => {
     res.send(csvContent);
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Export users error:');
+    logger.error('Export users error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Export failed' });
   }
 });
@@ -2102,7 +2102,7 @@ router.get('/api/two-factor/status', async (req, res) => {
     res.json(status);
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, '2FA status error:');
+    logger.error('2FA status error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Failed to get 2FA status' });
   }
 });
@@ -2124,7 +2124,7 @@ router.post('/api/two-factor/setup', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, '2FA setup error:');
+    logger.error('2FA setup error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Failed to setup 2FA' });
   }
 });
@@ -2151,7 +2151,7 @@ router.post('/api/two-factor/verify', async (req, res) => {
     res.json({ success: true, message: '2FA has been enabled' });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, '2FA verify error:');
+    logger.error('2FA verify error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Failed to verify 2FA' });
   }
 });
@@ -2197,7 +2197,7 @@ router.post('/api/two-factor/disable', async (req, res) => {
     res.json({ success: true, message: '2FA has been disabled' });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, '2FA disable error:');
+    logger.error('2FA disable error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Failed to disable 2FA' });
   }
 });
@@ -2235,7 +2235,7 @@ router.post('/api/two-factor/backup-codes', async (req, res) => {
     res.json({ backupCodes: newCodes });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Backup codes error:');
+    logger.error('Backup codes error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Failed to regenerate backup codes' });
   }
 });
@@ -2260,7 +2260,7 @@ router.get('/api/export/progress/:studentId', async (req, res) => {
     res.send(csvContent);
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Export student progress error:');
+    logger.error('Export student progress error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Export failed' });
   }
 });
@@ -2279,7 +2279,7 @@ router.get('/api/export/progress/:studentId/pdf', async (req, res) => {
     res.send(htmlContent);
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Generate progress report error:');
+    logger.error('Generate progress report error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Report generation failed' });
   }
 });
@@ -2303,7 +2303,7 @@ router.get('/api/export/sessions', async (req, res) => {
     res.send(csvContent);
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Export sessions error:');
+    logger.error('Export sessions error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Export failed' });
   }
 });
@@ -2324,7 +2324,7 @@ router.get('/api/export/assignments', async (req, res) => {
     res.send(csvContent);
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Export assignments error:');
+    logger.error('Export assignments error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Export failed' });
   }
 });
@@ -2343,7 +2343,7 @@ router.get('/api/export/grades/:classId', async (req, res) => {
     res.send(csvContent);
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Export grades error:');
+    logger.error('Export grades error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Export failed' });
   }
 });
@@ -2363,7 +2363,7 @@ router.get('/api/badges', async (req, res) => {
     });
     res.json(badges);
   } catch (error) {
-    logger.error({ error }, 'Get badges error');
+    logger.error('Get badges error', { error });
     res.status(500).json({ error: 'Failed to fetch badges' });
   }
 });
@@ -2402,7 +2402,7 @@ router.post('/api/badges', async (req, res) => {
 
     res.json(badge);
   } catch (error) {
-    logger.error({ error }, 'Create badge error');
+    logger.error('Create badge error', { error });
     res.status(500).json({ error: 'Failed to create badge' });
   }
 });
@@ -2424,7 +2424,7 @@ router.post('/api/badges/award', async (req, res) => {
 
     res.json(userBadge);
   } catch (error) {
-    logger.error({ error }, 'Award badge error');
+    logger.error('Award badge error', { error });
     res.status(500).json({ error: 'Failed to award badge' });
   }
 });
@@ -2435,7 +2435,7 @@ router.post('/api/badges/initialize', async (req, res) => {
     await initializeDefaultBadges();
     res.json({ success: true, message: 'Default badges initialized' });
   } catch (error) {
-    logger.error({ error }, 'Initialize badges error');
+    logger.error('Initialize badges error', { error });
     res.status(500).json({ error: 'Failed to initialize badges' });
   }
 });
@@ -2454,7 +2454,7 @@ router.get('/api/leaderboard', async (req, res) => {
 
     res.json(leaderboard);
   } catch (error) {
-    logger.error({ error }, 'Get leaderboard error');
+    logger.error('Get leaderboard error', { error });
     res.status(500).json({ error: 'Failed to fetch leaderboard' });
   }
 });
@@ -2465,7 +2465,7 @@ router.get('/api/point-config', async (req, res) => {
     const config = await getPointConfig();
     res.json(config);
   } catch (error) {
-    logger.error({ error }, 'Get point config error');
+    logger.error('Get point config error', { error });
     res.status(500).json({ error: 'Failed to fetch point config' });
   }
 });
@@ -2480,7 +2480,7 @@ router.put('/api/point-config', async (req, res) => {
     });
     res.json(updatedConfig);
   } catch (error) {
-    logger.error({ error }, 'Update point config error');
+    logger.error('Update point config error', { error });
     res.status(500).json({ error: 'Failed to update point config' });
   }
 });
@@ -2508,9 +2508,6 @@ router.get('/api/announcements', async (req, res) => {
     const announcements = await prisma.announcement.findMany({
       where,
       include: {
-        author: {
-          select: { firstName: true, lastName: true }
-        },
         _count: {
           select: { readBy: true }
         }
@@ -2521,9 +2518,20 @@ router.get('/api/announcements', async (req, res) => {
       ]
     });
 
-    res.json(announcements);
+    // Fetch author information separately since there's no author relation
+    const announcementsWithAuthor = await Promise.all(
+      announcements.map(async (announcement) => {
+        const author = await prisma.user.findUnique({
+          where: { id: announcement.authorId },
+          select: { firstName: true, lastName: true }
+        });
+        return { ...announcement, author };
+      })
+    );
+
+    res.json(announcementsWithAuthor);
   } catch (error) {
-    logger.error({ error }, 'Get announcements error');
+    logger.error('Get announcements error', { error });
     res.status(500).json({ error: 'Failed to fetch announcements' });
   }
 });
@@ -2553,7 +2561,7 @@ router.post('/api/announcements', async (req, res) => {
 
     res.json(announcement);
   } catch (error) {
-    logger.error({ error }, 'Create announcement error');
+    logger.error('Create announcement error', { error });
     res.status(500).json({ error: 'Failed to create announcement' });
   }
 });
@@ -2582,7 +2590,7 @@ router.put('/api/announcements/:id', async (req, res) => {
 
     res.json(announcement);
   } catch (error) {
-    logger.error({ error }, 'Update announcement error');
+    logger.error('Update announcement error', { error });
     res.status(500).json({ error: 'Failed to update announcement' });
   }
 });
@@ -2595,7 +2603,7 @@ router.delete('/api/announcements/:id', async (req, res) => {
     });
     res.json({ success: true });
   } catch (error) {
-    logger.error({ error }, 'Delete announcement error');
+    logger.error('Delete announcement error', { error });
     res.status(500).json({ error: 'Failed to delete announcement' });
   }
 });
@@ -2644,7 +2652,7 @@ router.get('/gamification', async (req, res) => {
       }
     });
   } catch (error) {
-    logger.error({ error }, 'Gamification dashboard error');
+    logger.error('Gamification dashboard error', { error });
     res.status(500).send('Error loading gamification dashboard');
   }
 });
@@ -2674,7 +2682,7 @@ router.post('/subjects/categories', async (req, res) => {
 
     res.redirect(`${config.basePath}/admin/subjects?token=${req.query.token || config.adminToken}`);
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Create subject category error:');
+    logger.error('Create subject category error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -2699,7 +2707,7 @@ router.post('/subjects/categories/:id', async (req, res) => {
 
     res.redirect(`${config.basePath}/admin/subjects?token=${req.query.token || config.adminToken}`);
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Update subject category error:');
+    logger.error('Update subject category error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -2723,7 +2731,7 @@ router.post('/subjects/categories/:id/delete', async (req, res) => {
 
     res.redirect(`${config.basePath}/admin/subjects?token=${req.query.token || config.adminToken}`);
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Delete subject category error:');
+    logger.error('Delete subject category error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -2749,7 +2757,7 @@ router.post('/subjects', async (req, res) => {
 
     res.redirect(`${config.basePath}/admin/subjects?token=${req.query.token || config.adminToken}`);
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Create subject error:');
+    logger.error('Create subject error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -2783,7 +2791,7 @@ router.get('/subjects/:id/edit', async (req, res) => {
       categories
     });
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Edit subject form error:');
+    logger.error('Edit subject form error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -2808,7 +2816,7 @@ router.post('/subjects/:id', async (req, res) => {
 
     res.redirect(`${config.basePath}/admin/subjects?token=${req.query.token || config.adminToken}`);
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Update subject error:');
+    logger.error('Update subject error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -2831,7 +2839,7 @@ router.post('/subjects/:id/delete', async (req, res) => {
 
     res.redirect(`${config.basePath}/admin/subjects?token=${req.query.token || config.adminToken}`);
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Delete subject error:');
+    logger.error('Delete subject error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -2864,7 +2872,7 @@ router.get('/subjects/:subjectId/topics', async (req, res) => {
       subject
     });
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'List topics error:');
+    logger.error('List topics error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -2889,7 +2897,7 @@ router.post('/subjects/:subjectId/topics', async (req, res) => {
 
     res.redirect(`${config.basePath}/admin/subjects/${req.params.subjectId}/topics?token=${req.query.token || config.adminToken}`);
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Create topic error:');
+    logger.error('Create topic error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -2919,7 +2927,7 @@ router.get('/topics/:id/edit', async (req, res) => {
       topic
     });
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Edit topic form error:');
+    logger.error('Edit topic form error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -2952,7 +2960,7 @@ router.post('/topics/:id', async (req, res) => {
 
     res.redirect(`${config.basePath}/admin/subjects/${topic.subjectId}/topics?token=${req.query.token || config.adminToken}`);
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Update topic error:');
+    logger.error('Update topic error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });
@@ -2984,7 +2992,7 @@ router.post('/topics/:id/delete', async (req, res) => {
 
     res.redirect(`${config.basePath}/admin/subjects/${topic.subjectId}/topics?token=${req.query.token || config.adminToken}`);
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Delete topic error:');
+    logger.error('Delete topic error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', { basePath: config.basePath, title: 'Error' });
   }
 });

@@ -3,32 +3,13 @@
  * Tests for assignment listing, viewing, submission, and grading
  */
 
-// Mock Prisma
-const mockPrisma = {
-  assignment: {
-    findMany: jest.fn(),
-    findFirst: jest.fn(),
-    findUnique: jest.fn()
-  },
-  submission: {
-    findFirst: jest.fn(),
-    create: jest.fn(),
-    update: jest.fn(),
-    upsert: jest.fn()
-  },
-  classStudent: {
-    findMany: jest.fn()
-  },
-  user: {
-    findUnique: jest.fn()
-  },
-  branding: {
-    findFirst: jest.fn()
-  }
-};
+import { createMockPrisma, MockPrismaClient } from '../mocks/prisma.mock';
+
+// Create the mock instance
+const assignmentMockPrisma: MockPrismaClient = createMockPrisma();
 
 jest.mock('../../config/database', () => ({
-  prisma: mockPrisma
+  prisma: assignmentMockPrisma
 }));
 
 jest.mock('../../config', () => ({
@@ -94,27 +75,27 @@ describe('Assignment Routes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
-    mockPrisma.branding.findFirst.mockResolvedValue({
+    assignmentMockPrisma.branding.findFirst.mockResolvedValue({
       primaryColor: '#0ea5e9',
       secondaryColor: '#0284c7',
       accentColor: '#38bdf8'
     });
 
-    mockPrisma.user.findUnique.mockResolvedValue(mockStudent);
-    mockPrisma.classStudent.findMany.mockResolvedValue([mockEnrollment]);
+    assignmentMockPrisma.user.findUnique.mockResolvedValue(mockStudent);
+    assignmentMockPrisma.classStudent.findMany.mockResolvedValue([mockEnrollment]);
   });
 
   describe('Assignment Access Control', () => {
     it('should only show assignments for enrolled classes', async () => {
-      mockPrisma.classStudent.findMany.mockResolvedValue([mockEnrollment]);
-      mockPrisma.assignment.findMany.mockResolvedValue([mockAssignment]);
+      assignmentMockPrisma.classStudent.findMany.mockResolvedValue([mockEnrollment]);
+      assignmentMockPrisma.assignment.findMany.mockResolvedValue([mockAssignment]);
 
-      const enrollments = await mockPrisma.classStudent.findMany({
+      const enrollments = await assignmentMockPrisma.classStudent.findMany({
         where: { studentId: 'student-123' }
       });
       const classIds = enrollments.map(e => e.classId);
 
-      const result = await mockPrisma.assignment.findMany({
+      const result = await assignmentMockPrisma.assignment.findMany({
         where: {
           isActive: true,
           OR: [
@@ -130,9 +111,9 @@ describe('Assignment Routes', () => {
 
     it('should include global assignments (classId: null)', async () => {
       const globalAssignment = { ...mockAssignment, classId: null, class: null };
-      mockPrisma.assignment.findMany.mockResolvedValue([mockAssignment, globalAssignment]);
+      assignmentMockPrisma.assignment.findMany.mockResolvedValue([mockAssignment, globalAssignment]);
 
-      const result = await mockPrisma.assignment.findMany({
+      const result = await assignmentMockPrisma.assignment.findMany({
         where: {
           isActive: true,
           OR: [
@@ -147,9 +128,9 @@ describe('Assignment Routes', () => {
 
     it('should not show inactive assignments', async () => {
       const inactiveAssignment = { ...mockAssignment, isActive: false };
-      mockPrisma.assignment.findMany.mockResolvedValue([]);
+      assignmentMockPrisma.assignment.findMany.mockResolvedValue([]);
 
-      const result = await mockPrisma.assignment.findMany({
+      const result = await assignmentMockPrisma.assignment.findMany({
         where: { isActive: true }
       });
 
@@ -159,9 +140,9 @@ describe('Assignment Routes', () => {
 
   describe('Assignment Submission', () => {
     it('should create new submission when student submits', async () => {
-      mockPrisma.submission.create.mockResolvedValue(mockSubmission);
+      assignmentMockPrisma.submission.create.mockResolvedValue(mockSubmission);
 
-      const result = await mockPrisma.submission.create({
+      const result = await assignmentMockPrisma.submission.create({
         data: {
           assignmentId: 'assign-123',
           studentId: 'student-123',
@@ -196,9 +177,9 @@ describe('Assignment Routes', () => {
 
     it('should allow updating submission before grading', async () => {
       const updatedSubmission = { ...mockSubmission, content: 'Updated homework' };
-      mockPrisma.submission.update.mockResolvedValue(updatedSubmission);
+      assignmentMockPrisma.submission.update.mockResolvedValue(updatedSubmission);
 
-      const result = await mockPrisma.submission.update({
+      const result = await assignmentMockPrisma.submission.update({
         where: { id: 'submission-123' },
         data: { content: 'Updated homework' }
       });
@@ -211,9 +192,9 @@ describe('Assignment Routes', () => {
         ...mockSubmission,
         attachments: JSON.stringify(['upload-1', 'upload-2'])
       };
-      mockPrisma.submission.create.mockResolvedValue(submissionWithAttachments);
+      assignmentMockPrisma.submission.create.mockResolvedValue(submissionWithAttachments);
 
-      const result = await mockPrisma.submission.create({
+      const result = await assignmentMockPrisma.submission.create({
         data: {
           assignmentId: 'assign-123',
           studentId: 'student-123',
@@ -236,9 +217,9 @@ describe('Assignment Routes', () => {
         grade: 85,
         feedback: 'Good work!'
       };
-      mockPrisma.submission.update.mockResolvedValue(gradedSubmission);
+      assignmentMockPrisma.submission.update.mockResolvedValue(gradedSubmission);
 
-      const result = await mockPrisma.submission.update({
+      const result = await assignmentMockPrisma.submission.update({
         where: { id: 'submission-123' },
         data: {
           status: 'graded',
@@ -263,9 +244,9 @@ describe('Assignment Routes', () => {
 
     it('should not allow student to edit after grading', async () => {
       const gradedSubmission = { ...mockSubmission, status: 'graded' };
-      mockPrisma.submission.findFirst.mockResolvedValue(gradedSubmission);
+      assignmentMockPrisma.submission.findFirst.mockResolvedValue(gradedSubmission);
 
-      const submission = await mockPrisma.submission.findFirst({
+      const submission = await assignmentMockPrisma.submission.findFirst({
         where: { id: 'submission-123' }
       });
 

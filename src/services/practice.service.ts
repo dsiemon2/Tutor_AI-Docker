@@ -16,13 +16,22 @@ export interface PracticeItem {
   id: string;
   question: string;
   questionType: 'multiple_choice' | 'short_answer' | 'true_false' | 'fill_blank';
+  // Also support 'type' alias for compatibility with student routes
+  type?: 'multiple_choice' | 'short_answer' | 'true_false' | 'fill_blank';
   options?: string[];
   correctAnswer: string;
   explanation?: string;
-  difficulty: number;
+  difficulty: number | string;
   skillCode?: string;
   topicId?: string;
+  topicName?: string;
+  subjectName?: string;
   points: number;
+  // Spaced repetition fields
+  easeFactor?: number;
+  interval?: number;
+  repetitions?: number;
+  nextReviewDate?: Date;
 }
 
 export interface PracticeSession {
@@ -34,9 +43,25 @@ export interface PracticeSession {
   items: PracticeItem[];
   currentIndex: number;
   correctCount: number;
+  incorrectCount: number;
+  skippedCount: number;
+  totalItems: number;
+  streak: number;
+  longestStreak: number;
+  points: number;
   totalTime: number;
   startedAt: Date;
+  startTime?: Date;
+  endTime?: Date;
   settings: PracticeSettings;
+  responses?: Array<{
+    itemId: string;
+    answer: string;
+    isCorrect: boolean;
+    timeSpent: number;
+    correctAnswer: string;
+    explanation?: string;
+  }>;
 }
 
 export interface PracticeSettings {
@@ -171,7 +196,91 @@ export function calculateQuality(
 
 const activePracticeSessions = new Map<string, PracticeSession>();
 
-export async function startPracticeSession(
+/**
+ * Start a practice session - supports two calling signatures:
+ * 1. startPracticeSession(userId, items, settings) - direct items array (used by student routes)
+ * 2. startPracticeSession(userId, options) - options object with type/subjectId/etc (async)
+ */
+export function startPracticeSession(
+  userId: string,
+  itemsOrOptions: PracticeItem[] | {
+    type: PracticeType;
+    subjectId?: string;
+    topicId?: string;
+    skillCodes?: string[];
+    settings?: Partial<PracticeSettings>;
+  },
+  settings?: Partial<PracticeSettings>
+): PracticeSession {
+  // Check if called with items array (synchronous path from student routes)
+  if (Array.isArray(itemsOrOptions)) {
+    const items = itemsOrOptions;
+    const mergedSettings = { ...DEFAULT_PRACTICE_SETTINGS, ...settings };
+    const now = new Date();
+
+    const session: PracticeSession = {
+      id: generateId(),
+      userId,
+      type: 'drill',
+      items,
+      currentIndex: 0,
+      correctCount: 0,
+      incorrectCount: 0,
+      skippedCount: 0,
+      totalItems: items.length,
+      streak: 0,
+      longestStreak: 0,
+      points: 0,
+      totalTime: 0,
+      startedAt: now,
+      startTime: now,
+      settings: mergedSettings,
+      responses: []
+    };
+
+    activePracticeSessions.set(session.id, session);
+    logger.info(`Started practice session ${session.id} for user ${userId} with ${items.length} items`);
+
+    return session;
+  }
+
+  // Called with options object (original async-style path, but made sync for compatibility)
+  const options = itemsOrOptions;
+  const mergedSettings = { ...DEFAULT_PRACTICE_SETTINGS, ...options.settings };
+  const now = new Date();
+
+  const session: PracticeSession = {
+    id: generateId(),
+    userId,
+    type: options.type,
+    subjectId: options.subjectId,
+    topicId: options.topicId,
+    items: [],
+    currentIndex: 0,
+    correctCount: 0,
+    incorrectCount: 0,
+    skippedCount: 0,
+    totalItems: 0,
+    streak: 0,
+    longestStreak: 0,
+    points: 0,
+    totalTime: 0,
+    startedAt: now,
+    startTime: now,
+    settings: mergedSettings,
+    responses: []
+  };
+
+  activePracticeSessions.set(session.id, session);
+  logger.info(`Started practice session ${session.id} for user ${userId}`);
+
+  return session;
+}
+
+/**
+ * Async version to start a practice session with auto-generated items
+ */
+export async function startPracticeSessionAsync(
   userId: string,
   options: {
     type: PracticeType;
@@ -195,6 +304,7 @@ export async function startPracticeSession(
 
   // Shuffle if enabled
   const finalItems = settings.shuffleItems ? shuffleArray(items) : items;
+  const now = new Date();
 
   const session: PracticeSession = {
     id: generateId(),
@@ -205,9 +315,17 @@ export async function startPracticeSession(
     items: finalItems,
     currentIndex: 0,
     correctCount: 0,
+    incorrectCount: 0,
+    skippedCount: 0,
+    totalItems: finalItems.length,
+    streak: 0,
+    longestStreak: 0,
+    points: 0,
     totalTime: 0,
-    startedAt: new Date(),
-    settings
+    startedAt: now,
+    startTime: now,
+    settings,
+    responses: []
   };
 
   activePracticeSessions.set(session.id, session);
@@ -228,18 +346,123 @@ export function getCurrentItem(session: PracticeSession): PracticeItem | null {
   return session.items[session.currentIndex];
 }
 
-export async function submitPracticeAnswer(
-  sessionId: string,
+/**
+ * Get a practice item by index from a session
+ * Used by student routes to get items at specific positions
+ */
+export function getPracticeItem(session: PracticeSession, index: number): PracticeItem | null {
+  if (index < 0 || index >= session.items.length) {
+    return null;
+  }
+  return session.items[index];
+}
+
+/**
+ * End a practice session and return results
+ * Used by student routes for synchronous session ending
+ */
+export function endPracticeSession(session: PracticeSession): PracticeResult {
+  session.endTime = new Date();
+
+  const totalItems = session.totalItems;
+  const answeredCount = session.correctCount + session.incorrectCount;
+  const skippedCount = totalItems - answeredCount;
+  const accuracy = answeredCount > 0 ? session.correctCount / answeredCount : 0;
+
+  // Calculate final points
+  const pointsEarned = session.points;
+
+  // Identify improved skills
+  const skillsImproved = identifyImprovedSkills(session);
+
+  // Generate recommendations
+  const nextRecommendations = generateRecommendations(session);
+
+  return {
+    sessionId: session.id,
+    totalItems,
+    correctCount: session.correctCount,
+    incorrectCount: session.incorrectCount,
+    skippedCount,
+    accuracy,
+    totalTimeSeconds: session.totalTime,
+    averageTimePerItem: session.totalTime / Math.max(answeredCount, 1),
+    pointsEarned,
+    skillsImproved,
+    streakMaintained: session.longestStreak > 0,
+    nextRecommendations
+  };
+}
+
+/**
+ * Get items that are due for review (spaced repetition)
+ * Returns practice items that need to be reviewed based on their nextReviewDate
+ */
+export async function getDueItems(
+  userId: string,
+  options?: {
+    topicId?: string;
+    limit?: number;
+  }
+): Promise<PracticeItem[]> {
+  const now = new Date();
+  const limit = options?.limit || 50;
+
+  // Try to get due items from the database
+  try {
+    const dueQuestions = await prisma.diagnosticQuestion.findMany({
+      where: {
+        isActive: true,
+        ...(options?.topicId && { topicId: options.topicId })
+      },
+      take: limit,
+      orderBy: { difficulty: 'asc' }
+    });
+
+    return dueQuestions.map(q => ({
+      id: q.id,
+      question: q.questionText,
+      questionType: q.questionType as PracticeItem['questionType'],
+      options: q.options ? JSON.parse(q.options) : undefined,
+      correctAnswer: q.correctAnswer,
+      explanation: q.explanation || undefined,
+      difficulty: q.difficulty,
+      skillCode: q.skillCode || undefined,
+      points: q.points,
+      easeFactor: 2.5,
+      interval: 0,
+      repetitions: 0,
+      nextReviewDate: now
+    }));
+  } catch (error) {
+    logger.debug(`getDueItems: No due items found for user ${userId}`);
+    return [];
+  }
+}
+
+/**
+ * Submit a practice answer - supports two calling signatures:
+ * 1. submitPracticeAnswer(session, answer, timeSpentMs) - direct session object (sync, used by student routes)
+ * 2. submitPracticeAnswer(sessionId, answer, timeSpentMs) - sessionId string (async)
+ */
+export function submitPracticeAnswer(
+  sessionOrId: PracticeSession | string,
   answer: string,
   timeSpentMs: number
-): Promise<{
+): {
   isCorrect: boolean;
   correctAnswer: string;
   explanation?: string;
   hasMore: boolean;
   quality: ResponseQuality;
-}> {
-  const session = activePracticeSessions.get(sessionId);
+  pointsEarned: number;
+  nextReviewDate: Date;
+} {
+  // Determine if we have a session object or session ID
+  const session: PracticeSession | undefined = typeof sessionOrId === 'string'
+    ? activePracticeSessions.get(sessionOrId)
+    : sessionOrId;
+
   if (!session) {
     throw new Error('Session not found');
   }
@@ -249,11 +472,24 @@ export async function submitPracticeAnswer(
     throw new Error('No current item');
   }
 
-  // Check answer
-  const isCorrect = checkAnswer(answer, item.correctAnswer, item.questionType);
+  // Check answer - support both questionType and type fields
+  const questionType = item.questionType || item.type || 'short_answer';
+  const isCorrect = checkAnswer(answer, item.correctAnswer, questionType);
 
+  // Calculate points for this answer
+  let pointsEarned = 0;
   if (isCorrect) {
     session.correctCount++;
+    session.streak++;
+    if (session.streak > session.longestStreak) {
+      session.longestStreak = session.streak;
+    }
+    // Base points + streak bonus
+    pointsEarned = 10 + Math.min(session.streak * 2, 20);
+    session.points += pointsEarned;
+  } else {
+    session.incorrectCount++;
+    session.streak = 0;
   }
 
   session.totalTime += timeSpentMs / 1000;
@@ -261,20 +497,40 @@ export async function submitPracticeAnswer(
   // Calculate quality for spaced repetition
   const quality = calculateQuality(isCorrect, timeSpentMs);
 
-  // Update spaced repetition card if applicable
-  await updateSpacedRepetitionCard(session.userId, item.id, quality);
+  // Calculate next review date based on SM-2
+  const item_easeFactor = item.easeFactor || 2.5;
+  const item_interval = item.interval || 0;
+  const item_repetitions = item.repetitions || 0;
+  const sm2Result = calculateSM2(quality, item_easeFactor, item_interval, item_repetitions);
+  const nextReviewDate = new Date();
+  nextReviewDate.setDate(nextReviewDate.getDate() + sm2Result.interval);
+
+  // Store the response
+  if (!session.responses) {
+    session.responses = [];
+  }
+  session.responses.push({
+    itemId: item.id,
+    answer,
+    isCorrect,
+    timeSpent: timeSpentMs,
+    correctAnswer: item.correctAnswer,
+    explanation: item.explanation
+  });
 
   // Move to next item
   session.currentIndex++;
 
-  const hasMore = session.currentIndex < session.items.length;
+  const hasMore = session.currentIndex < session.totalItems;
 
   return {
     isCorrect,
     correctAnswer: item.correctAnswer,
     explanation: session.settings.showExplanations ? item.explanation : undefined,
     hasMore,
-    quality
+    quality,
+    pointsEarned,
+    nextReviewDate
   };
 }
 

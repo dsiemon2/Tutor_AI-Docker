@@ -3,43 +3,13 @@
  * Tests for quiz listing, viewing, starting, taking, and submitting
  */
 
-import request from 'supertest';
-import express, { Express } from 'express';
+import { createMockPrisma, MockPrismaClient } from '../mocks/prisma.mock';
 
-// Mock Prisma
-const mockPrisma = {
-  quiz: {
-    findMany: jest.fn(),
-    findFirst: jest.fn(),
-    findUnique: jest.fn()
-  },
-  quizAttempt: {
-    findFirst: jest.fn(),
-    create: jest.fn(),
-    update: jest.fn()
-  },
-  quizAnswer: {
-    create: jest.fn()
-  },
-  classStudent: {
-    findMany: jest.fn()
-  },
-  classTeacher: {
-    findMany: jest.fn()
-  },
-  class: {
-    findMany: jest.fn()
-  },
-  user: {
-    findUnique: jest.fn()
-  },
-  branding: {
-    findFirst: jest.fn()
-  }
-};
+// Create the mock instance
+const quizMockPrisma: MockPrismaClient = createMockPrisma();
 
 jest.mock('../../config/database', () => ({
-  prisma: mockPrisma
+  prisma: quizMockPrisma
 }));
 
 jest.mock('../../config', () => ({
@@ -115,25 +85,25 @@ describe('Quiz Routes', () => {
     jest.clearAllMocks();
 
     // Default mock implementations
-    mockPrisma.branding.findFirst.mockResolvedValue({
+    quizMockPrisma.branding.findFirst.mockResolvedValue({
       primaryColor: '#0ea5e9',
       secondaryColor: '#0284c7',
       accentColor: '#38bdf8'
     });
 
-    mockPrisma.user.findUnique.mockResolvedValue(mockStudent);
-    mockPrisma.classStudent.findMany.mockResolvedValue([mockEnrollment]);
+    quizMockPrisma.user.findUnique.mockResolvedValue(mockStudent);
+    quizMockPrisma.classStudent.findMany.mockResolvedValue([mockEnrollment]);
   });
 
   describe('Quiz Access Control', () => {
     it('should only allow access to quizzes in enrolled classes', async () => {
       // Student is enrolled in class-123
-      mockPrisma.classStudent.findMany.mockResolvedValue([mockEnrollment]);
+      quizMockPrisma.classStudent.findMany.mockResolvedValue([mockEnrollment]);
 
       // Quiz is in class-123 - should be accessible
-      mockPrisma.quiz.findFirst.mockResolvedValue(mockQuiz);
+      quizMockPrisma.quiz.findFirst.mockResolvedValue(mockQuiz);
 
-      const result = await mockPrisma.quiz.findFirst({
+      const result = await quizMockPrisma.quiz.findFirst({
         where: {
           id: 'quiz-123',
           isActive: true,
@@ -150,12 +120,12 @@ describe('Quiz Routes', () => {
 
     it('should not allow access to quizzes in non-enrolled classes', async () => {
       // Student is enrolled in class-456 (different class)
-      mockPrisma.classStudent.findMany.mockResolvedValue([{ classId: 'class-456', studentId: 'student-123' }]);
+      quizMockPrisma.classStudent.findMany.mockResolvedValue([{ classId: 'class-456', studentId: 'student-123' }]);
 
       // Quiz is in class-123 - should NOT be accessible
-      mockPrisma.quiz.findFirst.mockResolvedValue(null);
+      quizMockPrisma.quiz.findFirst.mockResolvedValue(null);
 
-      const result = await mockPrisma.quiz.findFirst({
+      const result = await quizMockPrisma.quiz.findFirst({
         where: {
           id: 'quiz-123',
           isActive: true,
@@ -171,9 +141,9 @@ describe('Quiz Routes', () => {
 
     it('should allow access to global quizzes (classId: null)', async () => {
       const globalQuiz = { ...mockQuiz, classId: null, class: null };
-      mockPrisma.quiz.findFirst.mockResolvedValue(globalQuiz);
+      quizMockPrisma.quiz.findFirst.mockResolvedValue(globalQuiz);
 
-      const result = await mockPrisma.quiz.findFirst({
+      const result = await quizMockPrisma.quiz.findFirst({
         where: {
           id: 'quiz-123',
           isActive: true,
@@ -189,9 +159,9 @@ describe('Quiz Routes', () => {
     });
 
     it('should not allow access to inactive quizzes', async () => {
-      mockPrisma.quiz.findFirst.mockResolvedValue(null);
+      quizMockPrisma.quiz.findFirst.mockResolvedValue(null);
 
-      const result = await mockPrisma.quiz.findFirst({
+      const result = await quizMockPrisma.quiz.findFirst({
         where: {
           id: 'quiz-123',
           isActive: true, // This filter should exclude inactive quizzes
@@ -216,9 +186,9 @@ describe('Quiz Routes', () => {
         status: 'in_progress'
       };
 
-      mockPrisma.quizAttempt.create.mockResolvedValue(mockAttempt);
+      quizMockPrisma.quizAttempt.create.mockResolvedValue(mockAttempt);
 
-      const result = await mockPrisma.quizAttempt.create({
+      const result = await quizMockPrisma.quizAttempt.create({
         data: {
           quizId: 'quiz-123',
           studentId: 'student-123',
@@ -242,9 +212,9 @@ describe('Quiz Routes', () => {
         ]
       };
 
-      mockPrisma.quiz.findFirst.mockResolvedValue(quizWithMaxAttempts);
+      quizMockPrisma.quiz.findFirst.mockResolvedValue(quizWithMaxAttempts);
 
-      const result = await mockPrisma.quiz.findFirst({
+      const result = await quizMockPrisma.quiz.findFirst({
         where: { id: 'quiz-123' },
         include: { attempts: { where: { studentId: 'student-123' } } }
       });
@@ -262,9 +232,9 @@ describe('Quiz Routes', () => {
         status: 'in_progress'
       };
 
-      mockPrisma.quizAttempt.findFirst.mockResolvedValue(inProgressAttempt);
+      quizMockPrisma.quizAttempt.findFirst.mockResolvedValue(inProgressAttempt);
 
-      const result = await mockPrisma.quizAttempt.findFirst({
+      const result = await quizMockPrisma.quizAttempt.findFirst({
         where: {
           quizId: 'quiz-123',
           studentId: 'student-123',

@@ -3,31 +3,13 @@
  * Tests for login, registration, password reset, email verification
  */
 
-// Mock Prisma
-const mockPrisma = {
-  user: {
-    findFirst: jest.fn(),
-    findUnique: jest.fn(),
-    create: jest.fn(),
-    update: jest.fn()
-  },
-  passwordResetToken: {
-    findFirst: jest.fn(),
-    create: jest.fn(),
-    update: jest.fn()
-  },
-  emailVerificationToken: {
-    findFirst: jest.fn(),
-    create: jest.fn(),
-    update: jest.fn()
-  },
-  branding: {
-    findFirst: jest.fn()
-  }
-};
+import { createMockPrisma, MockPrismaClient } from '../mocks/prisma.mock';
+
+// Create the mock instance
+const authMockPrisma: MockPrismaClient = createMockPrisma();
 
 jest.mock('../../config/database', () => ({
-  prisma: mockPrisma
+  prisma: authMockPrisma
 }));
 
 jest.mock('../../config', () => ({
@@ -60,7 +42,7 @@ describe('Authentication', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockPrisma.branding.findFirst.mockResolvedValue({
+    authMockPrisma.branding.findFirst.mockResolvedValue({
       primaryColor: '#0ea5e9',
       secondaryColor: '#0284c7'
     });
@@ -68,9 +50,9 @@ describe('Authentication', () => {
 
   describe('Login', () => {
     it('should find active user by email', async () => {
-      mockPrisma.user.findFirst.mockResolvedValue(mockUser);
+      authMockPrisma.user.findFirst.mockResolvedValue(mockUser);
 
-      const user = await mockPrisma.user.findFirst({
+      const user = await authMockPrisma.user.findFirst({
         where: { email: 'test@example.com', isActive: true }
       });
 
@@ -79,9 +61,9 @@ describe('Authentication', () => {
     });
 
     it('should not find inactive user', async () => {
-      mockPrisma.user.findFirst.mockResolvedValue(null);
+      authMockPrisma.user.findFirst.mockResolvedValue(null);
 
-      const user = await mockPrisma.user.findFirst({
+      const user = await authMockPrisma.user.findFirst({
         where: { email: 'inactive@example.com', isActive: true }
       });
 
@@ -90,9 +72,9 @@ describe('Authentication', () => {
 
     it('should update last login timestamp', async () => {
       const updatedUser = { ...mockUser, lastLoginAt: new Date() };
-      mockPrisma.user.update.mockResolvedValue(updatedUser);
+      authMockPrisma.user.update.mockResolvedValue(updatedUser);
 
-      const result = await mockPrisma.user.update({
+      const result = await authMockPrisma.user.update({
         where: { id: 'user-123' },
         data: { lastLoginAt: new Date() }
       });
@@ -104,9 +86,9 @@ describe('Authentication', () => {
   describe('Registration', () => {
     it('should create new user with email unverified', async () => {
       const newUser = { ...mockUser, emailVerified: false };
-      mockPrisma.user.create.mockResolvedValue(newUser);
+      authMockPrisma.user.create.mockResolvedValue(newUser);
 
-      const result = await mockPrisma.user.create({
+      const result = await authMockPrisma.user.create({
         data: {
           email: 'new@example.com',
           passwordHash: 'hashed',
@@ -121,9 +103,9 @@ describe('Authentication', () => {
     });
 
     it('should check for existing user before registration', async () => {
-      mockPrisma.user.findFirst.mockResolvedValue(mockUser);
+      authMockPrisma.user.findFirst.mockResolvedValue(mockUser);
 
-      const existingUser = await mockPrisma.user.findFirst({
+      const existingUser = await authMockPrisma.user.findFirst({
         where: { email: 'test@example.com' }
       });
 
@@ -137,9 +119,9 @@ describe('Authentication', () => {
         token: 'abc123',
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
       };
-      mockPrisma.emailVerificationToken.create.mockResolvedValue(token);
+      authMockPrisma.emailVerificationToken.create.mockResolvedValue(token);
 
-      const result = await mockPrisma.emailVerificationToken.create({
+      const result = await authMockPrisma.emailVerificationToken.create({
         data: {
           userId: 'user-123',
           token: 'abc123',
@@ -160,9 +142,9 @@ describe('Authentication', () => {
         expiresAt: new Date(Date.now() + 60 * 60 * 1000),
         usedAt: null
       };
-      mockPrisma.passwordResetToken.create.mockResolvedValue(resetToken);
+      authMockPrisma.passwordResetToken.create.mockResolvedValue(resetToken);
 
-      const result = await mockPrisma.passwordResetToken.create({
+      const result = await authMockPrisma.passwordResetToken.create({
         data: {
           userId: 'user-123',
           token: 'resettoken123',
@@ -182,9 +164,9 @@ describe('Authentication', () => {
         createdAt: new Date(Date.now() - 2 * 60 * 1000), // 2 min ago
         usedAt: null
       };
-      mockPrisma.passwordResetToken.findFirst.mockResolvedValue(recentToken);
+      authMockPrisma.passwordResetToken.findFirst.mockResolvedValue(recentToken);
 
-      const recent = await mockPrisma.passwordResetToken.findFirst({
+      const recent = await authMockPrisma.passwordResetToken.findFirst({
         where: {
           userId: 'user-123',
           createdAt: { gt: new Date(Date.now() - 5 * 60 * 1000) },
@@ -203,9 +185,9 @@ describe('Authentication', () => {
         expiresAt: new Date(Date.now() + 30 * 60 * 1000), // 30 min from now
         usedAt: null
       };
-      mockPrisma.passwordResetToken.findFirst.mockResolvedValue(validToken);
+      authMockPrisma.passwordResetToken.findFirst.mockResolvedValue(validToken);
 
-      const token = await mockPrisma.passwordResetToken.findFirst({
+      const token = await authMockPrisma.passwordResetToken.findFirst({
         where: {
           token: 'validtoken',
           usedAt: null,
@@ -217,9 +199,9 @@ describe('Authentication', () => {
     });
 
     it('should reject expired reset token', async () => {
-      mockPrisma.passwordResetToken.findFirst.mockResolvedValue(null);
+      authMockPrisma.passwordResetToken.findFirst.mockResolvedValue(null);
 
-      const token = await mockPrisma.passwordResetToken.findFirst({
+      const token = await authMockPrisma.passwordResetToken.findFirst({
         where: {
           token: 'expiredtoken',
           usedAt: null,
@@ -236,9 +218,9 @@ describe('Authentication', () => {
         token: 'usedtoken',
         usedAt: new Date()
       };
-      mockPrisma.passwordResetToken.update.mockResolvedValue(usedToken);
+      authMockPrisma.passwordResetToken.update.mockResolvedValue(usedToken);
 
-      const result = await mockPrisma.passwordResetToken.update({
+      const result = await authMockPrisma.passwordResetToken.update({
         where: { id: 'reset-123' },
         data: { usedAt: new Date() }
       });
@@ -256,9 +238,9 @@ describe('Authentication', () => {
         expiresAt: new Date(Date.now() + 12 * 60 * 60 * 1000), // 12 hours
         verifiedAt: null
       };
-      mockPrisma.emailVerificationToken.findFirst.mockResolvedValue(validToken);
+      authMockPrisma.emailVerificationToken.findFirst.mockResolvedValue(validToken);
 
-      const token = await mockPrisma.emailVerificationToken.findFirst({
+      const token = await authMockPrisma.emailVerificationToken.findFirst({
         where: {
           token: 'verifytoken',
           verifiedAt: null,
@@ -271,9 +253,9 @@ describe('Authentication', () => {
 
     it('should mark email as verified', async () => {
       const verifiedUser = { ...mockUser, emailVerified: true };
-      mockPrisma.user.update.mockResolvedValue(verifiedUser);
+      authMockPrisma.user.update.mockResolvedValue(verifiedUser);
 
-      const result = await mockPrisma.user.update({
+      const result = await authMockPrisma.user.update({
         where: { id: 'user-123' },
         data: { emailVerified: true }
       });
@@ -287,9 +269,9 @@ describe('Authentication', () => {
         token: 'usedverify',
         verifiedAt: new Date()
       };
-      mockPrisma.emailVerificationToken.update.mockResolvedValue(usedToken);
+      authMockPrisma.emailVerificationToken.update.mockResolvedValue(usedToken);
 
-      const result = await mockPrisma.emailVerificationToken.update({
+      const result = await authMockPrisma.emailVerificationToken.update({
         where: { id: 'verify-123' },
         data: { verifiedAt: new Date() }
       });
@@ -304,9 +286,9 @@ describe('Authentication', () => {
         createdAt: new Date(Date.now() - 60 * 1000), // 1 min ago
         verifiedAt: null
       };
-      mockPrisma.emailVerificationToken.findFirst.mockResolvedValue(recentToken);
+      authMockPrisma.emailVerificationToken.findFirst.mockResolvedValue(recentToken);
 
-      const recent = await mockPrisma.emailVerificationToken.findFirst({
+      const recent = await authMockPrisma.emailVerificationToken.findFirst({
         where: {
           userId: 'user-123',
           createdAt: { gt: new Date(Date.now() - 2 * 60 * 1000) },

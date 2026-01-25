@@ -318,7 +318,7 @@ router.get('/api/view-as-students', async (req, res) => {
 
     res.json({ students: studentsWithLabels });
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'View-as students error:');
+    logger.error('View-as students error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Failed to load students' });
   }
 });
@@ -352,7 +352,7 @@ router.post('/view-as/start', async (req, res) => {
 
     res.redirect(`${config.basePath}/student`);
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'View-as start error:');
+    logger.error('View-as start error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Failed to start view-as session' });
   }
 });
@@ -457,7 +457,7 @@ router.get('/', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Dashboard error:');
+    logger.error('Dashboard error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -501,7 +501,7 @@ router.get('/subjects', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Subjects error:');
+    logger.error('Subjects error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -587,7 +587,7 @@ router.get('/subjects/:categoryCode', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Subject detail error:');
+    logger.error('Subject detail error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -684,7 +684,7 @@ router.get('/topics/:id', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Topic detail error:');
+    logger.error('Topic detail error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -743,7 +743,7 @@ router.get('/lessons/:id', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Lesson view error:');
+    logger.error('Lesson view error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -819,7 +819,7 @@ router.get('/tutor', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Tutor interface error:');
+    logger.error('Tutor interface error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -895,7 +895,7 @@ router.get('/sessions', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Sessions error:');
+    logger.error('Sessions error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -969,7 +969,7 @@ router.get('/sessions/:id', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Session detail error:');
+    logger.error('Session detail error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -1068,7 +1068,7 @@ router.get('/progress', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Progress error:');
+    logger.error('Progress error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -1093,7 +1093,7 @@ router.get('/settings', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Settings error:');
+    logger.error('Settings error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -1203,7 +1203,7 @@ router.get('/assignments', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Student assignments error:');
+    logger.error('Student assignments error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -1248,7 +1248,7 @@ router.get('/assignments/:id', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Assignment detail error:');
+    logger.error('Assignment detail error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -1318,7 +1318,7 @@ router.post('/assignments/:id/submit', async (req, res) => {
     res.redirect(`${config.basePath}/student/assignments/${req.params.id}`);
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Submit assignment error:');
+    logger.error('Submit assignment error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -1338,9 +1338,9 @@ router.get('/quizzes', async (req, res) => {
     const isViewingAs = !!req.session.viewAsStudentId;
     const canViewAs = canViewAsStudent(req.session.role || '');
 
-    logger.debug({ sessionRole: req.session.role }, 'DEBUG quizzes session.role:');
-    logger.debug({ effectiveStudentId }, 'DEBUG quizzes effectiveStudentId:');
-    logger.debug({ canViewAs }, 'DEBUG quizzes canViewAs:');
+    logger.debug('DEBUG quizzes session.role:', { sessionRole: req.session.role });
+    logger.debug('DEBUG quizzes effectiveStudentId:', { effectiveStudentId });
+    logger.debug('DEBUG quizzes canViewAs:', { canViewAs });
 
     const loggedInUser = await prisma.user.findUnique({
       where: { id: req.session.userId! },
@@ -1379,7 +1379,7 @@ router.get('/quizzes', async (req, res) => {
     } else if (canViewAs) {
       // Admin/Teacher viewing without specific student - show all accessible quizzes
       const accessibleClassIds = await getAccessibleClassIds(req.session);
-      logger.debug({ classCount: accessibleClassIds.length }, 'DEBUG quizzes accessibleClassIds:');
+      logger.debug('DEBUG quizzes accessibleClassIds:', { classCount: accessibleClassIds.length });
 
       quizzes = await prisma.quiz.findMany({
         where: {
@@ -1402,10 +1402,10 @@ router.get('/quizzes', async (req, res) => {
         orderBy: { createdAt: 'desc' },
         take: 50
       });
-      logger.debug({ count: quizzes.length }, 'DEBUG quizzes found');
+      logger.debug('DEBUG quizzes found', { count: quizzes.length });
     } else {
       // Fallback: show all active quizzes if no specific filtering applies
-      logger.debug({}, 'DEBUG quizzes FALLBACK - showing all quizzes');
+      logger.debug('DEBUG quizzes FALLBACK - showing all quizzes');
       quizzes = await prisma.quiz.findMany({
         where: { isActive: true },
         include: {
@@ -1417,7 +1417,7 @@ router.get('/quizzes', async (req, res) => {
         orderBy: { createdAt: 'desc' },
         take: 50
       });
-      logger.debug({ quizCount: quizzes.length }, 'DEBUG quizzes fallback quizzes found:');
+      logger.debug('DEBUG quizzes fallback quizzes found:', { quizCount: quizzes.length });
     }
 
     res.render('student/quizzes', {
@@ -1432,7 +1432,7 @@ router.get('/quizzes', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Student quizzes error:');
+    logger.error('Student quizzes error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -1504,7 +1504,7 @@ router.get('/quizzes/:id', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Quiz info error:');
+    logger.error('Quiz info error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -1576,7 +1576,7 @@ router.post('/quizzes/:id/start', async (req, res) => {
     res.redirect(`${config.basePath}/student/quizzes/${req.params.id}/take`);
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Start quiz error:');
+    logger.error('Start quiz error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -1659,7 +1659,7 @@ router.get('/quizzes/:id/take', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Take quiz error:');
+    logger.error('Take quiz error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -1824,7 +1824,7 @@ router.post('/quizzes/:id/submit', async (req, res) => {
     res.redirect(`${config.basePath}/student/quizzes/${req.params.id}/results/${attempt.id}`);
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Submit quiz error:');
+    logger.error('Submit quiz error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -1882,7 +1882,7 @@ router.get('/quizzes/:id/results/:attemptId', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Quiz results error:');
+    logger.error('Quiz results error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -1973,7 +1973,7 @@ router.get('/messages', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Messages error:');
+    logger.error('Messages error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -1992,7 +1992,7 @@ router.get('/privacy/status', async (req, res) => {
     const status = await getDeletionStatus(userId);
     res.json(status);
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'GDPR status error:');
+    logger.error('GDPR status error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Failed to get privacy status' });
   }
 });
@@ -2022,7 +2022,7 @@ router.get('/privacy/export', async (req, res) => {
 
     res.json(result.data);
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'GDPR export error:');
+    logger.error('GDPR export error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Failed to export data' });
   }
 });
@@ -2053,7 +2053,7 @@ router.post('/privacy/delete-request', async (req, res) => {
       deletionId: result.deletionId
     });
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'GDPR deletion request error:');
+    logger.error('GDPR deletion request error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Failed to process deletion request' });
   }
 });
@@ -2079,7 +2079,7 @@ router.post('/privacy/cancel-deletion', async (req, res) => {
 
     res.json({ success: true, message: 'Your deletion request has been cancelled.' });
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'GDPR cancel deletion error:');
+    logger.error('GDPR cancel deletion error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Failed to cancel deletion request' });
   }
 });
@@ -2104,7 +2104,7 @@ router.get('/reports/progress/csv', async (req, res) => {
     res.send(csvContent);
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Export progress CSV error:');
+    logger.error('Export progress CSV error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Export failed' });
   }
 });
@@ -2123,7 +2123,7 @@ router.get('/reports/progress/pdf', async (req, res) => {
     res.send(htmlContent);
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Generate progress report error:');
+    logger.error('Generate progress report error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Report generation failed' });
   }
 });
@@ -2147,7 +2147,7 @@ router.get('/reports/sessions/csv', async (req, res) => {
     res.send(csvContent);
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Export sessions CSV error:');
+    logger.error('Export sessions CSV error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Export failed' });
   }
 });
@@ -2173,7 +2173,7 @@ router.get('/reports/session/:sessionId/transcript', async (req, res) => {
     res.send(htmlContent);
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Generate transcript error:');
+    logger.error('Generate transcript error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Transcript generation failed' });
   }
 });
@@ -2194,7 +2194,7 @@ router.get('/reports/assignments/ical', async (req, res) => {
     res.send(icalContent);
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Generate assignments iCal error:');
+    logger.error('Generate assignments iCal error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Calendar export failed' });
   }
 });
@@ -2216,7 +2216,7 @@ router.get('/reports/sessions/ical', async (req, res) => {
     res.send(icalContent);
 
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Generate sessions iCal error:');
+    logger.error('Generate sessions iCal error:', { error: error instanceof Error ? error.message : String(error) });
     res.status(500).json({ error: 'Calendar export failed' });
   }
 });
@@ -2235,7 +2235,7 @@ router.get('/api/badges', async (req, res) => {
     });
     res.json(badges);
   } catch (error) {
-    logger.error({ error }, 'Get badges error');
+    logger.error('Get badges error', { error });
     res.status(500).json({ error: 'Failed to fetch badges' });
   }
 });
@@ -2263,7 +2263,7 @@ router.get('/api/my-badges', async (req, res) => {
       totalAvailable: allBadges.length
     });
   } catch (error) {
-    logger.error({ error }, 'Get user badges error');
+    logger.error('Get user badges error', { error });
     res.status(500).json({ error: 'Failed to fetch badges' });
   }
 });
@@ -2279,7 +2279,7 @@ router.get('/api/streak', async (req, res) => {
     const streak = await getStreak(studentId);
     res.json(streak);
   } catch (error) {
-    logger.error({ error }, 'Get streak error');
+    logger.error('Get streak error', { error });
     res.status(500).json({ error: 'Failed to fetch streak' });
   }
 });
@@ -2295,7 +2295,7 @@ router.post('/api/streak/update', async (req, res) => {
     const streak = await updateStreak(studentId);
     res.json(streak);
   } catch (error) {
-    logger.error({ error }, 'Update streak error');
+    logger.error('Update streak error', { error });
     res.status(500).json({ error: 'Failed to update streak' });
   }
 });
@@ -2311,7 +2311,7 @@ router.get('/api/points', async (req, res) => {
     const balance = await getPointBalance(studentId);
     res.json(balance);
   } catch (error) {
-    logger.error({ error }, 'Get points error');
+    logger.error('Get points error', { error });
     res.status(500).json({ error: 'Failed to fetch points' });
   }
 });
@@ -2333,7 +2333,7 @@ router.get('/api/points/history', async (req, res) => {
 
     res.json(history);
   } catch (error) {
-    logger.error({ error }, 'Get point history error');
+    logger.error('Get point history error', { error });
     res.status(500).json({ error: 'Failed to fetch point history' });
   }
 });
@@ -2376,7 +2376,7 @@ router.get('/api/leaderboard', async (req, res) => {
 
     res.json({ leaderboard, userRank });
   } catch (error) {
-    logger.error({ error }, 'Get leaderboard error');
+    logger.error('Get leaderboard error', { error });
     res.status(500).json({ error: 'Failed to fetch leaderboard' });
   }
 });
@@ -2397,7 +2397,7 @@ router.get('/api/activity', async (req, res) => {
 
     res.json(activity);
   } catch (error) {
-    logger.error({ error }, 'Get activity error');
+    logger.error('Get activity error', { error });
     res.status(500).json({ error: 'Failed to fetch activity' });
   }
 });
@@ -2423,7 +2423,7 @@ router.get('/api/activity/:scope/:scopeId', async (req, res) => {
 
     res.json(activity);
   } catch (error) {
-    logger.error({ error }, 'Get public activity error');
+    logger.error('Get public activity error', { error });
     res.status(500).json({ error: 'Failed to fetch activity' });
   }
 });
@@ -2453,7 +2453,7 @@ router.get('/api/announcements', async (req, res) => {
 
     res.json(announcements);
   } catch (error) {
-    logger.error({ error }, 'Get announcements error');
+    logger.error('Get announcements error', { error });
     res.status(500).json({ error: 'Failed to fetch announcements' });
   }
 });
@@ -2465,7 +2465,7 @@ router.post('/api/announcements/:id/read', async (req, res) => {
     await markAnnouncementRead(session.userId, req.params.id);
     res.json({ success: true });
   } catch (error) {
-    logger.error({ error }, 'Mark announcement read error');
+    logger.error('Mark announcement read error', { error });
     res.status(500).json({ error: 'Failed to mark announcement as read' });
   }
 });
@@ -2493,7 +2493,7 @@ router.get('/api/announcements/unread-count', async (req, res) => {
 
     res.json({ count });
   } catch (error) {
-    logger.error({ error }, 'Get unread count error');
+    logger.error('Get unread count error', { error });
     res.status(500).json({ error: 'Failed to get unread count' });
   }
 });
@@ -2531,7 +2531,7 @@ router.get('/api/gamification/summary', async (req, res) => {
       recentActivity
     });
   } catch (error) {
-    logger.error({ error }, 'Get gamification summary error');
+    logger.error('Get gamification summary error', { error });
     res.status(500).json({ error: 'Failed to fetch gamification summary' });
   }
 });
@@ -2574,7 +2574,7 @@ router.get('/diagnostics', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error }, 'Diagnostics page error');
+    logger.error('Diagnostics page error', { error });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -2593,7 +2593,7 @@ router.post('/diagnostics/:testId/start', async (req, res) => {
     res.json({ success: true, attemptId });
 
   } catch (error) {
-    logger.error({ error }, 'Start diagnostic error');
+    logger.error('Start diagnostic error', { error });
     res.status(500).json({ error: 'Failed to start diagnostic' });
   }
 });
@@ -2635,7 +2635,7 @@ router.get('/diagnostics/attempt/:attemptId', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error }, 'Diagnostic test page error');
+    logger.error('Diagnostic test page error', { error });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -2657,7 +2657,7 @@ router.get('/diagnostics/attempt/:attemptId/next', async (req, res) => {
     res.json({ success: true, ...questionData });
 
   } catch (error) {
-    logger.error({ error }, 'Get next question error');
+    logger.error('Get next question error', { error });
     res.status(500).json({ error: 'Failed to get next question' });
   }
 });
@@ -2680,7 +2680,7 @@ router.post('/diagnostics/attempt/:attemptId/answer', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error }, 'Submit answer error');
+    logger.error('Submit answer error', { error });
     res.status(500).json({ error: 'Failed to submit answer' });
   }
 });
@@ -2695,7 +2695,7 @@ router.post('/diagnostics/attempt/:attemptId/complete', async (req, res) => {
     res.json({ success: true, result });
 
   } catch (error) {
-    logger.error({ error }, 'Complete diagnostic error');
+    logger.error('Complete diagnostic error', { error });
     res.status(500).json({ error: 'Failed to complete diagnostic' });
   }
 });
@@ -2744,7 +2744,7 @@ router.get('/diagnostics/results/:attemptId', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error }, 'Diagnostic results error');
+    logger.error('Diagnostic results error', { error });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -2767,7 +2767,7 @@ router.get('/diagnostics/skill-gaps', async (req, res) => {
     res.json({ success: true, gaps });
 
   } catch (error) {
-    logger.error({ error }, 'Get skill gaps error');
+    logger.error('Get skill gaps error', { error });
     res.status(500).json({ error: 'Failed to get skill gaps' });
   }
 });
@@ -2783,7 +2783,7 @@ router.get('/diagnostics/placement/:subjectId', async (req, res) => {
     res.json({ success: true, recommendation });
 
   } catch (error) {
-    logger.error({ error }, 'Get placement error');
+    logger.error('Get placement error', { error });
     res.status(500).json({ error: 'Failed to get placement' });
   }
 });
@@ -2854,7 +2854,7 @@ router.get('/practice', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error }, 'Practice page error');
+    logger.error('Practice page error', { error });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -2898,12 +2898,14 @@ router.post('/practice/start', async (req, res) => {
     // Convert questions to practice items
     const practiceItems: PracticeItem[] = questions.map((q, idx) => ({
       id: q.id,
-      type: q.type as 'multiple_choice' | 'true_false' | 'short_answer' | 'fill_blank',
-      question: q.question,
+      questionType: q.questionType as 'multiple_choice' | 'true_false' | 'short_answer' | 'fill_blank',
+      type: q.questionType as 'multiple_choice' | 'true_false' | 'short_answer' | 'fill_blank',
+      question: q.questionText,
       options: q.options ? JSON.parse(q.options) : undefined,
       correctAnswer: q.correctAnswer,
       explanation: q.explanation || undefined,
-      difficulty: (q.difficulty || 'medium') as 'easy' | 'medium' | 'hard' | 'expert',
+      difficulty: 'medium' as 'easy' | 'medium' | 'hard' | 'expert',
+      points: q.points || 10,
       topicId: q.quiz.topicId || undefined,
       topicName: q.quiz.topic?.name,
       subjectName: q.quiz.topic?.subject?.name,
@@ -2930,7 +2932,7 @@ router.post('/practice/start', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error }, 'Start practice session error');
+    logger.error('Start practice session error', { error });
     res.status(500).json({ error: 'Failed to start practice session' });
   }
 });
@@ -2969,7 +2971,7 @@ router.get('/practice/session/:sessionId', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error }, 'Practice session page error');
+    logger.error('Practice session page error', { error });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -3027,7 +3029,7 @@ router.get('/practice/session/:sessionId/current', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error }, 'Get current practice item error');
+    logger.error('Get current practice item error', { error });
     res.status(500).json({ error: 'Failed to get current item' });
   }
 });
@@ -3062,7 +3064,7 @@ router.post('/practice/session/:sessionId/answer', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error }, 'Submit practice answer error');
+    logger.error('Submit practice answer error', { error });
     res.status(500).json({ error: 'Failed to submit answer' });
   }
 });
@@ -3093,7 +3095,7 @@ router.post('/practice/session/:sessionId/skip', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error }, 'Skip practice item error');
+    logger.error('Skip practice item error', { error });
     res.status(500).json({ error: 'Failed to skip item' });
   }
 });
@@ -3117,7 +3119,7 @@ router.post('/practice/session/:sessionId/end', async (req, res) => {
     res.json({ success: true, result });
 
   } catch (error) {
-    logger.error({ error }, 'End practice session error');
+    logger.error('End practice session error', { error });
     res.status(500).json({ error: 'Failed to end session' });
   }
 });
@@ -3175,7 +3177,7 @@ router.get('/practice/results/:sessionId', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error }, 'Practice results page error');
+    logger.error('Practice results page error', { error });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -3195,7 +3197,7 @@ router.get('/api/practice/stats', async (req, res) => {
     res.json(stats);
 
   } catch (error) {
-    logger.error({ error }, 'Get practice stats error');
+    logger.error('Get practice stats error', { error });
     res.status(500).json({ error: 'Failed to get practice stats' });
   }
 });
@@ -3217,7 +3219,7 @@ router.get('/api/practice/due', async (req, res) => {
     res.json({ items: dueItems, count: dueItems.length });
 
   } catch (error) {
-    logger.error({ error }, 'Get due items error');
+    logger.error('Get due items error', { error });
     res.status(500).json({ error: 'Failed to get due items' });
   }
 });
@@ -3290,7 +3292,7 @@ router.get('/learning-paths', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error }, 'Learning paths page error');
+    logger.error('Learning paths page error', { error });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -3372,7 +3374,7 @@ router.get('/learning-paths/:pathId', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error }, 'Learning path detail error');
+    logger.error('Learning path detail error', { error });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -3438,7 +3440,7 @@ router.get('/mastery', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ error }, 'Mastery dashboard error');
+    logger.error('Mastery dashboard error', { error });
     res.status(500).render('errors/500', {
       basePath: config.basePath,
       title: 'Error'
@@ -3460,7 +3462,7 @@ router.get('/api/mastery', async (req, res) => {
     res.json({ mastery });
 
   } catch (error) {
-    logger.error({ error }, 'Get mastery API error');
+    logger.error('Get mastery API error', { error });
     res.status(500).json({ error: 'Failed to get mastery data' });
   }
 });
@@ -3496,7 +3498,7 @@ router.get('/api/learning-paths/recommendations', async (req, res) => {
     res.json({ recommendations });
 
   } catch (error) {
-    logger.error({ error }, 'Get path recommendations API error');
+    logger.error('Get path recommendations API error', { error });
     res.status(500).json({ error: 'Failed to get recommendations' });
   }
 });
@@ -3515,7 +3517,7 @@ router.get('/api/learning-paths/:pathId/progress', async (req, res) => {
     res.json({ progress: progressData[0] || null });
 
   } catch (error) {
-    logger.error({ error }, 'Get path progress API error');
+    logger.error('Get path progress API error', { error });
     res.status(500).json({ error: 'Failed to get progress' });
   }
 });

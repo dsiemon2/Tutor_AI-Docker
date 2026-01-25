@@ -45,7 +45,7 @@ router.get('/', async (req, res) => {
       user: (req.session as any)?.user || null
     });
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Landing page error:');
+    logger.error('Landing page error:', { error: error instanceof Error ? error.message : String(error) });
     res.render('public/landing', {
       title: 'TutorAI',
       branding: {

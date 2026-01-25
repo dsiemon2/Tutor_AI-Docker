@@ -61,6 +61,9 @@ declare module 'express-session' {
       schoolId: string | null;
       districtId?: string | null;
     };
+    // 2FA pending authentication
+    pending2FAUserId?: string;
+    pending2FAEmail?: string;
   }
 }
 
